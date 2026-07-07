@@ -1,5 +1,7 @@
 node_modules/
 dist/
+.worktrees/
+worktrees/
 
 *.log
 npm-debug.log*
@@ -16,4 +18,3 @@ Thumbs.db
 
 .vscode/
 .idea/
-
