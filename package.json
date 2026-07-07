@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "check:modulo": "node scripts/check-modulo-engine.mjs",
+    "check:formatters": "node scripts/check-modulo-formatters.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
