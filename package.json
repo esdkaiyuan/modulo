@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "check:modulo": "node scripts/check-modulo-engine.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
