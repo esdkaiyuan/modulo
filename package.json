@@ -7,6 +7,7 @@
     "dev": "vite",
     "check:modulo": "node scripts/check-modulo-engine.mjs",
     "check:formatters": "node scripts/check-modulo-formatters.mjs",
+    "check:golden": "node scripts/check-modulo-golden.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
