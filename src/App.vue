@@ -2123,11 +2123,9 @@ const generateCharMatrix = (char) => {
   canvas.width = width.value
   canvas.height = height.value
 
-  // 清空画布
   ctx.fillStyle = 'white'
   ctx.fillRect(0, 0, width.value, height.value)
 
-  // 绘制文字
   ctx.fillStyle = 'black'
   const font = fontFamily.value === 'custom' ? customFont.value : fontFamily.value
   ctx.font = `${fontSize.value}px ${font}`
@@ -2135,58 +2133,13 @@ const generateCharMatrix = (char) => {
   ctx.textBaseline = 'middle'
   ctx.fillText(char, width.value / 2, height.value / 2)
 
-  // 获取像素数据
   const imageData = ctx.getImageData(0, 0, width.value, height.value)
-  const pixels = imageData.data
-
-  // 生成点阵数据
-  const data = []
-  const totalBits = width.value * height.value
-  const totalBytes = Math.ceil(totalBits / 8)
-
-  if (scanMode.value === 'row') {
-    // 逐行扫描
-    for (let y = 0; y < height.value; y++) {
-      for (let x = 0; x < width.value; x += 8) {
-        let byte = 0
-        for (let bit = 0; bit < 8 && (x + bit) < width.value; bit++) {
-          const px = x + bit
-          const py = y
-          const idx = (py * width.value + px) * 4
-          const gray = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3
-          const isOn = gray < 128
-
-          if (encodingMode.value === '阴码' ? isOn : !isOn) {
-            byte |= (1 << (byteOrder.value === 'msb' ? (7 - bit) : bit))
-          }
-        }
-        data.push(byte)
-      }
-    }
-  } else {
-    // 逐列扫描
-    for (let x = 0; x < width.value; x++) {
-      for (let y = 0; y < height.value; y += 8) {
-        let byte = 0
-        for (let bit = 0; bit < 8 && (y + bit) < height.value; bit++) {
-          const px = x
-          const py = y + bit
-          const idx = (py * width.value + px) * 4
-          const gray = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3
-          const isOn = gray < 128
-
-          if (encodingMode.value === '阴码' ? isOn : !isOn) {
-            byte |= (1 << (byteOrder.value === 'msb' ? (7 - bit) : bit))
-          }
-        }
-        data.push(byte)
-      }
-    }
-  }
-
-  return data
+  return packImageDataByMode(imageData, width.value, height.value, {
+    ...getModuloOptions(),
+    imageMode: 'mono',
+    colorFormat: 'MONO1'
+  })
 }
-
 // 格式化数据
 const formatHexData = (data) => {
   return data.map(b => '0x' + b.toString(16).toUpperCase().padStart(2, '0')).join(', ')
@@ -2747,65 +2700,20 @@ const generateDrawModulo = async () => {
   
   drawResult.length = 0
   
-  // 创建临时 Canvas 用于提取像素数据
   const tempCanvas = document.createElement('canvas')
   tempCanvas.width = width.value
   tempCanvas.height = height.value
   const tempCtx = tempCanvas.getContext('2d')
-  
-  // 将绘制的 Canvas 缩小到实际点阵大小
   tempCtx.drawImage(drawCanvas.value, 0, 0, width.value, height.value)
   
-  // 获取像素数据
   const imageData = tempCtx.getImageData(0, 0, width.value, height.value)
-  const pixels = imageData.data
-  
-  // 生成点阵数据（与文本取模相同的算法）
-  const data = []
-  
-  if (scanMode.value === 'row') {
-    // 逐行扫描
-    for (let y = 0; y < height.value; y++) {
-      for (let x = 0; x < width.value; x += 8) {
-        let byte = 0
-        for (let bit = 0; bit < 8 && (x + bit) < width.value; bit++) {
-          const px = x + bit
-          const py = y
-          const idx = (py * width.value + px) * 4
-          const gray = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3
-          const isOn = gray < 128
-          
-          if (encodingMode.value === '阴码' ? isOn : !isOn) {
-            byte |= (1 << (byteOrder.value === 'msb' ? (7 - bit) : bit))
-          }
-        }
-        data.push(byte)
-      }
-    }
-  } else {
-    // 逐列扫描
-    for (let x = 0; x < width.value; x++) {
-      for (let y = 0; y < height.value; y += 8) {
-        let byte = 0
-        for (let bit = 0; bit < 8 && (y + bit) < height.value; bit++) {
-          const px = x
-          const py = y + bit
-          const idx = (py * width.value + px) * 4
-          const gray = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3
-          const isOn = gray < 128
-          
-          if (encodingMode.value === '阴码' ? isOn : !isOn) {
-            byte |= (1 << (byteOrder.value === 'msb' ? (7 - bit) : bit))
-          }
-        }
-        data.push(byte)
-      }
-    }
-  }
-  
+  const data = packImageDataByMode(imageData, width.value, height.value, {
+    ...getModuloOptions(),
+    imageMode: 'mono',
+    colorFormat: 'MONO1'
+  })
   drawResult.push(...data)
 }
-
 // 复制手绘结果
 const copyDrawResult = (format) => {
   let text = ''
