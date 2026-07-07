@@ -118,153 +118,53 @@
           </div>
         </div>
 
-        <div class="config-panel">
-          <h3>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-            取模配置
-          </h3>
-
-          <div class="config-item">
-            <label>常用预设</label>
-            <select v-model="presetId" @change="applyPresetById(presetId)">
-              <option
-                v-for="preset in presetOptions"
-                :key="preset.id"
-                :value="preset.id"
-              >
-                {{ preset.label }}
-              </option>
-            </select>
-          </div>
-          
-          <div class="config-item">
-            <label>点阵大小</label>
-            <div class="size-inputs">
-              <input type="number" v-model.number="width" min="1" max="512" placeholder="宽">
-              <span>×</span>
-              <input type="number" v-model.number="height" min="1" max="512" placeholder="高">
+        <ModuloSettingsPanel
+          v-model:preset-id="presetId"
+          v-model:width="width"
+          v-model:height="height"
+          v-model:color-format="colorFormat"
+          v-model:output-format="outputFormat"
+          v-model:resize-mode="resizeMode"
+          v-model:scan-mode="scanMode"
+          v-model:encoding-mode="encodingMode"
+          v-model:byte-order="byteOrder"
+          v-model:rotation="rotation"
+          v-model:flip-x="flipX"
+          v-model:flip-y="flipY"
+          :preset-options="presetOptions"
+          @apply-preset="applyPresetById"
+        >
+          <template #font-settings>
+            <div class="config-item">
+              <label>字体大小</label>
+              <input type="range" v-model.number="fontSize" :min="8" :max="height" :step="1">
+              <span class="range-value">{{ fontSize }}px</span>
             </div>
-          </div>
 
-          <div class="config-item">
-            <label>颜色格式</label>
-            <select v-model="colorFormat">
-              <option value="MONO1">MONO1 单色位图</option>
-              <option value="GRAY2">GRAY2 2级灰度</option>
-              <option value="GRAY4">GRAY4 16级灰度</option>
-              <option value="GRAY8">GRAY8 256级灰度</option>
-              <option value="RGB332">RGB332</option>
-              <option value="RGB565">RGB565</option>
-              <option value="BGR565">BGR565</option>
-              <option value="RGB888">RGB888</option>
-              <option value="BGR888">BGR888</option>
-              <option value="ARGB8888">ARGB8888</option>
-              <option value="RGBA8888">RGBA8888</option>
-            </select>
-          </div>
+            <div class="config-item">
+              <label>字体选择</label>
+              <select v-model="fontFamily">
+                <option value="sans-serif">无衬线字体 (Sans-serif)</option>
+                <option value="serif">衬线字体 (Serif)</option>
+                <option value="monospace">等宽字体 (Monospace)</option>
+                <option value="Microsoft YaHei">微软雅黑</option>
+                <option value="SimSun">宋体</option>
+                <option value="SimHei">黑体</option>
+                <option value="KaiTi">楷体</option>
+                <option value="FangSong">仿宋</option>
+                <option value="Arial">Arial</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Courier New">Courier New</option>
+                <option value="custom">自定义字体</option>
+              </select>
+            </div>
 
-          <div class="config-item">
-            <label>输出格式</label>
-            <select v-model="outputFormat">
-              <option value="c-array">C数组</option>
-              <option value="c-header">C头文件</option>
-              <option value="lvgl">LVGL Descriptor</option>
-              <option value="arduino">Arduino PROGMEM</option>
-              <option value="hex">十六进制文本</option>
-              <option value="binary">二进制文本</option>
-              <option value="raw-bin">裸bin</option>
-            </select>
-          </div>
-
-          <div class="config-item">
-            <label>缩放方式</label>
-            <select v-model="resizeMode">
-              <option value="stretch">拉伸填充</option>
-              <option value="contain">等比适应</option>
-              <option value="cover">等比裁切</option>
-              <option value="crop-center">居中裁剪</option>
-              <option value="pad">留边填充</option>
-            </select>
-          </div>
-
-          <div class="config-item">
-            <label>字体大小</label>
-            <input type="range" v-model.number="fontSize" :min="8" :max="height" :step="1">
-            <span class="range-value">{{ fontSize }}px</span>
-          </div>
-
-          <div class="config-item">
-            <label>字体选择</label>
-            <select v-model="fontFamily">
-              <option value="sans-serif">无衬线字体 (Sans-serif)</option>
-              <option value="serif">衬线字体 (Serif)</option>
-              <option value="monospace">等宽字体 (Monospace)</option>
-              <option value="Microsoft YaHei">微软雅黑</option>
-              <option value="SimSun">宋体</option>
-              <option value="SimHei">黑体</option>
-              <option value="KaiTi">楷体</option>
-              <option value="FangSong">仿宋</option>
-              <option value="Arial">Arial</option>
-              <option value="Times New Roman">Times New Roman</option>
-              <option value="Courier New">Courier New</option>
-              <option value="custom">自定义字体</option>
-            </select>
-          </div>
-
-          <div class="config-item" v-if="fontFamily === 'custom'">
-            <label>自定义字体名称</label>
-            <input type="text" v-model="customFont" placeholder="输入字体名称，如：'PingFang SC'">
-          </div>
-
-          <div class="config-item">
-            <label>取模方式</label>
-            <select v-model="scanMode">
-              <option value="row">逐行式（横向取模）</option>
-              <option value="column">逐列式（纵向取模）</option>
-            </select>
-          </div>
-
-          <div class="config-item">
-            <label>编码方式</label>
-            <select v-model="encodingMode">
-              <option value="阴码">阴码（1点亮）</option>
-              <option value="阳码">阳码（0点亮）</option>
-            </select>
-          </div>
-
-          <div class="config-item">
-            <label>字节顺序</label>
-            <select v-model="byteOrder">
-              <option value="msb">高位在前（MSB）</option>
-              <option value="lsb">低位在前（LSB）</option>
-            </select>
-          </div>
-
-          <div class="config-item">
-            <label>旋转</label>
-            <select v-model.number="rotation">
-              <option :value="0">0°</option>
-              <option :value="90">90°</option>
-              <option :value="180">180°</option>
-              <option :value="270">270°</option>
-            </select>
-          </div>
-
-          <div class="config-item">
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="flipX">
-              水平翻转
-            </label>
-            <label class="checkbox-label">
-              <input type="checkbox" v-model="flipY">
-              垂直翻转
-            </label>
-          </div>
-        </div>
-      </aside>
+            <div class="config-item" v-if="fontFamily === 'custom'">
+              <label>自定义字体名称</label>
+              <input type="text" v-model="customFont" placeholder="输入字体名称，如：'PingFang SC'">
+            </div>
+          </template>
+        </ModuloSettingsPanel>      </aside>
 
       <main class="content-area">
         <!-- 文本取模 -->
@@ -1925,6 +1825,7 @@ import {
   getWorkflowHint,
   getWorkflowLabel
 } from './utils/mediaTypes.js'
+import ModuloSettingsPanel from './components/ModuloSettingsPanel.vue'
 import { useModuloConfig } from './composables/useModuloConfig.js'
 import { useModuloResult } from './composables/useModuloResult.js'
 
