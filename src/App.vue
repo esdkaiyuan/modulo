@@ -126,14 +126,68 @@
             </svg>
             取模配置
           </h3>
+
+          <div class="config-item">
+            <label>常用预设</label>
+            <select v-model="presetId" @change="applyPresetById(presetId)">
+              <option
+                v-for="preset in presetOptions"
+                :key="preset.id"
+                :value="preset.id"
+              >
+                {{ preset.label }}
+              </option>
+            </select>
+          </div>
           
           <div class="config-item">
             <label>点阵大小</label>
             <div class="size-inputs">
-              <input type="number" v-model.number="width" min="8" max="128" placeholder="宽">
+              <input type="number" v-model.number="width" min="1" max="512" placeholder="宽">
               <span>×</span>
-              <input type="number" v-model.number="height" min="8" max="128" placeholder="高">
+              <input type="number" v-model.number="height" min="1" max="512" placeholder="高">
             </div>
+          </div>
+
+          <div class="config-item">
+            <label>颜色格式</label>
+            <select v-model="colorFormat">
+              <option value="MONO1">MONO1 单色位图</option>
+              <option value="GRAY2">GRAY2 2级灰度</option>
+              <option value="GRAY4">GRAY4 16级灰度</option>
+              <option value="GRAY8">GRAY8 256级灰度</option>
+              <option value="RGB332">RGB332</option>
+              <option value="RGB565">RGB565</option>
+              <option value="BGR565">BGR565</option>
+              <option value="RGB888">RGB888</option>
+              <option value="BGR888">BGR888</option>
+              <option value="ARGB8888">ARGB8888</option>
+              <option value="RGBA8888">RGBA8888</option>
+            </select>
+          </div>
+
+          <div class="config-item">
+            <label>输出格式</label>
+            <select v-model="outputFormat">
+              <option value="c-array">C数组</option>
+              <option value="c-header">C头文件</option>
+              <option value="lvgl">LVGL Descriptor</option>
+              <option value="arduino">Arduino PROGMEM</option>
+              <option value="hex">十六进制文本</option>
+              <option value="binary">二进制文本</option>
+              <option value="raw-bin">裸bin</option>
+            </select>
+          </div>
+
+          <div class="config-item">
+            <label>缩放方式</label>
+            <select v-model="resizeMode">
+              <option value="stretch">拉伸填充</option>
+              <option value="contain">等比适应</option>
+              <option value="cover">等比裁切</option>
+              <option value="crop-center">居中裁剪</option>
+              <option value="pad">留边填充</option>
+            </select>
           </div>
 
           <div class="config-item">
@@ -187,6 +241,27 @@
               <option value="msb">高位在前（MSB）</option>
               <option value="lsb">低位在前（LSB）</option>
             </select>
+          </div>
+
+          <div class="config-item">
+            <label>旋转</label>
+            <select v-model.number="rotation">
+              <option :value="0">0°</option>
+              <option :value="90">90°</option>
+              <option :value="180">180°</option>
+              <option :value="270">270°</option>
+            </select>
+          </div>
+
+          <div class="config-item">
+            <label class="checkbox-label">
+              <input type="checkbox" v-model="flipX">
+              水平翻转
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" v-model="flipY">
+              垂直翻转
+            </label>
           </div>
         </div>
       </aside>
@@ -1850,6 +1925,8 @@ import {
   getWorkflowHint,
   getWorkflowLabel
 } from './utils/mediaTypes.js'
+import { useModuloConfig } from './composables/useModuloConfig.js'
+import { useModuloResult } from './composables/useModuloResult.js'
 
 // 状态
 const currentTab = ref('text')
@@ -1861,14 +1938,30 @@ const visitorRecords = reactive([])
 const HISTORY_PASSWORD = 'esdkaiyuan-ip'
 
 // 配置参数
-const width = ref(16)
-const height = ref(16)
+const {
+  presetOptions,
+  presetId,
+  width,
+  height,
+  scanMode,
+  encodingMode,
+  byteOrder,
+  threshold,
+  imageMode,
+  colorDepth,
+  colorFormat,
+  outputFormat,
+  rotation,
+  flipX,
+  flipY,
+  resizeMode,
+  applyPresetById,
+  getModuloOptions: getSharedModuloOptions
+} = useModuloConfig()
+const { outputFormatLabels } = useModuloResult()
 const fontSize = ref(14)
 const fontFamily = ref('sans-serif')
 const customFont = ref('')
-const scanMode = ref('row')
-const encodingMode = ref('阴码')
-const byteOrder = ref('msb')
 
 // 文本取模
 const inputText = ref('你好')
@@ -1876,9 +1969,6 @@ const textResult = reactive([])
 
 // 图片取模
 const uploadedImage = ref(null)
-const imageMode = ref('mono')
-const threshold = ref(128)
-const colorDepth = ref(8)
 const imageResult = ref(null)
 const imageActiveTab = ref('hex')
 const imageCanvas = ref(null)
@@ -2215,8 +2305,10 @@ const uint8_t font_${unicode.toString(16).toUpperCase().padStart(4, '0')}[] = {
 }
 
 const getModuloOptions = () => ({
+  ...getSharedModuloOptions(),
   imageMode: imageMode.value,
   colorDepth: Number(colorDepth.value),
+  colorFormat: colorFormat.value,
   scanMode: scanMode.value,
   encodingMode: encodingMode.value,
   byteOrder: byteOrder.value,
