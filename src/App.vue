@@ -43,7 +43,9 @@
 
     <div class="main-content">
       <aside class="sidebar">
-        <div class="nav-menu">
+        <div class="sidebar-section">
+          <div class="nav-section-label">工作流</div>
+          <div class="nav-menu workflow-nav">
           <div 
             class="nav-item" 
             :class="{ active: currentTab === 'text' }"
@@ -80,28 +82,30 @@
             </svg>
             批量取模
           </div>
-          <div 
-            class="nav-item" 
-            :class="{ active: currentTab === 'animatedImage' }"
-            @click="switchMediaTab('animatedImage')"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <circle cx="8" cy="8" r="1.5"/>
-              <path d="M21 15l-5-5L5 21"/>
-            </svg>
-            动图取模
-          </div>
-          <div 
-            class="nav-item" 
-            :class="{ active: currentTab === 'video' }"
-            @click="switchMediaTab('video')"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polygon points="23 7 16 12 23 17 23 7"/>
-              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-            </svg>
-            视频取模
+          <div class="media-nav-group">
+            <div
+              class="nav-item"
+              :class="{ active: currentTab === 'animatedImage' }"
+              @click="switchMediaTab('animatedImage')"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8" cy="8" r="1.5"/>
+                <path d="M21 15l-5-5L5 21"/>
+              </svg>
+              动图取模
+            </div>
+            <div
+              class="nav-item"
+              :class="{ active: currentTab === 'video' }"
+              @click="switchMediaTab('video')"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="23 7 16 12 23 17 23 7"/>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+              </svg>
+              视频取模
+            </div>
           </div>
           <div 
             class="nav-item" 
@@ -116,90 +120,64 @@
             </svg>
             手绘取模
           </div>
+          </div>
         </div>
 
-        <div class="config-panel">
-          <h3>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="3"/>
-              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
-            </svg>
-            取模配置
-          </h3>
-          
-          <div class="config-item">
-            <label>点阵大小</label>
-            <div class="size-inputs">
-              <input type="number" v-model.number="width" min="8" max="128" placeholder="宽">
-              <span>×</span>
-              <input type="number" v-model.number="height" min="8" max="128" placeholder="高">
+        <ModuloSettingsPanel
+          v-model:preset-id="presetId"
+          v-model:width="width"
+          v-model:height="height"
+          v-model:color-format="colorFormat"
+          v-model:output-format="outputFormat"
+          v-model:resize-mode="resizeMode"
+          v-model:scan-mode="scanMode"
+          v-model:encoding-mode="encodingMode"
+          v-model:byte-order="byteOrder"
+          v-model:rotation="rotation"
+          v-model:flip-x="flipX"
+          v-model:flip-y="flipY"
+          :preset-options="presetOptions"
+          @apply-preset="applyPresetById"
+        >
+          <template #font-settings>
+            <div class="config-item">
+              <label>字体大小</label>
+              <input type="range" v-model.number="fontSize" :min="8" :max="height" :step="1">
+              <span class="range-value">{{ fontSize }}px</span>
             </div>
-          </div>
 
-          <div class="config-item">
-            <label>字体大小</label>
-            <input type="range" v-model.number="fontSize" :min="8" :max="height" :step="1">
-            <span class="range-value">{{ fontSize }}px</span>
-          </div>
+            <div class="config-item">
+              <label>字体选择</label>
+              <select v-model="fontFamily">
+                <option value="sans-serif">无衬线字体 (Sans-serif)</option>
+                <option value="serif">衬线字体 (Serif)</option>
+                <option value="monospace">等宽字体 (Monospace)</option>
+                <option value="Microsoft YaHei">微软雅黑</option>
+                <option value="SimSun">宋体</option>
+                <option value="SimHei">黑体</option>
+                <option value="KaiTi">楷体</option>
+                <option value="FangSong">仿宋</option>
+                <option value="Arial">Arial</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Courier New">Courier New</option>
+                <option value="custom">自定义字体</option>
+              </select>
+            </div>
 
-          <div class="config-item">
-            <label>字体选择</label>
-            <select v-model="fontFamily">
-              <option value="sans-serif">无衬线字体 (Sans-serif)</option>
-              <option value="serif">衬线字体 (Serif)</option>
-              <option value="monospace">等宽字体 (Monospace)</option>
-              <option value="Microsoft YaHei">微软雅黑</option>
-              <option value="SimSun">宋体</option>
-              <option value="SimHei">黑体</option>
-              <option value="KaiTi">楷体</option>
-              <option value="FangSong">仿宋</option>
-              <option value="Arial">Arial</option>
-              <option value="Times New Roman">Times New Roman</option>
-              <option value="Courier New">Courier New</option>
-              <option value="custom">自定义字体</option>
-            </select>
-          </div>
-
-          <div class="config-item" v-if="fontFamily === 'custom'">
-            <label>自定义字体名称</label>
-            <input type="text" v-model="customFont" placeholder="输入字体名称，如：'PingFang SC'">
-          </div>
-
-          <div class="config-item">
-            <label>取模方式</label>
-            <select v-model="scanMode">
-              <option value="row">逐行式（横向取模）</option>
-              <option value="column">逐列式（纵向取模）</option>
-            </select>
-          </div>
-
-          <div class="config-item">
-            <label>编码方式</label>
-            <select v-model="encodingMode">
-              <option value="阴码">阴码（1点亮）</option>
-              <option value="阳码">阳码（0点亮）</option>
-            </select>
-          </div>
-
-          <div class="config-item">
-            <label>字节顺序</label>
-            <select v-model="byteOrder">
-              <option value="msb">高位在前（MSB）</option>
-              <option value="lsb">低位在前（LSB）</option>
-            </select>
-          </div>
-        </div>
+            <div class="config-item" v-if="fontFamily === 'custom'">
+              <label>自定义字体名称</label>
+              <input type="text" v-model="customFont" placeholder="输入字体名称，如：'PingFang SC'">
+            </div>
+          </template>
+        </ModuloSettingsPanel>
       </aside>
 
       <main class="content-area">
+        <StatusSummary :items="statusSummaryItems" />
+
         <!-- 文本取模 -->
         <div v-if="currentTab === 'text'" class="tab-content">
-          <div class="input-section">
-            <div class="section-header">
-              <h2>文本/汉字取模</h2>
-              <p class="section-desc">输入文字生成点阵数据，支持中英文、数字、符号</p>
-            </div>
-
+          <SectionCard title="文本/汉字取模" description="输入文字生成点阵数据，支持中英文、数字、符号">
             <div class="form-group">
               <label>输入文本</label>
               <textarea 
@@ -215,12 +193,11 @@
               </svg>
               生成点阵
             </button>
-          </div>
+          </SectionCard>
 
-          <div class="result-section" v-if="textResult.length > 0">
-            <div class="section-header">
-              <h2>取模结果</h2>
-              <div class="result-actions">
+          <SectionCard v-if="textResult.length > 0" title="取模结果">
+            <template #actions>
+              <ResultToolbar>
                 <button class="small-btn" @click="copyResult('c')">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
@@ -243,8 +220,8 @@
                   </svg>
                   导出C文件
                 </button>
-              </div>
-            </div>
+              </ResultToolbar>
+            </template>
 
             <div class="char-results">
               <div v-for="(char, index) in textResult" :key="index" class="char-item">
@@ -292,35 +269,35 @@
                 </div>
               </div>
             </div>
-          </div>
+          </SectionCard>
         </div>
 
         <!-- 图片取模 -->
         <div v-if="currentTab === 'image'" class="tab-content">
-          <div class="input-section">
-            <div class="section-header">
-              <h2>图片取模</h2>
-              <p class="section-desc">上传图片生成点阵数据，支持单色和彩色取模</p>
-            </div>
-
-            <div class="upload-area" @click="$refs.fileInput.click()" @dragover.prevent @drop.prevent="handleDrop">
-              <input 
-                type="file" 
-                ref="fileInput" 
-                accept="image/*" 
-                @change="handleImageUpload"
-                style="display: none"
-              >
-              <div class="upload-content">
+          <SectionCard title="图片取模" description="上传图片生成点阵数据，支持单色和彩色取模">
+            <UploadDropzone
+              title="点击或拖拽上传图片"
+              hint="支持 PNG、JPG、BMP 格式"
+              @select="$refs.fileInput.click()"
+              @drop="handleDrop"
+            >
+              <template #input>
+                <input
+                  type="file"
+                  ref="fileInput"
+                  accept="image/*"
+                  @change="handleImageUpload"
+                  style="display: none"
+                >
+              </template>
+              <template #icon>
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
                   <polyline points="17,8 12,3 7,8"/>
                   <line x1="12" y1="3" x2="12" y2="15"/>
                 </svg>
-                <p>点击或拖拽上传图片</p>
-                <p class="upload-hint">支持 PNG、JPG、BMP 格式</p>
-              </div>
-            </div>
+              </template>
+            </UploadDropzone>
 
             <div class="image-options" v-if="uploadedImage">
               <div class="option-group">
@@ -360,12 +337,11 @@
               </svg>
               生成点阵
             </button>
-          </div>
+          </SectionCard>
 
-          <div class="result-section" v-if="imageResult">
-            <div class="section-header">
-              <h2>取模结果</h2>
-              <div class="result-actions">
+          <SectionCard v-if="imageResult" title="取模结果">
+            <template #actions>
+              <ResultToolbar>
                 <button class="small-btn" @click="copyResult('c')">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
@@ -381,8 +357,8 @@
                   </svg>
                   导出C文件
                 </button>
-              </div>
-            </div>
+              </ResultToolbar>
+            </template>
 
             <div class="image-result">
               <div class="preview-area">
@@ -428,7 +404,7 @@
                 <pre v-else>{{ imageResult.cCode }}</pre>
               </div>
             </div>
-          </div>
+          </SectionCard>
         </div>
 
         <!-- 动图/视频取模 -->
@@ -1850,6 +1826,13 @@ import {
   getWorkflowHint,
   getWorkflowLabel
 } from './utils/mediaTypes.js'
+import ModuloSettingsPanel from './components/ModuloSettingsPanel.vue'
+import SectionCard from './components/SectionCard.vue'
+import UploadDropzone from './components/UploadDropzone.vue'
+import ResultToolbar from './components/ResultToolbar.vue'
+import StatusSummary from './components/StatusSummary.vue'
+import { useModuloConfig } from './composables/useModuloConfig.js'
+import { useModuloResult } from './composables/useModuloResult.js'
 
 // 状态
 const currentTab = ref('text')
@@ -1861,14 +1844,40 @@ const visitorRecords = reactive([])
 const HISTORY_PASSWORD = 'esdkaiyuan-ip'
 
 // 配置参数
-const width = ref(16)
-const height = ref(16)
+const {
+  presetOptions,
+  presetId,
+  width,
+  height,
+  scanMode,
+  encodingMode,
+  byteOrder,
+  threshold,
+  imageMode,
+  colorDepth,
+  colorFormat,
+  outputFormat,
+  rotation,
+  flipX,
+  flipY,
+  resizeMode,
+  applyPresetById,
+  getModuloOptions: getSharedModuloOptions
+} = useModuloConfig()
+const { outputFormatLabels } = useModuloResult()
 const fontSize = ref(14)
 const fontFamily = ref('sans-serif')
 const customFont = ref('')
-const scanMode = ref('row')
-const encodingMode = ref('阴码')
-const byteOrder = ref('msb')
+const activePresetLabel = computed(() => {
+  return presetOptions.find((preset) => preset.id === presetId.value)?.label || '自定义'
+})
+const statusSummaryItems = computed(() => [
+  { label: '尺寸', value: `${width.value} × ${height.value}` },
+  { label: '颜色', value: colorFormat.value },
+  { label: '扫描', value: scanMode.value === 'row' ? '逐行' : '逐列' },
+  { label: '输出', value: outputFormatLabels[outputFormat.value] || outputFormat.value },
+  { label: '预设', value: activePresetLabel.value },
+])
 
 // 文本取模
 const inputText = ref('你好')
@@ -1876,9 +1885,6 @@ const textResult = reactive([])
 
 // 图片取模
 const uploadedImage = ref(null)
-const imageMode = ref('mono')
-const threshold = ref(128)
-const colorDepth = ref(8)
 const imageResult = ref(null)
 const imageActiveTab = ref('hex')
 const imageCanvas = ref(null)
@@ -2132,11 +2138,9 @@ const generateCharMatrix = (char) => {
   canvas.width = width.value
   canvas.height = height.value
 
-  // 清空画布
   ctx.fillStyle = 'white'
   ctx.fillRect(0, 0, width.value, height.value)
 
-  // 绘制文字
   ctx.fillStyle = 'black'
   const font = fontFamily.value === 'custom' ? customFont.value : fontFamily.value
   ctx.font = `${fontSize.value}px ${font}`
@@ -2144,58 +2148,13 @@ const generateCharMatrix = (char) => {
   ctx.textBaseline = 'middle'
   ctx.fillText(char, width.value / 2, height.value / 2)
 
-  // 获取像素数据
   const imageData = ctx.getImageData(0, 0, width.value, height.value)
-  const pixels = imageData.data
-
-  // 生成点阵数据
-  const data = []
-  const totalBits = width.value * height.value
-  const totalBytes = Math.ceil(totalBits / 8)
-
-  if (scanMode.value === 'row') {
-    // 逐行扫描
-    for (let y = 0; y < height.value; y++) {
-      for (let x = 0; x < width.value; x += 8) {
-        let byte = 0
-        for (let bit = 0; bit < 8 && (x + bit) < width.value; bit++) {
-          const px = x + bit
-          const py = y
-          const idx = (py * width.value + px) * 4
-          const gray = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3
-          const isOn = gray < 128
-
-          if (encodingMode.value === '阴码' ? isOn : !isOn) {
-            byte |= (1 << (byteOrder.value === 'msb' ? (7 - bit) : bit))
-          }
-        }
-        data.push(byte)
-      }
-    }
-  } else {
-    // 逐列扫描
-    for (let x = 0; x < width.value; x++) {
-      for (let y = 0; y < height.value; y += 8) {
-        let byte = 0
-        for (let bit = 0; bit < 8 && (y + bit) < height.value; bit++) {
-          const px = x
-          const py = y + bit
-          const idx = (py * width.value + px) * 4
-          const gray = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3
-          const isOn = gray < 128
-
-          if (encodingMode.value === '阴码' ? isOn : !isOn) {
-            byte |= (1 << (byteOrder.value === 'msb' ? (7 - bit) : bit))
-          }
-        }
-        data.push(byte)
-      }
-    }
-  }
-
-  return data
+  return packImageDataByMode(imageData, width.value, height.value, {
+    ...getModuloOptions(),
+    imageMode: 'mono',
+    colorFormat: 'MONO1'
+  })
 }
-
 // 格式化数据
 const formatHexData = (data) => {
   return data.map(b => '0x' + b.toString(16).toUpperCase().padStart(2, '0')).join(', ')
@@ -2215,8 +2174,10 @@ const uint8_t font_${unicode.toString(16).toUpperCase().padStart(4, '0')}[] = {
 }
 
 const getModuloOptions = () => ({
+  ...getSharedModuloOptions(),
   imageMode: imageMode.value,
   colorDepth: Number(colorDepth.value),
+  colorFormat: colorFormat.value,
   scanMode: scanMode.value,
   encodingMode: encodingMode.value,
   byteOrder: byteOrder.value,
@@ -2754,65 +2715,20 @@ const generateDrawModulo = async () => {
   
   drawResult.length = 0
   
-  // 创建临时 Canvas 用于提取像素数据
   const tempCanvas = document.createElement('canvas')
   tempCanvas.width = width.value
   tempCanvas.height = height.value
   const tempCtx = tempCanvas.getContext('2d')
-  
-  // 将绘制的 Canvas 缩小到实际点阵大小
   tempCtx.drawImage(drawCanvas.value, 0, 0, width.value, height.value)
   
-  // 获取像素数据
   const imageData = tempCtx.getImageData(0, 0, width.value, height.value)
-  const pixels = imageData.data
-  
-  // 生成点阵数据（与文本取模相同的算法）
-  const data = []
-  
-  if (scanMode.value === 'row') {
-    // 逐行扫描
-    for (let y = 0; y < height.value; y++) {
-      for (let x = 0; x < width.value; x += 8) {
-        let byte = 0
-        for (let bit = 0; bit < 8 && (x + bit) < width.value; bit++) {
-          const px = x + bit
-          const py = y
-          const idx = (py * width.value + px) * 4
-          const gray = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3
-          const isOn = gray < 128
-          
-          if (encodingMode.value === '阴码' ? isOn : !isOn) {
-            byte |= (1 << (byteOrder.value === 'msb' ? (7 - bit) : bit))
-          }
-        }
-        data.push(byte)
-      }
-    }
-  } else {
-    // 逐列扫描
-    for (let x = 0; x < width.value; x++) {
-      for (let y = 0; y < height.value; y += 8) {
-        let byte = 0
-        for (let bit = 0; bit < 8 && (y + bit) < height.value; bit++) {
-          const px = x
-          const py = y + bit
-          const idx = (py * width.value + px) * 4
-          const gray = (pixels[idx] + pixels[idx + 1] + pixels[idx + 2]) / 3
-          const isOn = gray < 128
-          
-          if (encodingMode.value === '阴码' ? isOn : !isOn) {
-            byte |= (1 << (byteOrder.value === 'msb' ? (7 - bit) : bit))
-          }
-        }
-        data.push(byte)
-      }
-    }
-  }
-  
+  const data = packImageDataByMode(imageData, width.value, height.value, {
+    ...getModuloOptions(),
+    imageMode: 'mono',
+    colorFormat: 'MONO1'
+  })
   drawResult.push(...data)
 }
-
 // 复制手绘结果
 const copyDrawResult = (format) => {
   let text = ''
@@ -3052,89 +2968,135 @@ const exportBatchCFile = () => {
 }
 
 .sidebar {
-  width: 280px;
+  width: 300px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
+}
+
+.sidebar-section,
+.config-panel {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.sidebar-section {
+  padding: 10px;
+}
+
+.nav-section-label,
+.settings-group-title {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.nav-section-label {
+  padding: 2px 8px 9px;
 }
 
 .nav-menu {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.nav-menu:hover {
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 4px 16px rgba(74, 144, 226, 0.15);
+.media-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 0;
+  padding: 6px 0 6px 10px;
+  border-left: 1px solid #e5e7eb;
 }
 
 .nav-item {
-  padding: 12px 16px;
-  border-radius: 8px;
+  position: relative;
+  min-height: 40px;
+  padding: 9px 12px 9px 14px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.16s ease, color 0.16s ease;
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 15px;
-  color: #333;
-  margin-bottom: 4px;
+  gap: 9px;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.3;
+  white-space: nowrap;
 }
 
 .nav-item:hover {
-  background: #f5f7fa;
+  background: #f8fafc;
+  color: #0f172a;
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #E3F2FD 0%, #E8F5E9 100%);
-  color: #4A90E2;
-  font-weight: 500;
-  animation: navItemColorShift 8s ease infinite;
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 600;
 }
 
-@keyframes navItemColorShift {
-  0%, 100% {
-    color: #4A90E2;
-  }
-  50% {
-    color: #66BB6A;
-  }
+.nav-item.active::before {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 999px;
+  background: #2563eb;
+  content: "";
+}
+
+.nav-item svg {
+  flex-shrink: 0;
 }
 
 .config-panel {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s ease;
+  padding: 14px;
 }
 
-.config-panel:hover {
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 4px 16px rgba(74, 144, 226, 0.15);
+.settings-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #0f172a;
+  font-size: 15px;
+  line-height: 1.2;
+  margin-bottom: 14px;
 }
 
-.config-panel h3 {
-  font-size: 16px;
-  margin-bottom: 16px;
-  color: #333;
+.settings-group {
+  padding: 14px 0;
+  border-top: 1px solid #eef2f7;
+}
+
+.settings-group:last-child {
+  padding-bottom: 0;
+}
+
+.settings-group-title {
+  margin-bottom: 10px;
 }
 
 .config-item {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+}
+
+.config-item:last-child {
+  margin-bottom: 0;
 }
 
 .config-item label {
   display: block;
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 8px;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.3;
+  margin-bottom: 6px;
 }
 
 .size-inputs {
@@ -3145,8 +3107,10 @@ const exportBatchCFile = () => {
 
 .size-inputs input {
   flex: 1;
-  padding: 8px;
-  border: 1px solid #e0e0e0;
+  min-width: 0;
+  height: 36px;
+  padding: 7px 9px;
+  border: 1px solid #d7dee8;
   border-radius: 6px;
   font-size: 14px;
 }
@@ -3158,11 +3122,45 @@ const exportBatchCFile = () => {
 .config-item select,
 .config-item input[type="text"] {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #e0e0e0;
+  height: 36px;
+  padding: 7px 9px;
+  border: 1px solid #d7dee8;
   border-radius: 6px;
   font-size: 14px;
   background: white;
+}
+
+.config-item select:focus,
+.config-item input[type="text"]:focus,
+.size-inputs input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.config-item-inline {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  margin-bottom: 0 !important;
+  padding: 7px 9px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #334155 !important;
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  margin: 0;
+  flex-shrink: 0;
 }
 
 input[type="range"] {
@@ -3188,39 +3186,79 @@ input[type="range"] {
 
 .content-area {
   flex: 1;
+  min-width: 0;
 }
 
 .tab-content {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 18px;
 }
 
+.status-summary {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.status-summary-item {
+  min-width: 0;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.status-summary-item span,
+.section-card-desc {
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.status-summary-item strong {
+  display: block;
+  margin-top: 5px;
+  overflow: hidden;
+  color: #1e293b;
+  font-size: 14px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.section-card,
 .input-section,
 .result-section {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 28px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s ease;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 22px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
-.input-section:hover,
-.result-section:hover {
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 4px 16px rgba(74, 144, 226, 0.15);
-}
-
+.section-card-header,
 .section-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
 }
 
+.section-card-title-group {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.section-card-header h2,
 .section-header h2 {
-  font-size: 22px;
+  font-size: 20px;
+  line-height: 1.25;
   color: #1a1a1a;
 }
 
@@ -3258,18 +3296,6 @@ input[type="range"] {
   outline: none;
   border-color: #4A90E2;
   box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
-  animation: inputFocusShift 8s ease infinite;
-}
-
-@keyframes inputFocusShift {
-  0%, 100% {
-    border-color: #4A90E2;
-    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
-  }
-  50% {
-    border-color: #66BB6A;
-    box-shadow: 0 0 0 3px rgba(102, 187, 106, 0.1);
-  }
 }
 
 .form-group textarea {
@@ -3278,40 +3304,27 @@ input[type="range"] {
 
 .primary-btn {
   width: 100%;
-  padding: 14px;
+  min-height: 44px;
+  padding: 11px 14px;
   background: white;
   color: #4A90E2;
-  border: 2px solid #4A90E2;
+  border: 1px solid #4A90E2;
   border-radius: 8px;
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 15px;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, color 0.16s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  animation: primaryBtnShift 8s ease infinite;
-}
-
-@keyframes primaryBtnShift {
-  0%, 100% {
-    color: #4A90E2;
-    border-color: #4A90E2;
-  }
-  50% {
-    color: #66BB6A;
-    border-color: #66BB6A;
-  }
 }
 
 .primary-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #4A90E2 0%, #66BB6A 100%);
   color: white;
   border-color: transparent;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
-  animation: none;
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.18);
 }
 
 .primary-btn:active:not(:disabled) {
@@ -3323,31 +3336,26 @@ input[type="range"] {
   cursor: not-allowed;
 }
 
+.upload-dropzone,
 .upload-area {
-  border: 2px dashed #e0e0e0;
-  border-radius: 12px;
-  padding: 40px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  padding: 32px;
   text-align: center;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
   margin-bottom: 20px;
+  background: #f8fafc;
 }
 
+.upload-dropzone:hover,
 .upload-area:hover {
   border-color: #4A90E2;
   background: linear-gradient(135deg, #E3F2FD 0%, #E8F5E9 100%);
-  animation: uploadAreaHoverShift 8s ease infinite;
+  box-shadow: inset 0 0 0 1px rgba(74, 144, 226, 0.08);
 }
 
-@keyframes uploadAreaHoverShift {
-  0%, 100% {
-    border-color: #4A90E2;
-  }
-  50% {
-    border-color: #66BB6A;
-  }
-}
-
+.upload-dropzone-content,
 .upload-content {
   display: flex;
   flex-direction: column;
@@ -3356,11 +3364,13 @@ input[type="range"] {
   color: #666;
 }
 
+.upload-dropzone-content svg,
 .upload-content svg {
   color: #999;
   margin-bottom: 4px;
 }
 
+.upload-dropzone p,
 .upload-area p {
   color: #666;
   margin-bottom: 8px;
@@ -3372,9 +3382,10 @@ input[type="range"] {
 }
 
 .image-options {
-  background: #f9f9f9;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 20px;
+  padding: 16px;
   margin-bottom: 20px;
 }
 
@@ -3407,43 +3418,34 @@ input[type="range"] {
   font-weight: normal;
 }
 
+.result-toolbar,
 .result-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
+  justify-content: flex-end;
 }
 
 .small-btn {
-  padding: 8px 16px;
+  min-height: 34px;
+  padding: 7px 12px;
   background: white;
   border: 1px solid #4A90E2;
   border-radius: 6px;
-  font-size: 14px;
+  font-size: 13px;
   color: #4A90E2;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, color 0.16s ease;
   display: flex;
   align-items: center;
   gap: 6px;
-  animation: smallBtnShift 8s ease infinite;
-}
-
-@keyframes smallBtnShift {
-  0%, 100% {
-    color: #4A90E2;
-    border-color: #4A90E2;
-  }
-  50% {
-    color: #66BB6A;
-    border-color: #66BB6A;
-  }
 }
 
 .small-btn:hover {
   background: linear-gradient(135deg, #4A90E2 0%, #66BB6A 100%);
   color: white;
   border-color: transparent;
-  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.3);
-  animation: none;
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.18);
 }
 
 .char-results {
@@ -3453,17 +3455,16 @@ input[type="range"] {
 }
 
 .char-item {
-  background: rgba(249, 249, 249, 0.8);
-  backdrop-filter: blur(5px);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 20px;
-  transition: all 0.3s ease;
+  padding: 18px;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
 .char-item:hover {
-  background: rgba(249, 249, 249, 0.95);
-  box-shadow: 0 2px 12px rgba(74, 144, 226, 0.1);
-  transform: translateY(-2px);
+  border-color: rgba(74, 144, 226, 0.35);
+  box-shadow: 0 4px 14px rgba(74, 144, 226, 0.08);
 }
 
 .char-header {
@@ -3507,31 +3508,21 @@ input[type="range"] {
 }
 
 .tab-btn {
-  padding: 6px 16px;
+  min-height: 32px;
+  padding: 6px 14px;
   background: white;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #d7dee8;
   border-radius: 6px;
   font-size: 13px;
-  color: #666;
+  color: #475569;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
 }
 
 .tab-btn:hover {
   border-color: #4A90E2;
   color: #4A90E2;
-  animation: tabBtnHoverShift 8s ease infinite;
-}
-
-@keyframes tabBtnHoverShift {
-  0%, 100% {
-    border-color: #4A90E2;
-    color: #4A90E2;
-  }
-  50% {
-    border-color: #66BB6A;
-    color: #66BB6A;
-  }
+  background: #f8fafc;
 }
 
 .tab-btn.active {
@@ -3542,10 +3533,10 @@ input[type="range"] {
 }
 
 .data-content {
-  background: white;
-  border-radius: 6px;
+  background: #ffffff;
+  border-radius: 8px;
   padding: 16px;
-  border: 1px solid #e0e0e0;
+  border: 1px solid #e2e8f0;
 }
 
 .data-content pre {
@@ -3565,9 +3556,10 @@ input[type="range"] {
 }
 
 .preview-area h4 {
-  font-size: 15px;
-  color: #333;
-  margin-bottom: 12px;
+  font-size: 13px;
+  color: #475569;
+  margin-bottom: 10px;
+  font-weight: 700;
 }
 
 .source-image {
@@ -3706,16 +3698,16 @@ input[type="range"] {
 }
 
 .data-output {
-  background: rgba(249, 249, 249, 0.8);
-  backdrop-filter: blur(5px);
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
-  padding: 20px;
-  transition: all 0.3s ease;
+  padding: 18px;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
 .data-output:hover {
-  background: rgba(249, 249, 249, 0.95);
-  box-shadow: 0 2px 12px rgba(74, 144, 226, 0.1);
+  border-color: rgba(74, 144, 226, 0.35);
+  box-shadow: 0 4px 14px rgba(74, 144, 226, 0.08);
 }
 
 .batch-grid {
@@ -3775,23 +3767,25 @@ input[type="range"] {
   gap: 10px;
   margin-bottom: 20px;
   padding: 10px;
-  background: #f9f9f9;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
   align-items: center;
 }
 
 .tool-btn {
-  padding: 8px 16px;
+  min-height: 36px;
+  padding: 8px 12px;
   background: white;
-  border: 2px solid #e0e0e0;
+  border: 1px solid #d7dee8;
   border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 6px;
   font-size: 14px;
-  color: #666;
-  transition: all 0.2s;
+  color: #475569;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease;
 }
 
 .tool-btn:hover:not(:disabled) {
@@ -4337,7 +4331,7 @@ input[type="range"] {
   }
 
   .sidebar {
-    width: 240px;
+    width: 260px;
   }
 
   .section-header {
@@ -4414,12 +4408,19 @@ input[type="range"] {
 
   .nav-menu {
     display: flex;
+    flex-direction: row;
     gap: 8px;
     overflow-x: auto;
-    padding: 8px;
-    border-radius: 8px;
     scrollbar-width: thin;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .media-nav-group {
+    flex: 0 0 auto;
+    flex-direction: row;
+    margin: 0;
+    padding: 0;
+    border-left: 0;
   }
 
   .nav-item {
@@ -4431,6 +4432,7 @@ input[type="range"] {
   }
 
   .config-panel,
+  .section-card,
   .input-section,
   .result-section,
   .data-output,
@@ -4446,12 +4448,24 @@ input[type="range"] {
     gap: 0;
   }
 
+  .settings-group {
+    padding: 12px 0;
+  }
+
+  .status-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .section-card-header,
   .section-header {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
   }
 
+  .section-card-header h2,
   .section-header h2 {
     font-size: 19px;
   }
@@ -4461,6 +4475,7 @@ input[type="range"] {
     line-height: 1.5;
   }
 
+  .upload-dropzone,
   .upload-area {
     padding: 24px 14px;
   }
@@ -4475,9 +4490,11 @@ input[type="range"] {
     flex-wrap: wrap;
   }
 
+  .result-toolbar,
   .result-actions {
     flex-wrap: wrap;
     gap: 8px;
+    justify-content: stretch;
   }
 
   .small-btn {
@@ -4605,6 +4622,7 @@ input[type="range"] {
   }
 
   .config-panel,
+  .section-card,
   .input-section,
   .result-section,
   .data-output,
@@ -4615,6 +4633,10 @@ input[type="range"] {
 
   .size-inputs {
     gap: 6px;
+  }
+
+  .status-summary {
+    grid-template-columns: 1fr;
   }
 
   .small-btn {

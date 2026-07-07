@@ -251,6 +251,8 @@ const extractVideoFrames = async (file, options) => {
     mode,
     fps,
     maxFrames,
+    startTimeMs,
+    endTimeMs,
     onStatus,
     onProgress,
   } = options
@@ -268,7 +270,12 @@ const extractVideoFrames = async (file, options) => {
     const duration = Number.isFinite(video.duration) && video.duration > 0 ? video.duration : 0
     const requestedFps = Math.max(1, Number(fps) || 1)
     const frameLimit = Math.max(1, Number(maxFrames) || 1)
-    const fpsFrameCount = Math.max(1, Math.ceil(duration * requestedFps))
+    const startSeconds = Math.max(0, Number(startTimeMs || 0) / 1000)
+    const endSeconds = Number.isFinite(Number(endTimeMs)) && Number(endTimeMs) > 0
+      ? Math.min(duration, Number(endTimeMs) / 1000)
+      : duration
+    const rangeSeconds = Math.max(0, endSeconds - startSeconds) || duration
+    const fpsFrameCount = Math.max(1, Math.ceil(rangeSeconds * requestedFps))
     const totalFrames = mode === 'fps' ? fpsFrameCount : Math.min(frameLimit, fpsFrameCount)
     const canvas = document.createElement('canvas')
     canvas.width = video.videoWidth || 1
@@ -277,7 +284,7 @@ const extractVideoFrames = async (file, options) => {
     const frames = []
 
     for (let index = 0; index < totalFrames; index++) {
-      const timestamp = duration > 0 ? index / requestedFps : 0
+      const timestamp = duration > 0 ? startSeconds + (index / requestedFps) : 0
       await seekVideo(video, timestamp)
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
       frames.push(await canvasToPngFrame(canvas, index, Math.round(timestamp * 1000)))
@@ -299,6 +306,8 @@ export const extractMediaFrames = async (file, options = {}) => {
     mode: options.mode || 'fpsAndMax',
     fps: options.fps || 5,
     maxFrames: options.maxFrames || 64,
+    startTimeMs: options.startTimeMs || 0,
+    endTimeMs: options.endTimeMs || 0,
     onStatus: options.onStatus || (() => {}),
     onProgress: options.onProgress || (() => {}),
   }

@@ -5,6 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "check:modulo": "node scripts/check-modulo-engine.mjs",
+    "check:formatters": "node scripts/check-modulo-formatters.mjs",
+    "check:golden": "node scripts/check-modulo-golden.mjs",
+    "check:sidebar-ui": "node scripts/check-left-sidebar-ui.mjs",
+    "check:ui-polish": "node scripts/check-overall-ui-polish.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },
