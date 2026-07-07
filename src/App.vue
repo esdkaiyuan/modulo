@@ -43,7 +43,9 @@
 
     <div class="main-content">
       <aside class="sidebar">
-        <div class="nav-menu">
+        <div class="sidebar-section">
+          <div class="nav-section-label">工作流</div>
+          <div class="nav-menu workflow-nav">
           <div 
             class="nav-item" 
             :class="{ active: currentTab === 'text' }"
@@ -80,28 +82,30 @@
             </svg>
             批量取模
           </div>
-          <div 
-            class="nav-item" 
-            :class="{ active: currentTab === 'animatedImage' }"
-            @click="switchMediaTab('animatedImage')"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <rect x="3" y="3" width="18" height="18" rx="2"/>
-              <circle cx="8" cy="8" r="1.5"/>
-              <path d="M21 15l-5-5L5 21"/>
-            </svg>
-            动图取模
-          </div>
-          <div 
-            class="nav-item" 
-            :class="{ active: currentTab === 'video' }"
-            @click="switchMediaTab('video')"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polygon points="23 7 16 12 23 17 23 7"/>
-              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
-            </svg>
-            视频取模
+          <div class="media-nav-group">
+            <div
+              class="nav-item"
+              :class="{ active: currentTab === 'animatedImage' }"
+              @click="switchMediaTab('animatedImage')"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="18" height="18" rx="2"/>
+                <circle cx="8" cy="8" r="1.5"/>
+                <path d="M21 15l-5-5L5 21"/>
+              </svg>
+              动图取模
+            </div>
+            <div
+              class="nav-item"
+              :class="{ active: currentTab === 'video' }"
+              @click="switchMediaTab('video')"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="23 7 16 12 23 17 23 7"/>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+              </svg>
+              视频取模
+            </div>
           </div>
           <div 
             class="nav-item" 
@@ -115,6 +119,7 @@
               <circle cx="11" cy="11" r="2"/>
             </svg>
             手绘取模
+          </div>
           </div>
         </div>
 
@@ -164,7 +169,8 @@
               <input type="text" v-model="customFont" placeholder="输入字体名称，如：'PingFang SC'">
             </div>
           </template>
-        </ModuloSettingsPanel>      </aside>
+        </ModuloSettingsPanel>
+      </aside>
 
       <main class="content-area">
         <!-- 文本取模 -->
@@ -2953,89 +2959,135 @@ const exportBatchCFile = () => {
 }
 
 .sidebar {
-  width: 280px;
+  width: 300px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 14px;
+}
+
+.sidebar-section,
+.config-panel {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.sidebar-section {
+  padding: 10px;
+}
+
+.nav-section-label,
+.settings-group-title {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.nav-section-label {
+  padding: 2px 8px 9px;
 }
 
 .nav-menu {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
-.nav-menu:hover {
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 4px 16px rgba(74, 144, 226, 0.15);
+.media-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 4px 0;
+  padding: 6px 0 6px 10px;
+  border-left: 1px solid #e5e7eb;
 }
 
 .nav-item {
-  padding: 12px 16px;
-  border-radius: 8px;
+  position: relative;
+  min-height: 40px;
+  padding: 9px 12px 9px 14px;
+  border-radius: 6px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: background 0.16s ease, color 0.16s ease;
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 15px;
-  color: #333;
-  margin-bottom: 4px;
+  gap: 9px;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.3;
+  white-space: nowrap;
 }
 
 .nav-item:hover {
-  background: #f5f7fa;
+  background: #f8fafc;
+  color: #0f172a;
 }
 
 .nav-item.active {
-  background: linear-gradient(135deg, #E3F2FD 0%, #E8F5E9 100%);
-  color: #4A90E2;
-  font-weight: 500;
-  animation: navItemColorShift 8s ease infinite;
+  background: #eff6ff;
+  color: #2563eb;
+  font-weight: 600;
 }
 
-@keyframes navItemColorShift {
-  0%, 100% {
-    color: #4A90E2;
-  }
-  50% {
-    color: #66BB6A;
-  }
+.nav-item.active::before {
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 999px;
+  background: #2563eb;
+  content: "";
+}
+
+.nav-item svg {
+  flex-shrink: 0;
 }
 
 .config-panel {
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: all 0.3s ease;
+  padding: 14px;
 }
 
-.config-panel:hover {
-  background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 4px 16px rgba(74, 144, 226, 0.15);
+.settings-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #0f172a;
+  font-size: 15px;
+  line-height: 1.2;
+  margin-bottom: 14px;
 }
 
-.config-panel h3 {
-  font-size: 16px;
-  margin-bottom: 16px;
-  color: #333;
+.settings-group {
+  padding: 14px 0;
+  border-top: 1px solid #eef2f7;
+}
+
+.settings-group:last-child {
+  padding-bottom: 0;
+}
+
+.settings-group-title {
+  margin-bottom: 10px;
 }
 
 .config-item {
-  margin-bottom: 16px;
+  margin-bottom: 12px;
+}
+
+.config-item:last-child {
+  margin-bottom: 0;
 }
 
 .config-item label {
   display: block;
-  font-size: 14px;
-  color: #666;
-  margin-bottom: 8px;
+  color: #475569;
+  font-size: 13px;
+  line-height: 1.3;
+  margin-bottom: 6px;
 }
 
 .size-inputs {
@@ -3046,8 +3098,10 @@ const exportBatchCFile = () => {
 
 .size-inputs input {
   flex: 1;
-  padding: 8px;
-  border: 1px solid #e0e0e0;
+  min-width: 0;
+  height: 36px;
+  padding: 7px 9px;
+  border: 1px solid #d7dee8;
   border-radius: 6px;
   font-size: 14px;
 }
@@ -3059,11 +3113,45 @@ const exportBatchCFile = () => {
 .config-item select,
 .config-item input[type="text"] {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #e0e0e0;
+  height: 36px;
+  padding: 7px 9px;
+  border: 1px solid #d7dee8;
   border-radius: 6px;
   font-size: 14px;
   background: white;
+}
+
+.config-item select:focus,
+.config-item input[type="text"]:focus,
+.size-inputs input:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.config-item-inline {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.checkbox-label {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  min-height: 34px;
+  margin-bottom: 0 !important;
+  padding: 7px 9px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #334155 !important;
+  cursor: pointer;
+}
+
+.checkbox-label input {
+  margin: 0;
+  flex-shrink: 0;
 }
 
 input[type="range"] {
@@ -4238,7 +4326,7 @@ input[type="range"] {
   }
 
   .sidebar {
-    width: 240px;
+    width: 260px;
   }
 
   .section-header {
@@ -4315,12 +4403,19 @@ input[type="range"] {
 
   .nav-menu {
     display: flex;
+    flex-direction: row;
     gap: 8px;
     overflow-x: auto;
-    padding: 8px;
-    border-radius: 8px;
     scrollbar-width: thin;
     -webkit-overflow-scrolling: touch;
+  }
+
+  .media-nav-group {
+    flex: 0 0 auto;
+    flex-direction: row;
+    margin: 0;
+    padding: 0;
+    border-left: 0;
   }
 
   .nav-item {
@@ -4345,6 +4440,10 @@ input[type="range"] {
     display: grid;
     grid-template-columns: 1fr;
     gap: 0;
+  }
+
+  .settings-group {
+    padding: 12px 0;
   }
 
   .section-header {

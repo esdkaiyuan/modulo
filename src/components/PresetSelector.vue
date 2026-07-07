@@ -1,5 +1,5 @@
 <template>
-  <div class="config-item">
+  <div class="config-item preset-selector">
     <label>常用预设</label>
     <select :value="modelValue" @change="$emit('update:modelValue', $event.target.value); $emit('select', $event.target.value)">
       <option
@@ -27,4 +27,3 @@ defineProps({
 
 defineEmits(['update:modelValue', 'select'])
 </script>
-
