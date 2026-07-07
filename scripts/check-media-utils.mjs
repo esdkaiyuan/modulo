@@ -153,6 +153,34 @@ const color16 = packImageDataByMode(colorImageData, 2, 1, {
 })
 assert.deepEqual(color16, [0xF8, 0x00, 0xFF, 0xFF])
 
+assert.equal(getImageModuloBytesPerFrame(2, 1, { colorFormat: 'RGB565' }), 4)
+assert.equal(getImageModuloBytesPerFrame(2, 1, { colorFormat: 'BGR565' }), 4)
+assert.equal(getImageModuloBytesPerFrame(2, 1, { colorFormat: 'RGB888' }), 6)
+
+const rgb565Little = packImageDataByMode(colorImageData, 2, 1, {
+  colorFormat: 'RGB565',
+  byteOrder: 'little',
+})
+assert.deepEqual(rgb565Little, [0x00, 0xF8, 0xFF, 0xFF])
+
+const bgr565 = packImageDataByMode(colorImageData, 2, 1, {
+  colorFormat: 'BGR565',
+  byteOrder: 'big',
+})
+assert.deepEqual(bgr565, [0x00, 0x1F, 0xFF, 0xFF])
+assert.deepEqual(
+  Array.from(renderModuloToRgba(bgr565, 2, 1, {
+    colorFormat: 'BGR565',
+    byteOrder: 'big',
+  }).data),
+  [255, 0, 0, 255, 255, 255, 255, 255]
+)
+
+const rgb888 = packImageDataByMode(colorImageData, 2, 1, {
+  colorFormat: 'RGB888',
+})
+assert.deepEqual(rgb888, [255, 0, 0, 255, 255, 255])
+
 const frames = [
   { index: 0, data: [0, 24] },
   { index: 1, data: [60, 255] },

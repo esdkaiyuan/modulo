@@ -2,6 +2,11 @@ import {
   getBytesPerFrame,
   packImageDataToModulo,
 } from './modulo.js'
+import {
+  convertImageDataToModulo,
+  getBytesPerFrameForConfig,
+  renderModuloToRgba as renderCoreModuloToRgba,
+} from '../core/moduloEngine.js'
 
 const MONO_ON = [17, 24, 39]
 const MONO_OFF = [255, 255, 255]
@@ -134,6 +139,10 @@ const packColor16 = (imageData, width, height) => {
 }
 
 export const getImageModuloBytesPerFrame = (width, height, options = {}) => {
+  if (options.colorFormat) {
+    return getBytesPerFrameForConfig({ ...options, width, height })
+  }
+
   const {
     imageMode = 'mono',
     colorDepth = 8,
@@ -152,6 +161,10 @@ export const getImageModuloBytesPerFrame = (width, height, options = {}) => {
 }
 
 export const packImageDataByMode = (imageData, width, height, options = {}) => {
+  if (options.colorFormat) {
+    return convertImageDataToModulo({ ...imageData, width, height }, { ...options, width, height }).data
+  }
+
   const {
     imageMode = 'mono',
     colorDepth = 8,
@@ -242,6 +255,10 @@ const renderColor16ToRgba = (data, width, height) => {
 }
 
 export const renderModuloToRgba = (data, width, height, options = {}) => {
+  if (options.colorFormat) {
+    return renderCoreModuloToRgba(data, { ...options, width, height })
+  }
+
   const {
     imageMode = 'mono',
     colorDepth = 8,
@@ -259,6 +276,7 @@ export const renderModuloToRgba = (data, width, height, options = {}) => {
 }
 
 export const imageModeLabel = (imageMode, colorDepth) => {
+  if (imageMode && !['mono', 'color'].includes(imageMode)) return imageMode
   if (imageMode !== 'color') return '单色'
   return `${Number(colorDepth) || 8}位彩色`
 }
