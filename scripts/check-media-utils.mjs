@@ -210,13 +210,24 @@ assert.equal(getMediaKind(file('demo.gif', 'image/gif')), 'animatedImage')
 assert.equal(getMediaKind(file('demo.png', 'image/png')), 'animatedImage')
 assert.equal(getMediaKind(file('demo.apng', 'image/apng')), 'animatedImage')
 assert.equal(getMediaKind(file('demo.webp', 'image/webp')), 'animatedImage')
+assert.equal(getMediaKind(file('demo.bmp', 'image/bmp')), 'image')
+assert.equal(getMediaKind(file('demo.ico', 'image/x-icon')), 'image')
+assert.equal(getMediaKind(file('demo.svg', 'image/svg+xml')), 'image')
+assert.equal(getMediaKind(file('demo.avif', 'image/avif')), 'image')
 assert.equal(getMediaKind(file('demo.mp4', 'video/mp4')), 'video')
 assert.equal(getMediaKind(file('demo.webm', 'video/webm')), 'video')
 assert.equal(getMediaKind(file('demo.mov', '')), 'video')
+assert.equal(getMediaKind(file('demo.m4v', '')), 'video')
+assert.equal(getMediaKind(file('demo.ogv', '')), 'video')
 assert.equal(getMediaKind(file('demo.txt', 'text/plain')), 'unsupported')
 
 assert.equal(inferMediaType(file('demo.png', '')), 'image/png')
 assert.equal(inferMediaType(file('demo.webm', '')), 'video/webm')
+assert.equal(inferMediaType(file('demo.bmp', '')), 'image/bmp')
+assert.equal(inferMediaType(file('demo.ico', '')), 'image/x-icon')
+assert.equal(inferMediaType(file('demo.svg', '')), 'image/svg+xml')
+assert.equal(inferMediaType(file('demo.avif', '')), 'image/avif')
+assert.equal(inferMediaType(file('demo.ogv', '')), 'video/ogg')
 assert.equal(
   detectMediaTypeFromHeader(new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]), 'image/png'),
   'image/gif'
@@ -229,10 +240,20 @@ assert.equal(
   detectMediaTypeFromHeader(new Uint8Array([0x52, 0x49, 0x46, 0x46, 0, 0, 0, 0, 0x57, 0x45, 0x42, 0x50]), ''),
   'image/webp'
 )
+assert.equal(
+  detectMediaTypeFromHeader(new Uint8Array([0x42, 0x4D, 0, 0]), ''),
+  'image/bmp'
+)
+assert.equal(
+  detectMediaTypeFromHeader(new Uint8Array([0x00, 0x00, 0x01, 0x00]), ''),
+  'image/x-icon'
+)
 assert.equal(isSupportedForWorkflow(file('demo.webp', 'image/webp'), 'animatedImage'), true)
 assert.equal(isSupportedForWorkflow(file('demo.webp', 'image/webp'), 'video'), false)
 assert.equal(isSupportedForWorkflow(file('demo.mp4', 'video/mp4'), 'video'), true)
 assert.equal(isSupportedForWorkflow(file('demo.mp4', 'video/mp4'), 'animatedImage'), false)
+assert.equal(isSupportedForWorkflow(file('demo.bmp', 'image/bmp'), 'image'), true)
+assert.equal(isSupportedForWorkflow(file('demo.svg', 'image/svg+xml'), 'image'), true)
 
 const extractorSource = readFileSync(new URL('../src/utils/mediaExtractor.js', import.meta.url), 'utf8')
 assert.equal(extractorSource.includes('@ffmpeg/'), false, 'media extractor must not import FFmpeg WASM')
@@ -242,3 +263,10 @@ assert.match(extractorSource, /extractGifFrames/)
 assert.match(extractorSource, /extractApngFrames/)
 assert.match(extractorSource, /decompressFrames/)
 assert.match(extractorSource, /UPNG\.decode/)
+assert.match(extractorSource, /startTimeMs/)
+assert.match(extractorSource, /endTimeMs/)
+
+const mediaTypesSource = readFileSync(new URL('../src/media/mediaTypes.js', import.meta.url), 'utf8')
+assert.match(mediaTypesSource, /getStillImageAccept/)
+assert.match(mediaTypesSource, /image\/bmp/)
+assert.match(mediaTypesSource, /image\/avif/)
