@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import HomePage from './pages/HomePage.vue';
 import HandDrawPage from './pages/HandDrawPage.vue';
 import BatchExtractorPage from './pages/BatchExtractorPage.vue';
 import FontExtractorPage from './pages/FontExtractorPage.vue';
@@ -7,16 +8,19 @@ import AnimationFramePage from './pages/AnimationFramePage.vue';
 import ImageConverterPage from './pages/ImageConverterPage.vue';
 import VideoExtractorPage from './pages/VideoExtractorPage.vue';
 
-type PageId = 'handdraw' | 'batch' | 'font' | 'animation' | 'image' | 'video';
+type PageId = 'home' | 'handdraw' | 'batch' | 'font' | 'animation' | 'image' | 'video';
 
-const activePage = ref<PageId>('handdraw');
+const activePage = ref<PageId>('home');
 
 function readRoute(): PageId {
   const route = window.location.hash.replace(/^#\/?/, '').toLowerCase();
-  if (['batch', 'font', 'animation', 'image', 'video'].includes(route)) {
+  if (route === '' || route === '/') {
+    return 'home';
+  }
+  if (['handdraw', 'batch', 'font', 'animation', 'image', 'video'].includes(route)) {
     return route as PageId;
   }
-  return 'handdraw';
+  return 'home';
 }
 
 function syncRoute() {
@@ -25,6 +29,7 @@ function syncRoute() {
 
 const pageComponent = computed(() => {
   const pages = {
+    home: HomePage,
     handdraw: HandDrawPage,
     batch: BatchExtractorPage,
     font: FontExtractorPage,

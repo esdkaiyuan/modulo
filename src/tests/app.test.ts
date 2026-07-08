@@ -4,16 +4,32 @@ import { createPinia } from 'pinia';
 import App from '../App.vue';
 
 describe('App', () => {
-  it('renders the PixelCraft workbench shell', () => {
+  it('renders the Dot Matrix Studio home page by default', () => {
+    window.location.hash = '#/';
     const wrapper = mount(App, {
       global: {
         plugins: [createPinia()]
       }
     });
 
+    expect(wrapper.text()).toContain('Dot Matrix Studio');
+    expect(wrapper.text()).toContain('All-in-One Dot Matrix Solution');
+    expect(wrapper.find('[data-test="launch-image"]').exists()).toBe(true);
+  });
+
+  it('launches tools from the home page cards', async () => {
+    window.location.hash = '#/';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+
+    await wrapper.get('[data-test="launch-handdraw"]').trigger('click');
+    expect(window.location.hash).toBe('#/handdraw');
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
     expect(wrapper.text()).toContain('PixelCraft Web');
-    expect(wrapper.text()).toContain('TOOLS');
-    expect(wrapper.text()).toContain('HEX OUTPUT');
   });
 
   it('switches between extractor pages by hash route without adding global chrome', async () => {
@@ -28,7 +44,8 @@ describe('App', () => {
       ['Font', 'PixelFont Extractor'],
       ['Animation', 'DotMatrix Frame Extractor'],
       ['Image', 'Dot Matrix Studio'],
-      ['Video', 'Video to Dot Matrix Extractor']
+      ['Video', 'Video to Dot Matrix Extractor'],
+      ['Handdraw', 'PixelCraft Web']
     ];
 
     for (const [route, title] of pages) {

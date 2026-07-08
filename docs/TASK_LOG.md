@@ -277,3 +277,47 @@ Keep `#/handdraw` as a subpage and enhance it with the same shared modulo encodi
 
 - Homepage design remains intentionally deferred.
 - Future handdraw improvements can add import/export project files, layer operations, and additional output languages.
+
+## 2026-07-08 - Homepage Dot Matrix Studio Dashboard
+
+### Goal
+
+Design and implement the default homepage according to the provided reference image, while keeping handdraw and the other tools as separate subpages with real route launches.
+
+### Changes
+
+- Added `src/pages/HomePage.vue` as the separated default dashboard page.
+- Updated `src/App.vue` so `#/`, `#`, empty hash, and unknown routes render the homepage.
+- Kept existing subpage routes working:
+  - `#/image`
+  - `#/video`
+  - `#/animation`
+  - `#/handdraw`
+  - `#/batch`
+  - `#/font`
+- Matched the supplied homepage layout:
+  - Dot Matrix Studio header with version badge and action buttons.
+  - All-in-One Dot Matrix Solution hero section.
+  - Six tool cards with Launch buttons.
+  - Recent Projects, Quick Start Guide, Quick Actions, and footer sections.
+- Added functional interactions:
+  - Tool Launch buttons navigate to their real tool pages.
+  - Import Files quick action opens the image tool.
+  - Theme, Docs, Settings, project, update, and footer actions provide live status feedback or open the GitHub repository.
+- Added homepage route and launch behavior tests in `src/tests/app.test.ts`.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 9 tests.
+- `npm test -- --run` passed with 11 test files and 29 tests.
+- `npm run build` passed.
+- Local Vite server responded with HTTP 200 at `http://127.0.0.1:5173/#/`.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `feat: add dot matrix studio homepage`.
+
+### Follow-Up
+
+- The homepage can later wire Open Project to a real project-file importer when the project file format is defined.
