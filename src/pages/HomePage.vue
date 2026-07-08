@@ -13,7 +13,7 @@ const tools: Array<{
   route: ToolRoute;
   accent: string;
   icon: string;
-  visual: string;
+  preview: PixelPreviewKind;
   testId: string;
 }> = [
   {
@@ -23,7 +23,7 @@ const tools: Array<{
     route: 'image',
     accent: 'blue',
     icon: 'image',
-    visual: 'panda',
+    preview: 'image',
     testId: 'launch-image'
   },
   {
@@ -33,7 +33,7 @@ const tools: Array<{
     route: 'video',
     accent: 'green',
     icon: 'film',
-    visual: 'landscape',
+    preview: 'video',
     testId: 'launch-video'
   },
   {
@@ -43,7 +43,7 @@ const tools: Array<{
     route: 'animation',
     accent: 'purple',
     icon: 'grid',
-    visual: 'runner',
+    preview: 'animation',
     testId: 'launch-animation'
   },
   {
@@ -53,7 +53,7 @@ const tools: Array<{
     route: 'handdraw',
     accent: 'orange',
     icon: 'cat',
-    visual: 'cat',
+    preview: 'editor',
     testId: 'launch-handdraw'
   },
   {
@@ -63,7 +63,7 @@ const tools: Array<{
     route: 'batch',
     accent: 'blue',
     icon: 'layers',
-    visual: 'mountain',
+    preview: 'batch',
     testId: 'launch-batch'
   },
   {
@@ -73,16 +73,42 @@ const tools: Array<{
     route: 'batch',
     accent: 'teal',
     icon: 'database',
-    visual: 'queue',
+    preview: 'data',
     testId: 'launch-batch-data'
   }
 ];
 
 const projects = [
-  ['panda_animation.h', 'Frame Extractor', '2 hours ago', '128 x 64', 'panda'],
-  ['landscape_video.c', 'Video to Dot Matrix', '5 hours ago', '128 x 64', 'landscape'],
-  ['cat_pixel_art.h', 'Pixel Editor', 'Yesterday', '32 x 32', 'cat']
+  { name: 'panda_animation.h', module: 'Frame Extractor', time: '2 hours ago', size: '128 x 64', preview: 'animation' as const },
+  { name: 'landscape_video.c', module: 'Video to Dot Matrix', time: '5 hours ago', size: '128 x 64', preview: 'video' as const },
+  { name: 'cat_pixel_art.h', module: 'Pixel Editor', time: 'Yesterday', size: '32 x 32', preview: 'editor' as const }
 ];
+
+type PixelPreviewKind = 'image' | 'video' | 'animation' | 'editor' | 'batch' | 'data';
+type PixelTone = 'empty' | 'blue' | 'green' | 'mint' | 'purple' | 'orange' | 'pink' | 'dark' | 'white' | 'yellow' | 'red';
+
+const previewPalettes: Record<PixelPreviewKind, PixelTone[]> = {
+  image: ['empty', 'dark', 'dark', 'empty', 'white', 'white', 'pink', 'blue', 'mint'],
+  video: ['blue', 'blue', 'white', 'mint', 'green', 'green', 'dark', 'purple', 'yellow'],
+  animation: ['dark', 'orange', 'yellow', 'pink', 'purple', 'dark', 'empty', 'orange', 'red'],
+  editor: ['empty', 'dark', 'white', 'pink', 'purple', 'mint', 'blue', 'dark', 'white'],
+  batch: ['blue', 'mint', 'green', 'white', 'dark', 'purple', 'orange', 'yellow', 'empty'],
+  data: ['mint', 'green', 'blue', 'dark', 'yellow', 'orange', 'purple', 'red', 'white']
+};
+
+function pixelTone(kind: PixelPreviewKind, index: number) {
+  const x = index % 12;
+  const y = Math.floor(index / 12);
+  const palette = previewPalettes[kind];
+  if ((x + y) % 5 === 0) return palette[(x + y) % palette.length];
+  if (kind === 'image' && ((x > 2 && x < 9 && y > 2 && y < 6) || (x > 5 && y > 6))) return palette[(x + y * 2) % palette.length];
+  if (kind === 'video' && (y > x / 2 + 2 || y > 7 - x / 3)) return palette[(x + y) % palette.length];
+  if (kind === 'animation' && ((x === y) || (x + y > 9 && x + y < 14) || (x > 6 && y < 4))) return palette[(x * 2 + y) % palette.length];
+  if (kind === 'editor' && ((x > 3 && x < 8 && y > 2 && y < 8) || (x === 2 && y < 4) || (x === 9 && y < 4))) return palette[(x + y) % palette.length];
+  if (kind === 'batch' && (x % 3 === 1 || y % 4 === 2)) return palette[(x + y) % palette.length];
+  if (kind === 'data' && (x < 3 || x > 8 || y === 2 || y === 7)) return palette[(x * y + x) % palette.length];
+  return 'empty';
+}
 
 const guideSteps = [
   ['Choose Your Tool', 'Select the tool that matches your needs from above'],
@@ -197,13 +223,13 @@ function openGithub() {
               </button>
             </div>
           </div>
-          <div class="tool-visual" :class="tool.visual">
-            <div v-if="tool.visual === 'queue'" class="queue-list">
-              <span class="done">✓ Done <i></i></span>
-              <span class="processing">● Processing <i></i></span>
-              <span class="pending">● Pending <i></i></span>
-              <span class="failed">● Error <i></i></span>
-            </div>
+          <div class="pixel-preview-window" :class="tool.accent" aria-hidden="true">
+            <span
+              v-for="dot in 96"
+              :key="`${tool.preview}-${dot}`"
+              class="pixel-dot"
+              :class="pixelTone(tool.preview, dot - 1)"
+            ></span>
           </div>
         </article>
       </section>
@@ -212,17 +238,23 @@ function openGithub() {
         <article class="home-panel recent-panel">
           <h3>Recent Projects</h3>
           <button
-            v-for="[name, module, time, size, visual] in projects"
-            :key="name"
+            v-for="project in projects"
+            :key="project.name"
             class="project-row"
-            @click="setStatus(`${name} selected from recent projects.`)"
+            @click="setStatus(`${project.name} selected from recent projects.`)"
           >
-            <span class="project-thumb" :class="visual"></span>
-            <span>
-              <strong>{{ name }}</strong>
-              <small>{{ module }} · {{ time }}</small>
+            <span class="project-thumb pixel-thumb" aria-hidden="true">
+              <i
+                v-for="dot in 25"
+                :key="`${project.preview}-${dot}`"
+                :class="pixelTone(project.preview, dot - 1)"
+              ></i>
             </span>
-            <em>{{ size }}</em>
+            <span>
+              <strong>{{ project.name }}</strong>
+              <small>{{ project.module }} · {{ project.time }}</small>
+            </span>
+            <em>{{ project.size }}</em>
             <b>⋮</b>
           </button>
         </article>

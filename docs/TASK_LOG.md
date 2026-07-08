@@ -406,3 +406,38 @@ Use visual self-review to optimize the page UI layout and shared framework acros
 ### Follow-Up
 
 - Temporary screenshot files are not required for source control and should remain untracked.
+
+## 2026-07-08 - Homepage Pixel Preview Cleanup
+
+### Goal
+
+Optimize the homepage first by removing messy decorative shape composites and replacing all homepage preview resources with orderly pixel-particle matrix previews that behave correctly in small windows.
+
+### Changes
+
+- Replaced homepage tool card preview resources with data-driven pixel matrix windows.
+- Removed rendered use of old decorative preview classes such as panda, runner, and landscape tool visuals.
+- Reworked recent project thumbnails to use compact pixel-particle grids.
+- Hid the decorative guide book asset so the lower homepage area stays clean and utilitarian.
+- Tightened homepage small-window behavior:
+  - Launch buttons keep readable text.
+  - Tool cards wrap predictably on mobile.
+  - Pixel preview windows stay inside their cards.
+  - Status toast no longer dominates small screens.
+- Added regression coverage requiring six homepage pixel preview windows and preventing old shape-composite preview classes from rendering.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 12 tests.
+- `npm test -- --run` passed with 11 test files and 32 tests.
+- `npm run build` passed.
+- Playwright screenshot self-check confirmed the mobile homepage has readable buttons and orderly pixel preview windows.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `style: replace homepage previews with pixel matrices`.
+
+### Follow-Up
+
+- Continue applying this pixel-preview resource style to any future homepage visual assets.

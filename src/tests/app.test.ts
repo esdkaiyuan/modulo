@@ -177,4 +177,19 @@ describe('App', () => {
       expect(wrapper.find('.tool-ui-frame').exists()).toBe(true);
     }
   });
+
+  it('renders home previews as pixel particle matrices instead of decorative shape composites', () => {
+    window.location.hash = '#/';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+
+    expect(wrapper.findAll('.pixel-preview-window')).toHaveLength(6);
+    expect(wrapper.findAll('.pixel-dot').length).toBeGreaterThan(200);
+    expect(wrapper.find('.tool-visual.panda').exists()).toBe(false);
+    expect(wrapper.find('.tool-visual.runner').exists()).toBe(false);
+    expect(wrapper.find('.tool-visual.landscape').exists()).toBe(false);
+  });
 });
