@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import PanelSection from '../../../components/common/PanelSection.vue';
+import { useBatchModuloStore } from '../stores/batchModuloStore';
+
+const store = useBatchModuloStore();
 </script>
 
 <template>
@@ -7,14 +10,10 @@ import PanelSection from '../../../components/common/PanelSection.vue';
     <template #actions>
       <button class="ghost-btn">Ⅱ Pause</button>
       <span>Overall Progress</span>
-      <span class="progress wide-progress"><i style="width: 48%"></i></span>
-      <strong>48%</strong>
-      <span>ETA: 00:04:32</span>
+      <span class="progress wide-progress"><i :style="{ width: `${store.overallProgress}%` }"></i></span>
+      <strong>{{ store.overallProgress }}%</strong>
+      <span>{{ store.summary.processing ? 'Processing' : 'Idle' }}</span>
     </template>
-    <pre class="terminal-log">[12:34:56] ▣ Queued 47 files for processing
-[12:34:56] ▣ Processing image_021.png... ✓ Done (0.42s)
-[12:34:57] ▣ Processing image_024.png... ⇆ Processing (62%)
-[12:34:58] ▣ Processing image_026.png... ✕ Error: Checksum mismatch at line 128
-[12:34:59] ▣ Processing image_028.png... ⧖ Pending</pre>
+    <pre class="terminal-log">{{ store.logs.length ? store.logs.join('\n') : 'No batch activity yet.' }}</pre>
   </PanelSection>
 </template>

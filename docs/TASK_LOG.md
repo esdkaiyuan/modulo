@@ -103,3 +103,37 @@ Make the `#/image` page work with real image input and real modulo extraction in
 
 - Batch 2 should make `#/batch` use the same image-processing engine for multi-file queues.
 - Later pages should reuse `imageProcessor`, `bitmapEncoder`, and `outputFormatter` rather than duplicating extraction logic.
+
+## 2026-07-08 - Batch 2 Batch Image Modulo Real Function
+
+### Goal
+
+Make the `#/batch` page process multiple real still-image files using the shared image modulo engine.
+
+### Changes
+
+- Added batch-specific design and implementation plan docs:
+  - `docs/superpowers/specs/2026-07-08-batch-image-modulo-real-function-design.md`
+  - `docs/superpowers/plans/2026-07-08-batch-image-modulo-real-function.md`
+- Added `src/features/batch/stores/batchModuloStore.ts`.
+- Implemented queue state for pending, processing, done, and error items.
+- Added batch upload support for multiple browser-decodable image files.
+- Reused the shared `imageProcessor`, `bitmapEncoder`, and `outputFormatter` engines.
+- Added shared extraction parameters for target size, threshold, dithering, scan direction, bit order, and polarity.
+- Connected batch table, configuration panel, processing log, summary statistics, selected output preview, and merged output export to real state.
+- Added tests for batch queue processing, retry/remove behavior, merged output, and batch page smoke controls.
+
+### Verification
+
+- `npm test -- --run` passed with 7 test files and 17 tests.
+- `npm run build` passed.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `feat: implement batch image modulo processing`.
+
+### Follow-Up
+
+- Batch 3 should make `#/font` render real text through Canvas and encode it with the shared bitmap encoder.
+- Batch output can later add ZIP export for separate per-input files.

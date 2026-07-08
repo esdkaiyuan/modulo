@@ -1,22 +1,64 @@
 <script setup lang="ts">
 import PanelSection from '../../../components/common/PanelSection.vue';
+import { useBatchModuloStore } from '../stores/batchModuloStore';
 
-const files = [
-  ['image_023.png', 'Done', '100%', '12.45 KB'],
-  ['image_024.png', 'Processing', '62%', '18.72 KB'],
-  ['image_025.png', 'Pending', '0%', '7.91 KB'],
-  ['image_026.png', 'Error', '15%', '22.18 KB'],
-  ['image_027.png', 'Done', '100%', '9.33 KB'],
-  ['image_028.png', 'Pending', '0%', '11.02 KB'],
-  ['image_029.png', 'Pending', '0%', '15.66 KB']
-];
+const store = useBatchModuloStore();
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function decodeImage(dataUrl: string): Promise<ImageData> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext('2d');
+      if (!context) {
+        reject(new Error('Canvas 2D is unavailable'));
+        return;
+      }
+      context.drawImage(image, 0, 0);
+      resolve(context.getImageData(0, 0, canvas.width, canvas.height));
+    };
+    image.onerror = () => reject(new Error('Unable to decode image'));
+    image.src = dataUrl;
+  });
+}
+
+async function addFiles(files: FileList | null) {
+  if (!files) return;
+  for (const file of Array.from(files)) {
+    const dataUrl = await readAsDataUrl(file);
+    const imageData = await decodeImage(dataUrl);
+    store.addImageData({
+      fileName: file.name,
+      size: file.size,
+      type: file.type || 'image/*',
+      imageData,
+      dataUrl
+    });
+  }
+}
+
+function formatSize(bytes: number) {
+  return `${(bytes / 1024).toFixed(2)} KB`;
+}
 </script>
 
 <template>
   <PanelSection class="batch-files" step="1" title="Input Files">
     <template #actions>
-      <label class="inline-check"><input type="checkbox" /> Select All (47)</label>
-      <button class="primary-btn">▶ Start Batch</button>
+      <label class="ghost-btn batch-upload">＋ Add Images<input type="file" multiple accept="image/png,image/jpeg,image/webp,image/bmp" @change="addFiles(($event.target as HTMLInputElement).files)" /></label>
+      <label class="inline-check"><input type="checkbox" /> Select All ({{ store.items.length }})</label>
+      <button class="primary-btn" data-test="start-batch" @click="store.processAll">▶ Start Batch</button>
     </template>
     <table class="file-table">
       <thead>
@@ -30,16 +72,22 @@ const files = [
         </tr>
       </thead>
       <tbody>
-        <tr v-for="(file, index) in files" :key="file[0]">
+        <tr v-for="item in store.items" :key="item.id" :class="{ selected: store.selectedId === item.id }" @click="store.selectedId = item.id">
           <td><input type="checkbox" /></td>
-          <td><span class="mini-image" :class="`tone-${index % 4}`"></span>{{ file[0] }}</td>
-          <td><span class="status-pill" :class="file[1].toLowerCase()">{{ file[1] }}</span></td>
-          <td><span class="progress"><i :style="{ width: file[2] }"></i></span>{{ file[2] }}</td>
-          <td>{{ file[3] }}</td>
-          <td><button class="link-danger">Remove</button></td>
+          <td><img v-if="item.dataUrl" class="mini-image" :src="item.dataUrl" alt="" /><span v-else class="mini-image"></span>{{ item.fileName }}</td>
+          <td><span class="status-pill" :class="item.status">{{ item.status }}</span></td>
+          <td><span class="progress"><i :style="{ width: `${item.progress}%` }"></i></span>{{ item.progress }}%</td>
+          <td>{{ formatSize(item.size) }}</td>
+          <td>
+            <button v-if="item.status === 'error'" class="ghost-primary" @click.stop="store.retryItem(item.id)">Retry</button>
+            <button class="link-danger" @click.stop="store.removeItem(item.id)">Remove</button>
+          </td>
+        </tr>
+        <tr v-if="store.items.length === 0">
+          <td colspan="6" class="empty-row">Add images to start batch extraction.</td>
         </tr>
       </tbody>
     </table>
-    <footer class="table-footer">Showing 1 to 20 of 47 files <span>‹ 1 2 3 ... ›</span></footer>
+    <footer class="table-footer">Showing {{ store.items.length }} files <span>Completed {{ store.summary.completed }} / {{ store.summary.total }}</span></footer>
   </PanelSection>
 </template>

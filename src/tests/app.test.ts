@@ -55,4 +55,19 @@ describe('App', () => {
     expect(wrapper.text()).toContain('Apply & Generate');
     expect(wrapper.text()).toContain('Generated C Array');
   });
+
+  it('exposes real batch page controls for multi-image processing', async () => {
+    window.location.hash = '#/batch';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('input[type="file"][multiple]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="start-batch"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain('Summary Statistics');
+  });
 });
