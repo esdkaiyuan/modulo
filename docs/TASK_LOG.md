@@ -55,3 +55,51 @@ Build a Vue 3 front-end for the modulo tool, starting with the hand-drawn pixel 
 
 - Replace mock data in the five added pages with real import, decoding, extraction, and export workflows.
 - Continue tightening visual fidelity against the reference screenshots page by page.
+
+## 2026-07-08 - Batch 1 Image Modulo Real Function
+
+### Goal
+
+Make the `#/image` page work with real image input and real modulo extraction instead of static mock data.
+
+### Changes
+
+- Added shared image-processing engine:
+  - `src/engines/imageProcessor.ts`
+  - RGBA to grayscale conversion
+  - Brightness and contrast adjustment
+  - Nearest-neighbor resizing
+  - Thresholding
+  - Floyd-Steinberg dithering
+- Added shared bitmap encoding and output formatting:
+  - `src/engines/bitmapEncoder.ts`
+  - `src/engines/outputFormatter.ts`
+  - Scan direction, bit order, positive/negative polarity, C-array output, and header filename generation.
+- Added image page store:
+  - `src/features/image/stores/imageModuloStore.ts`
+  - Owns uploaded image metadata, decoded `ImageData`, generated bitmap, encoded bytes, and generated source.
+- Connected `#/image` UI to real behavior:
+  - Upload or drag/drop PNG, JPG, BMP, or WebP.
+  - Display source image metadata.
+  - Update dot-matrix preview when parameters change.
+  - Generate real C array output.
+  - Copy and download generated header source.
+- Added batch-specific docs:
+  - `docs/superpowers/specs/2026-07-08-image-modulo-real-function-design.md`
+  - `docs/superpowers/plans/2026-07-08-image-modulo-real-function.md`
+- Added tests for image processing, bitmap encoding, output formatting, image store processing, and image page smoke behavior.
+
+### Verification
+
+- `npm test -- --run` passed with 6 test files and 14 tests.
+- `npm run build` passed.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `feat: implement image modulo processing`.
+
+### Follow-Up
+
+- Batch 2 should make `#/batch` use the same image-processing engine for multi-file queues.
+- Later pages should reuse `imageProcessor`, `bitmapEncoder`, and `outputFormatter` rather than duplicating extraction logic.

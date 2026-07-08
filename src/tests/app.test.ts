@@ -40,4 +40,19 @@ describe('App', () => {
 
     expect(wrapper.find('.module-nav').exists()).toBe(false);
   });
+
+  it('exposes real image page controls for upload and generation', async () => {
+    window.location.hash = '#/image';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('input[type="file"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain('Apply & Generate');
+    expect(wrapper.text()).toContain('Generated C Array');
+  });
 });
