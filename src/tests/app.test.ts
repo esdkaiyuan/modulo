@@ -115,4 +115,19 @@ describe('App', () => {
     expect(wrapper.text()).toContain('Generate All');
     expect(wrapper.text()).toContain('Generated Output');
   });
+
+  it('exposes shared encoding controls on the handdraw page', async () => {
+    window.location.hash = '#/handdraw';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('[data-test="handdraw-output-format"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="handdraw-scan"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain('ENCODING');
+  });
 });

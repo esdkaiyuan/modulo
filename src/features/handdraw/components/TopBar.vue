@@ -2,6 +2,15 @@
 import { usePixelStore } from '../../../stores/pixelStore';
 
 const store = usePixelStore();
+
+function downloadOutput() {
+  const url = URL.createObjectURL(store.outputBlob());
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = store.outputFileName;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
 </script>
 
 <template>
@@ -32,7 +41,7 @@ const store = usePixelStore();
     <div class="top-actions">
       <span class="saved">☁ Saved just now</span>
       <button class="icon-button" title="Theme">☼</button>
-      <button class="export-button">Export <span>⌄</span></button>
+      <button class="export-button" @click="downloadOutput">Export <span>⌄</span></button>
     </div>
   </header>
 </template>

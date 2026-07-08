@@ -63,6 +63,30 @@ watch(() => store.pixels, () => nextTick(renderPreview), { deep: true });
       </div>
     </section>
 
+    <section class="panel-card handdraw-encoder-card">
+      <h2>ENCODING</h2>
+      <label class="field-label">Scan
+        <select v-model="store.scanDirection" data-test="handdraw-scan">
+          <option value="horizontal-ltr">Left → Right, Top → Bottom</option>
+          <option value="horizontal-rtl">Right → Left, Top → Bottom</option>
+          <option value="vertical-ttb">Top → Bottom, Left → Right</option>
+          <option value="vertical-btt">Bottom → Top, Left → Right</option>
+        </select>
+      </label>
+      <label class="field-label">Bit Order
+        <select v-model="store.bitOrder">
+          <option value="msb">MSB First</option>
+          <option value="lsb">LSB First</option>
+        </select>
+      </label>
+      <label class="field-label">Polarity
+        <select v-model="store.polarity">
+          <option value="positive">Positive</option>
+          <option value="negative">Negative</option>
+        </select>
+      </label>
+    </section>
+
     <section class="panel-card layers-card">
       <h2>LAYERS <span>＋ ⧉</span></h2>
       <div class="layer active"><span>◉</span><span class="thumb"></span><strong>Layer 1</strong></div>

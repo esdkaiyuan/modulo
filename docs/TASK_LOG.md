@@ -242,3 +242,38 @@ Make the `#/video` page extract frames from uploaded browser video files and gen
 
 - Batch 6 should enhance `#/handdraw` with the same shared encoding settings and output formats used by the other pages.
 - Future video improvements can add background workers, cancellation/progress feedback during extraction, and FFmpeg.wasm for broader codec support.
+
+## 2026-07-08 - Batch 6 Handdraw Encoder Enhancement
+
+### Goal
+
+Keep `#/handdraw` as a subpage and enhance it with the same shared modulo encoding controls used by the other pages.
+
+### Changes
+
+- Added handdraw-specific design and implementation plan docs:
+  - `docs/superpowers/specs/2026-07-08-handdraw-encoder-enhancement-design.md`
+  - `docs/superpowers/plans/2026-07-08-handdraw-encoder-enhancement.md`
+- Updated `src/stores/pixelStore.ts` to use `bitmapEncoder` and `outputFormatter`.
+- Added scan direction, bit order, positive/negative polarity, and output format state.
+- Added C array, HEX text, and binary output support.
+- Added output filename and output blob generation.
+- Connected handdraw output panel to selected output format, copy, and download.
+- Added compact encoding controls to the handdraw right panel.
+- Added top-bar export download behavior.
+- Added tests for shared handdraw encoding options, polarity, HEX output, binary output, and handdraw page smoke controls.
+
+### Verification
+
+- `npm test -- --run` passed with 11 test files and 28 tests.
+- `npm run build` passed.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `feat: enhance handdraw modulo encoding`.
+
+### Follow-Up
+
+- Homepage design remains intentionally deferred.
+- Future handdraw improvements can add import/export project files, layer operations, and additional output languages.

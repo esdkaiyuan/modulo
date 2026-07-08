@@ -1,9 +1,12 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
+import { encodeBitmap, type BitOrder, type Polarity, type ScanDirection } from '../engines/bitmapEncoder';
 import { floodFill } from '../engines/fill';
-import { packBitsToBytes, pixelsToBits, pixelsToCArray, type PixelValue } from '../engines/modulo';
+import { type PixelValue } from '../engines/modulo';
+import { formatCArray, makeTextBlob } from '../engines/outputFormatter';
 
 export type Tool = 'pencil' | 'eraser' | 'fill' | 'eyedropper';
+export type HanddrawOutputFormat = 'c-array' | 'hex' | 'bin';
 
 const defaultPalette = [
   '#20252A',
@@ -38,9 +41,36 @@ export const usePixelStore = defineStore('pixel', () => {
   const pixels = ref<PixelValue[]>(createEmptyPixels(width.value, height.value));
   const history = ref<PixelValue[][]>([[...pixels.value]]);
   const historyIndex = ref(0);
+  const scanDirection = ref<ScanDirection>('horizontal-ltr');
+  const bitOrder = ref<BitOrder>('msb');
+  const polarity = ref<Polarity>('positive');
+  const outputFormat = ref<HanddrawOutputFormat>('c-array');
 
-  const byteOutput = computed(() => packBitsToBytes(pixelsToBits(pixels.value)));
-  const cArrayOutput = computed(() => pixelsToCArray(pixels.value, width.value, height.value));
+  const bitmapOutput = computed(() => Uint8Array.from(pixels.value, (pixel) => (pixel ? 1 : 0)));
+  const byteOutput = computed(() => encodeBitmap(bitmapOutput.value, width.value, height.value, {
+    scan: scanDirection.value,
+    bitOrder: bitOrder.value,
+    polarity: polarity.value
+  }));
+  const outputBaseName = computed(() => `image_${width.value}x${height.value}`);
+  const cArrayOutput = computed(() => formatCArray(byteOutput.value, {
+    name: outputBaseName.value,
+    width: width.value,
+    height: height.value
+  }));
+  const hexOutput = computed(() => Array.from(byteOutput.value)
+    .map((byte) => `0x${byte.toString(16).padStart(2, '0').toUpperCase()}`)
+    .join(', '));
+  const currentOutput = computed(() => {
+    if (outputFormat.value === 'hex') return hexOutput.value;
+    if (outputFormat.value === 'bin') return `[binary output] ${byteOutput.value.length} bytes`;
+    return cArrayOutput.value;
+  });
+  const outputFileName = computed(() => {
+    if (outputFormat.value === 'hex') return `${outputBaseName.value}.hex.txt`;
+    if (outputFormat.value === 'bin') return `${outputBaseName.value}.bin`;
+    return `${outputBaseName.value}.h`;
+  });
 
   function indexFor(x: number, y: number) {
     return y * width.value + x;
@@ -129,6 +159,13 @@ export const usePixelStore = defineStore('pixel', () => {
     pixels.value = [...history.value[historyIndex.value]];
   }
 
+  function outputBlob() {
+    if (outputFormat.value === 'bin') {
+      return new Blob([new Uint8Array(byteOutput.value)], { type: 'application/octet-stream' });
+    }
+    return makeTextBlob(currentOutput.value);
+  }
+
   return {
     width,
     height,
@@ -143,14 +180,23 @@ export const usePixelStore = defineStore('pixel', () => {
     cursorY,
     palette,
     pixels,
+    scanDirection,
+    bitOrder,
+    polarity,
+    outputFormat,
+    bitmapOutput,
     byteOutput,
     cArrayOutput,
+    hexOutput,
+    currentOutput,
+    outputFileName,
     pixelAt,
     paintPixel,
     setCursor,
     setTool,
     setCanvasSize,
     undo,
-    redo
+    redo,
+    outputBlob
   };
 });

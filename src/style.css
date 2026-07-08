@@ -317,7 +317,7 @@ kbd {
 
 .output-panel header {
   display: grid;
-  grid-template-columns: 1fr 260px 116px;
+  grid-template-columns: 1fr 220px 104px 116px;
   gap: 10px;
   align-items: center;
 }
@@ -472,6 +472,14 @@ code {
 
 .layers-card {
   flex: 0 0 210px;
+}
+
+.handdraw-encoder-card {
+  flex: 0 0 212px;
+}
+
+.handdraw-encoder-card .field-label {
+  margin: 8px 0;
 }
 
 .layers-card h2 {
