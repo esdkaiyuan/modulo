@@ -321,3 +321,49 @@ Design and implement the default homepage according to the provided reference im
 ### Follow-Up
 
 - The homepage can later wire Open Project to a real project-file importer when the project file format is defined.
+
+## 2026-07-08 - Reference UI Fidelity and Responsive Tool Pages
+
+### Goal
+
+Refine the six real-function tool subpages against the supplied reference screenshots, with special attention to practical window resizing and component behavior.
+
+### Changes
+
+- Added a shared `responsive-tool-page` shell class to all six subpages:
+  - `#/handdraw`
+  - `#/font`
+  - `#/animation`
+  - `#/batch`
+  - `#/video`
+  - `#/image`
+- Reworked responsive layout rules so tool pages can scroll or stack instead of relying on a fixed 1200px viewport.
+- Tuned desktop grid proportions, panel heights, output regions, preview regions, and sidebars to more closely match the provided screenshots.
+- Improved handdraw visual fidelity:
+  - Added screenshot-like header sizing and cat logo treatment.
+  - Adjusted left toolbar, brush controls, canvas area, right-side color/preview/layers panels, and output panel density.
+  - Seeded the default 32x32 canvas with a pixel cat illustration so preview and generated output show a realistic initial state.
+- Added responsive breakpoints for medium and narrow windows across image, font, animation, batch, video, and handdraw pages.
+- Added a regression test ensuring every extractor workspace renders with the responsive page shell.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 10 tests.
+- `npm test -- --run` passed with 11 test files and 30 tests.
+- `npm run build` passed.
+- Local Vite server responded with HTTP 200 for:
+  - `http://127.0.0.1:5173/#/handdraw`
+  - `http://127.0.0.1:5173/#/font`
+  - `http://127.0.0.1:5173/#/animation`
+  - `http://127.0.0.1:5173/#/batch`
+  - `http://127.0.0.1:5173/#/video`
+  - `http://127.0.0.1:5173/#/image`
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `style: refine tool pages against references`.
+
+### Follow-Up
+
+- A later pass can add Playwright screenshot comparisons if pixel-level visual regression tooling is introduced.

@@ -25,6 +25,74 @@ function createEmptyPixels(width: number, height: number): PixelValue[] {
   return Array.from({ length: width * height }, () => null);
 }
 
+function createCatPixels(width: number, height: number): PixelValue[] {
+  const pixels = createEmptyPixels(width, height);
+  if (width !== 32 || height !== 32) return pixels;
+
+  const set = (x: number, y: number, color: PixelValue) => {
+    if (x < 0 || y < 0 || x >= width || y >= height) return;
+    pixels[y * width + x] = color;
+  };
+  const rect = (x: number, y: number, w: number, h: number, color: PixelValue) => {
+    for (let py = y; py < y + h; py += 1) {
+      for (let px = x; px < x + w; px += 1) set(px, py, color);
+    }
+  };
+
+  const outline = '#20252A';
+  const fur = '#AEB3B8';
+  const shadow = '#8B9096';
+  const pink = '#FF9BB4';
+  const scarf = '#7A5BD6';
+  const scarfLight = '#9A75EA';
+  const white = '#FFFFFF';
+
+  rect(8, 2, 3, 2, outline);
+  rect(21, 2, 3, 2, outline);
+  rect(7, 4, 5, 2, outline);
+  rect(20, 4, 5, 2, outline);
+  rect(6, 6, 3, 5, outline);
+  rect(23, 6, 3, 5, outline);
+  rect(5, 11, 2, 6, outline);
+  rect(25, 11, 2, 6, outline);
+  rect(6, 17, 3, 2, outline);
+  rect(23, 17, 3, 2, outline);
+  rect(9, 19, 14, 2, outline);
+
+  rect(9, 5, 14, 13, fur);
+  rect(10, 3, 2, 4, fur);
+  rect(20, 3, 2, 4, fur);
+  rect(7, 8, 18, 8, fur);
+  rect(8, 15, 16, 4, white);
+  rect(13, 12, 6, 5, white);
+  rect(10, 6, 2, 5, shadow);
+  rect(21, 6, 2, 5, shadow);
+  rect(8, 13, 4, 2, pink);
+  rect(21, 13, 4, 2, pink);
+  rect(10, 5, 1, 3, pink);
+  rect(21, 5, 1, 3, pink);
+  rect(12, 11, 1, 3, outline);
+  rect(20, 11, 1, 3, outline);
+  rect(15, 14, 3, 1, outline);
+  rect(14, 16, 2, 1, outline);
+  rect(18, 16, 2, 1, outline);
+  rect(16, 17, 2, 1, outline);
+
+  rect(6, 19, 4, 2, scarf);
+  rect(9, 20, 5, 2, scarfLight);
+  rect(14, 21, 9, 2, scarf);
+  rect(19, 20, 5, 2, scarfLight);
+  rect(12, 22, 8, 2, scarfLight);
+  rect(14, 24, 5, 2, scarf);
+
+  rect(8, 24, 3, 6, outline);
+  rect(9, 24, 3, 6, fur);
+  rect(21, 24, 3, 6, outline);
+  rect(20, 24, 3, 6, fur);
+  rect(10, 30, 12, 1, outline);
+  return pixels;
+}
+
 export const usePixelStore = defineStore('pixel', () => {
   const width = ref(32);
   const height = ref(32);
@@ -38,7 +106,7 @@ export const usePixelStore = defineStore('pixel', () => {
   const cursorX = ref(0);
   const cursorY = ref(0);
   const palette = ref(defaultPalette);
-  const pixels = ref<PixelValue[]>(createEmptyPixels(width.value, height.value));
+  const pixels = ref<PixelValue[]>(createCatPixels(width.value, height.value));
   const history = ref<PixelValue[][]>([[...pixels.value]]);
   const historyIndex = ref(0);
   const scanDirection = ref<ScanDirection>('horizontal-ltr');

@@ -147,4 +147,19 @@ describe('App', () => {
     expect(wrapper.find('[data-test="handdraw-scan"]').exists()).toBe(true);
     expect(wrapper.text()).toContain('ENCODING');
   });
+
+  it('uses responsive tool page shells for every extractor workspace', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+
+    for (const route of ['image', 'batch', 'font', 'animation', 'video', 'handdraw']) {
+      window.location.hash = `#/${route}`;
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+      await wrapper.vm.$nextTick();
+      expect(wrapper.find('.responsive-tool-page').exists()).toBe(true);
+    }
+  });
 });

@@ -7,7 +7,7 @@ import FontOutputPanel from '../features/font/components/FontOutputPanel.vue';
 </script>
 
 <template>
-  <div class="dm-page font-page">
+  <div class="dm-page font-page responsive-tool-page">
     <FontHeader />
     <main class="font-grid">
       <FontInputPanel />

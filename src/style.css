@@ -2276,3 +2276,431 @@ video.hero-video {
 .home-page-dark {
   background: #eef4ff;
 }
+
+@media (max-width: 1199px) {
+  body {
+    min-width: 0;
+    overflow: auto;
+  }
+}
+
+.responsive-tool-page {
+  width: 100%;
+  min-width: 0;
+}
+
+.dm-page.responsive-tool-page {
+  min-height: 100vh;
+  height: 100vh;
+  overflow: auto;
+  padding: clamp(8px, 1vw, 14px);
+}
+
+.app-shell.responsive-tool-page {
+  min-width: 0;
+  border-radius: 8px;
+}
+
+.handdraw-page .topbar {
+  grid-template-columns: minmax(250px, 330px) minmax(360px, 1fr) minmax(280px, 390px);
+  padding: 12px 14px;
+}
+
+.handdraw-page .brand {
+  font-size: 20px;
+}
+
+.handdraw-page .cat-logo {
+  width: 48px;
+  height: 48px;
+  border: 0;
+  border-radius: 0;
+  background:
+    radial-gradient(circle at 34% 42%, #20252a 0 5%, transparent 6%),
+    radial-gradient(circle at 64% 42%, #20252a 0 5%, transparent 6%),
+    linear-gradient(135deg, transparent 0 19%, #20252a 20% 31%, transparent 32%),
+    linear-gradient(225deg, transparent 0 19%, #20252a 20% 31%, transparent 32%),
+    radial-gradient(circle at 50% 55%, #fff 0 38%, transparent 39%);
+  color: transparent;
+  box-shadow: inset 0 0 0 2px #dfe4ea;
+}
+
+.handdraw-page .workbench {
+  grid-template-columns: clamp(250px, 20vw, 308px) minmax(520px, 1fr) clamp(278px, 22vw, 334px);
+  gap: 6px;
+  min-height: 0;
+}
+
+.handdraw-page .center-stage {
+  grid-template-rows: minmax(360px, 1fr) clamp(210px, 28vh, 286px);
+}
+
+.handdraw-page .canvas-wrap {
+  align-items: start;
+  padding: clamp(12px, 2vw, 28px);
+  background-size: 24px 24px;
+}
+
+.handdraw-page .pixel-canvas {
+  max-width: min(100%, 82vh);
+  max-height: 100%;
+  width: auto;
+  height: auto;
+}
+
+.handdraw-page .panel-card {
+  padding: 16px 18px;
+}
+
+.handdraw-page .tool-row {
+  height: 54px;
+  grid-template-columns: 38px 1fr auto;
+  border-radius: 5px;
+}
+
+.handdraw-page .tool-row.active {
+  background: linear-gradient(135deg, #8b65de, #6f4bd4);
+}
+
+.handdraw-page .brush-row {
+  grid-template-columns: repeat(5, minmax(38px, 1fr));
+}
+
+.handdraw-page .right-panel {
+  overflow: auto;
+}
+
+.handdraw-page .color-card {
+  flex-basis: 336px;
+}
+
+.handdraw-page .color-field {
+  height: 174px;
+  margin-right: 58px;
+}
+
+.handdraw-page .preview-card {
+  flex-basis: 286px;
+}
+
+.handdraw-page .preview-box {
+  height: 230px;
+}
+
+.handdraw-page .layers-card {
+  flex-basis: 204px;
+}
+
+.handdraw-page .output-panel {
+  grid-template-rows: 42px 1fr 44px;
+  padding: 8px 14px;
+}
+
+.handdraw-page .output-panel header {
+  grid-template-columns: 1fr minmax(170px, 260px) 92px 110px;
+}
+
+.handdraw-page pre,
+.code-block {
+  font-size: 12px;
+}
+
+.dm-page:not(.home-page) .dm-card {
+  border-radius: 8px;
+  box-shadow: 0 9px 22px rgba(30, 47, 72, 0.055);
+}
+
+.dm-page:not(.home-page) .dm-header {
+  min-height: 58px;
+  height: auto;
+  margin-bottom: 10px;
+  padding: 0 4px;
+}
+
+.dm-page:not(.home-page) .dm-brand h1 {
+  font-size: 23px;
+}
+
+.dm-page:not(.home-page) .header-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.image-page .image-grid {
+  grid-template-columns: minmax(640px, 1fr) clamp(280px, 22vw, 320px);
+  grid-template-rows: minmax(180px, 208px) minmax(330px, 1fr) minmax(250px, 304px);
+  min-height: calc(100vh - 90px);
+}
+
+.image-page .drop-zone {
+  width: min(48%, 520px);
+}
+
+.image-page .loaded-image {
+  right: clamp(170px, 16vw, 210px);
+  width: clamp(190px, 18vw, 250px);
+}
+
+.image-page .compare-grid {
+  grid-template-columns: minmax(280px, 0.92fr) minmax(320px, 1fr);
+  height: calc(100% - 46px);
+}
+
+.image-page .source-preview,
+.image-page .crop-box,
+.image-page .panda-dots {
+  height: 100%;
+  min-height: 240px;
+}
+
+.image-page .image-output .code-block {
+  width: calc(100% - min(390px, 34vw));
+}
+
+.image-page .output-preview {
+  width: min(340px, 32vw);
+}
+
+.font-page .font-grid {
+  grid-template-columns: minmax(620px, 1fr) clamp(360px, 30vw, 456px);
+  grid-template-rows: minmax(126px, 142px) minmax(390px, 1fr) minmax(250px, 304px);
+  min-height: calc(100vh - 90px);
+}
+
+.font-page .font-input-grid {
+  grid-template-columns: minmax(260px, 1.8fr) minmax(220px, 1fr) 110px 88px 150px;
+  gap: clamp(12px, 1.7vw, 26px);
+}
+
+.font-page .han-grid {
+  height: min(320px, 42vh);
+  font-size: clamp(220px, 24vw, 330px);
+}
+
+.font-page .font-preview-layout {
+  grid-template-columns: 86px 1fr;
+}
+
+.font-page .font-output .code-block {
+  width: calc(100% - min(390px, 34vw));
+}
+
+.font-page .hex-preview,
+.font-page .output-preview {
+  width: min(340px, 32vw);
+}
+
+.animation-page.with-local-rail {
+  grid-template-columns: 78px 1fr;
+}
+
+.animation-page .media-grid {
+  grid-template-columns: minmax(650px, 1fr) clamp(360px, 31vw, 480px);
+}
+
+.animation-page .media-workspace {
+  grid-template-rows: minmax(260px, 0.96fr) 146px minmax(150px, 0.62fr);
+}
+
+.animation-page .black-player {
+  height: clamp(190px, 24vh, 230px);
+}
+
+.animation-page .zoom-matrix {
+  height: clamp(120px, 18vh, 152px);
+}
+
+.animation-page .media-settings {
+  grid-template-rows: auto 1fr;
+}
+
+.animation-page .media-output {
+  display: grid;
+  grid-template-columns: minmax(520px, 1fr) clamp(360px, 31vw, 480px);
+  gap: 12px;
+}
+
+.animation-page .media-output .dm-card {
+  grid-column: auto;
+}
+
+.batch-page .batch-grid {
+  grid-template-columns: minmax(660px, 1fr) clamp(380px, 32vw, 486px);
+  grid-template-rows: minmax(360px, 48vh) minmax(156px, 20vh) minmax(220px, 26vh);
+  min-height: calc(100vh - 88px);
+}
+
+.batch-page .file-table th,
+.batch-page .file-table td {
+  height: 44px;
+}
+
+.batch-page .batch-files {
+  overflow: auto;
+}
+
+.batch-page .terminal-log {
+  min-height: 110px;
+  max-height: 160px;
+}
+
+.batch-page .result-layout {
+  grid-template-columns: minmax(210px, 260px) 1fr minmax(270px, 360px);
+}
+
+.video-page .video-grid {
+  grid-template-columns: minmax(700px, 1fr) clamp(390px, 33vw, 500px);
+  min-height: calc(100vh - 90px);
+}
+
+.video-page .video-workspace {
+  grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
+  grid-auto-rows: auto;
+}
+
+.video-page .hero-video {
+  height: clamp(230px, 32vh, 282px);
+}
+
+.video-page .video-source {
+  height: clamp(180px, 25vh, 220px);
+}
+
+.video-page .dot-preview {
+  height: clamp(160px, 22vh, 190px);
+}
+
+.video-page .video-output {
+  display: grid;
+  grid-template-columns: minmax(520px, 1fr) clamp(400px, 40vw, 560px);
+  gap: 12px;
+}
+
+@media (max-width: 1180px) {
+  .app-shell.responsive-tool-page {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .handdraw-page .topbar {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .handdraw-page .top-controls,
+  .handdraw-page .top-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .handdraw-page .workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .handdraw-page .left-panel,
+  .handdraw-page .right-panel {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(260px, 1fr));
+  }
+
+  .handdraw-page .center-stage {
+    grid-template-rows: 68vh 260px;
+  }
+
+  .dm-page.responsive-tool-page {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .image-page .image-grid,
+  .font-page .font-grid,
+  .batch-page .batch-grid,
+  .animation-page .media-grid,
+  .video-page .video-grid,
+  .animation-page .media-output,
+  .video-page .video-output {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .image-options,
+  .font-options,
+  .batch-side,
+  .batch-log,
+  .batch-results,
+  .media-output,
+  .video-output {
+    grid-column: auto;
+    grid-row: auto;
+  }
+
+  .image-page .image-output .code-block,
+  .font-page .font-output .code-block {
+    width: auto;
+    margin-right: 14px;
+  }
+
+  .image-page .output-preview,
+  .font-page .hex-preview,
+  .font-page .output-preview {
+    position: static;
+    width: auto;
+    margin: 0 14px 14px;
+  }
+
+  .batch-page .result-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .home-page {
+    padding: 14px;
+  }
+
+  .handdraw-page .left-panel,
+  .handdraw-page .right-panel,
+  .image-page .compare-grid,
+  .font-page .font-input-grid,
+  .font-page .font-preview-layout,
+  .video-page .video-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .handdraw-page .output-panel header {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .image-page .loaded-image,
+  .image-page .image-meta,
+  .image-page .image-actions {
+    position: static;
+    margin: 12px 18px;
+  }
+
+  .image-page .drop-zone {
+    position: relative;
+    left: auto;
+    top: auto;
+    width: auto;
+    margin: 14px;
+  }
+
+  .font-page .font-input-grid {
+    padding: 14px;
+  }
+
+  .animation-page.with-local-rail {
+    grid-template-columns: 1fr;
+  }
+
+  .local-rail {
+    min-height: auto;
+    flex-direction: row;
+    overflow: auto;
+    padding: 8px;
+    border-right: 0;
+    border-bottom: 1px solid #dfe6ef;
+  }
+}
