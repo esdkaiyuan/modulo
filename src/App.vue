@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import HomePage from './pages/HomePage.vue';
 import HandDrawPage from './pages/HandDrawPage.vue';
 import BatchExtractorPage from './pages/BatchExtractorPage.vue';
@@ -48,7 +48,15 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('hashchange', syncRoute);
+  document.body.classList.remove('route-home', 'route-handdraw', 'route-batch', 'route-font', 'route-animation', 'route-image', 'route-video');
 });
+
+watch(activePage, (page, previousPage) => {
+  if (previousPage) {
+    document.body.classList.remove(`route-${previousPage}`);
+  }
+  document.body.classList.add(`route-${page}`);
+}, { immediate: true });
 </script>
 
 <template>

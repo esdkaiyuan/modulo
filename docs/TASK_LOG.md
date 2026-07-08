@@ -514,3 +514,39 @@ Apply the same cleanup method used on the homepage to the next page, `#/image`, 
 ### Follow-Up
 
 - Continue with the next page using the same sequence: red test, remove fake composites, add pixel-based functional samples, verify responsive layout.
+
+## 2026-07-09 - Video Page Pixel Empty State Cleanup
+
+### Goal
+
+Apply the same homepage/image-page correction method to `#/video`, replacing decorative empty video placeholders with ordered pixel-frame samples while keeping real video extraction and frame conversion usable.
+
+### Changes
+
+- Added `src/features/video/components/VideoPixelSample.vue`.
+- Replaced the empty video hero placeholder with a structured pixel video-frame sample.
+- Added pixel sample empty states for:
+  - Source frame preview
+  - Dot-matrix frame preview
+  - Generated output preview
+  - Sampled frame strip thumbnails
+- Kept real uploaded video playback, extracted frame canvases, and generated output rendering unchanged for actual use.
+- Added route-level body classes so the video page can opt out of the global desktop minimum width on small windows.
+- Tightened video page responsive CSS for narrow windows, including header wrapping, preview sizing, and horizontal thumbnail scrolling.
+- Added regression coverage requiring video-page ordered pixel samples and preventing the old non-video `.hero-video` placeholder.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 15 tests.
+- `npm test -- --run` passed with 11 test files and 35 tests.
+- `npm run build` passed.
+- Chrome headless screenshots were generated for `#/video` at desktop and small viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+### Follow-Up
+
+- Continue with the next page in homepage card order using the same sequence: red test, remove fake composites, add page-specific ordered pixel samples, verify responsive layout.

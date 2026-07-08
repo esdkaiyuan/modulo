@@ -148,6 +148,22 @@ describe('App', () => {
     expect(wrapper.text()).toContain('Generated Output');
   });
 
+  it('uses ordered pixel samples for the video page empty previews', async () => {
+    window.location.hash = '#/video';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.findAll('.video-pixel-sample').length).toBeGreaterThanOrEqual(4);
+    expect(wrapper.findAll('.video-pixel-sample .pixel-dot').length).toBeGreaterThan(180);
+    expect(wrapper.find('.hero-video.landscape:not(video)').exists()).toBe(false);
+    expect(wrapper.findAll('.video-thumb.empty-thumb').length).toBeGreaterThanOrEqual(4);
+  });
+
   it('exposes shared encoding controls on the handdraw page', async () => {
     window.location.hash = '#/handdraw';
     const wrapper = mount(App, {

@@ -2,6 +2,7 @@
 import { nextTick, onMounted, ref, watch } from 'vue';
 import PanelSection from '../../../components/common/PanelSection.vue';
 import { useVideoModuloStore } from '../stores/videoModuloStore';
+import VideoPixelSample from './VideoPixelSample.vue';
 
 const store = useVideoModuloStore();
 const preview = ref<HTMLCanvasElement | null>(null);
@@ -47,6 +48,9 @@ watch(() => [store.selectedIndex, store.selectedFrame?.bitmap, store.targetWidth
   <PanelSection class="video-output" title="Generated Output (C Array - Hex)">
     <template #actions><button class="ghost-btn" @click="copyOutput">⧉ Copy</button><button class="ghost-btn" @click="downloadOutput">⇩ Download</button></template>
     <pre class="code-block">{{ store.generatedSource }}</pre>
-    <div class="black-player small landscape animation-canvas"><canvas ref="preview"></canvas></div>
+    <div class="black-player small landscape animation-canvas" :class="{ 'sample-preview': !store.selectedFrame }">
+      <canvas v-if="store.selectedFrame" ref="preview"></canvas>
+      <VideoPixelSample v-else variant="output" :frame="4" />
+    </div>
   </PanelSection>
 </template>
