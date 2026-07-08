@@ -172,3 +172,39 @@ Make the `#/font` page render real text through Canvas and generate real dot-mat
 
 - Batch 4 should make `#/animation` decode GIF frames and reuse the bitmap encoding pipeline.
 - A later enhancement can add custom TTF/OTF rendering through a dedicated font parser or WASM renderer.
+
+## 2026-07-08 - Batch 4 Animation Modulo Real Function
+
+### Goal
+
+Make the `#/animation` page decode GIF frames and generate embedded-ready animation frame data.
+
+### Changes
+
+- Added animation-specific design and implementation plan docs:
+  - `docs/superpowers/specs/2026-07-08-animation-modulo-real-function-design.md`
+  - `docs/superpowers/plans/2026-07-08-animation-modulo-real-function.md`
+- Added `gifuct-js` for GIF parsing and frame decompression.
+- Added `src/features/animation/stores/animationModuloStore.ts`.
+- Added `src/features/animation/utils/gifDecoder.ts`.
+- Implemented decoded frame loading with frame delays.
+- Implemented frame range, sampling step, target width/height, threshold, dithering, scan direction, bit order, and polarity.
+- Reused `imageProcessor`, `bitmapEncoder`, and output blob utilities for per-frame extraction.
+- Generated C header source with frame byte arrays, delay arrays, frame count, width, and height.
+- Connected the animation page to real GIF upload, frame strip selection, preview canvases, settings, generated code, copy, and download.
+- Added tests for decoded-frame processing, frame sampling, generated animation output, delay table, and animation page smoke controls.
+
+### Verification
+
+- `npm test -- --run` passed with 10 test files and 23 tests.
+- `npm run build` passed.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `feat: implement animation modulo processing`.
+
+### Follow-Up
+
+- Batch 5 should make `#/video` extract frames from browser video playback and reuse the same frame-processing pipeline.
+- Future animation improvements can add APNG/WebP decoding and more complete GIF disposal handling.

@@ -85,4 +85,19 @@ describe('App', () => {
     expect(wrapper.text()).toContain('Regenerate');
     expect(wrapper.text()).toContain('Generated Output');
   });
+
+  it('exposes real animation page controls for GIF frame extraction', async () => {
+    window.location.hash = '#/animation';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('input[type="file"][accept="image/gif"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain('Generate Frame Data');
+    expect(wrapper.text()).toContain('Generated Code');
+  });
 });
