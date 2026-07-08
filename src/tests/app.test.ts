@@ -73,6 +73,21 @@ describe('App', () => {
     expect(wrapper.text()).toContain('Generated C Array');
   });
 
+  it('uses ordered pixel samples for the image page empty previews', async () => {
+    window.location.hash = '#/image';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.findAll('.image-pixel-sample').length).toBeGreaterThanOrEqual(3);
+    expect(wrapper.findAll('.image-pixel-sample .pixel-dot').length).toBeGreaterThan(120);
+    expect(wrapper.find('.loaded-image.panda').exists()).toBe(false);
+  });
+
   it('exposes real batch page controls for multi-image processing', async () => {
     window.location.hash = '#/batch';
     const wrapper = mount(App, {

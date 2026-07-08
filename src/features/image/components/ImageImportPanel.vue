@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import PanelSection from '../../../components/common/PanelSection.vue';
 import { useImageModuloStore } from '../stores/imageModuloStore';
+import ImagePixelSample from './ImagePixelSample.vue';
 
 const store = useImageModuloStore();
 
@@ -74,7 +75,7 @@ function formatSize(bytes: number) {
     </label>
     <div class="image-actions"><button class="ghost-primary">⌗ Crop</button><button class="ghost-btn" @click="store.reset">↺ Reset</button></div>
     <img v-if="store.previewUrl" class="loaded-image" :src="store.previewUrl" alt="Loaded source" />
-    <div v-else class="loaded-image panda"></div>
+    <div v-else class="loaded-image sample-holder"><ImagePixelSample variant="source" compact /></div>
     <div class="image-meta">
       <strong>{{ store.fileName || 'No image loaded' }}</strong>
       <span>Dimensions: {{ store.sourceWidth || '-' }} × {{ store.sourceHeight || '-' }} px</span>

@@ -479,3 +479,38 @@ Fix unreadable Launch button labels and make every homepage tool preview better 
 ### Follow-Up
 
 - Future homepage preview improvements should continue using pixel matrices rather than decorative shape composites.
+
+## 2026-07-09 - Image Page Pixel Empty State Cleanup
+
+### Goal
+
+Apply the same cleanup method used on the homepage to the next page, `#/image`, by removing fake decorative placeholder imagery and replacing empty previews with ordered pixel sample resources.
+
+### Changes
+
+- Added `src/features/image/components/ImagePixelSample.vue`.
+- Replaced the image import placeholder `.panda` composite with a structured pixel sample board.
+- Added ordered pixel sample empty states for:
+  - Import preview card
+  - Original image preview
+  - Dot-matrix preview
+  - Output preview
+- Kept real uploaded image preview and generated Canvas previews unchanged for actual use.
+- Added white pixel-board styling for image-page empty matrix previews so they do not look like cropped black media panels.
+- Added regression coverage requiring image-page ordered pixel samples and preventing `.loaded-image.panda` from rendering.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 14 tests.
+- `npm test -- --run` passed with 11 test files and 34 tests.
+- `npm run build` passed.
+- Playwright visual self-check screenshots were generated for `#/image` at desktop and small viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `style: clean image page pixel empty states`.
+
+### Follow-Up
+
+- Continue with the next page using the same sequence: red test, remove fake composites, add pixel-based functional samples, verify responsive layout.

@@ -2,6 +2,7 @@
 import { nextTick, onMounted, ref, watch } from 'vue';
 import PanelSection from '../../../components/common/PanelSection.vue';
 import { useImageModuloStore } from '../stores/imageModuloStore';
+import ImagePixelSample from './ImagePixelSample.vue';
 
 const store = useImageModuloStore();
 const matrixCanvas = ref<HTMLCanvasElement | null>(null);
@@ -36,10 +37,11 @@ watch(() => [store.bitmap, store.targetWidth, store.targetHeight], () => nextTic
     <div class="compare-grid">
       <div class="source-preview crop-box">
         <img v-if="store.previewUrl" :src="store.previewUrl" alt="Source preview" />
-        <div v-else class="empty-preview">Upload an image to preview</div>
+        <div v-else class="empty-preview image-sample-empty"><ImagePixelSample variant="source" /><span>Upload an image to preview</span></div>
       </div>
-      <div class="dot-preview matrix-canvas-wrap">
-        <canvas ref="matrixCanvas"></canvas>
+      <div class="dot-preview matrix-canvas-wrap" :class="{ 'sample-preview': !store.bitmap.length }">
+        <canvas v-if="store.bitmap.length" ref="matrixCanvas"></canvas>
+        <ImagePixelSample v-else variant="matrix" />
       </div>
     </div>
   </PanelSection>

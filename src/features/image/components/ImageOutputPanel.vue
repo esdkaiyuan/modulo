@@ -2,6 +2,7 @@
 import { nextTick, onMounted, ref, watch } from 'vue';
 import PanelSection from '../../../components/common/PanelSection.vue';
 import { useImageModuloStore } from '../stores/imageModuloStore';
+import ImagePixelSample from './ImagePixelSample.vue';
 
 const store = useImageModuloStore();
 const outputCanvas = ref<HTMLCanvasElement | null>(null);
@@ -56,7 +57,10 @@ watch(() => [store.bitmap, store.targetWidth, store.targetHeight], () => nextTic
     </footer>
     <aside class="output-preview">
       <h2><span class="step-badge">5</span> Output Preview</h2>
-      <div class="dot-preview matrix-canvas-wrap"><canvas ref="outputCanvas"></canvas></div>
+      <div class="dot-preview matrix-canvas-wrap" :class="{ 'sample-preview': !store.bitmap.length }">
+        <canvas v-if="store.bitmap.length" ref="outputCanvas"></canvas>
+        <ImagePixelSample v-else variant="output" />
+      </div>
       <footer>Scale: 4x <span>Grid: On</span></footer>
     </aside>
   </PanelSection>
