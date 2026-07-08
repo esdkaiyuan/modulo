@@ -192,4 +192,28 @@ describe('App', () => {
     expect(wrapper.find('.tool-visual.runner').exists()).toBe(false);
     expect(wrapper.find('.tool-visual.landscape').exists()).toBe(false);
   });
+
+  it('keeps home launch labels readable and rotates multiple preview frames per tool', () => {
+    window.location.hash = '#/';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+
+    const launches = wrapper.findAll('.launch-btn');
+    expect(launches).toHaveLength(6);
+    for (const launch of launches) {
+      expect(launch.classes()).toContain('launch-readable');
+      expect(launch.text()).toContain('Launch');
+    }
+
+    expect(wrapper.findAll('.pixel-preview-frame')).toHaveLength(18);
+    expect(wrapper.find('[data-preview-kind="image"]').exists()).toBe(true);
+    expect(wrapper.find('[data-preview-kind="video"]').exists()).toBe(true);
+    expect(wrapper.find('[data-preview-kind="animation"]').exists()).toBe(true);
+    expect(wrapper.find('[data-preview-kind="editor"]').exists()).toBe(true);
+    expect(wrapper.find('[data-preview-kind="batch"]').exists()).toBe(true);
+    expect(wrapper.find('[data-preview-kind="data"]').exists()).toBe(true);
+  });
 });

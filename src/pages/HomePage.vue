@@ -96,17 +96,23 @@ const previewPalettes: Record<PixelPreviewKind, PixelTone[]> = {
   data: ['mint', 'green', 'blue', 'dark', 'yellow', 'orange', 'purple', 'red', 'white']
 };
 
-function pixelTone(kind: PixelPreviewKind, index: number) {
+const previewFrames = [0, 1, 2];
+
+function pixelTone(kind: PixelPreviewKind, index: number, frame = 0) {
   const x = index % 12;
   const y = Math.floor(index / 12);
   const palette = previewPalettes[kind];
-  if ((x + y) % 5 === 0) return palette[(x + y) % palette.length];
-  if (kind === 'image' && ((x > 2 && x < 9 && y > 2 && y < 6) || (x > 5 && y > 6))) return palette[(x + y * 2) % palette.length];
-  if (kind === 'video' && (y > x / 2 + 2 || y > 7 - x / 3)) return palette[(x + y) % palette.length];
-  if (kind === 'animation' && ((x === y) || (x + y > 9 && x + y < 14) || (x > 6 && y < 4))) return palette[(x * 2 + y) % palette.length];
-  if (kind === 'editor' && ((x > 3 && x < 8 && y > 2 && y < 8) || (x === 2 && y < 4) || (x === 9 && y < 4))) return palette[(x + y) % palette.length];
-  if (kind === 'batch' && (x % 3 === 1 || y % 4 === 2)) return palette[(x + y) % palette.length];
-  if (kind === 'data' && (x < 3 || x > 8 || y === 2 || y === 7)) return palette[(x * y + x) % palette.length];
+  const shiftedX = (x + frame * 2) % 12;
+  const shiftedY = (y + frame) % 8;
+  const pick = (salt = 0) => palette[(x + y * 2 + frame * 3 + salt) % palette.length];
+
+  if ((x + y + frame) % 7 === 0) return pick(1);
+  if (kind === 'image' && ((x > 1 + frame && x < 8 + frame && y > 2 && y < 6) || (x > 6 - frame && y > 5))) return pick();
+  if (kind === 'video' && (y > shiftedX / 2 + 1 || shiftedY > 5 || (x + frame) % 5 === 0)) return pick(2);
+  if (kind === 'animation' && (((x + frame) % 6 === y % 6) || (x + y > 8 + frame && x + y < 14 + frame) || (x > 6 && y < 3 + frame))) return pick(3);
+  if (kind === 'editor' && ((x > 3 && x < 8 && y > 1 + frame && y < 7) || (x === 2 + frame && y < 4) || (x === 9 - frame && y < 4))) return pick();
+  if (kind === 'batch' && ((x + frame) % 3 === 1 || (y + frame) % 4 === 2)) return pick(4);
+  if (kind === 'data' && (x < 2 + frame || x > 8 - frame || y === 2 + frame || y === 7 - frame)) return pick(5);
   return 'empty';
 }
 
@@ -211,7 +217,7 @@ function openGithub() {
             <p>{{ tool.description }}</p>
             <div class="tool-card-actions">
               <button
-                class="launch-btn"
+                class="launch-btn launch-readable"
                 :class="tool.accent"
                 :data-test="tool.testId"
                 @click="launchTool(tool.route)"
@@ -223,13 +229,20 @@ function openGithub() {
               </button>
             </div>
           </div>
-          <div class="pixel-preview-window" :class="tool.accent" aria-hidden="true">
-            <span
-              v-for="dot in 96"
-              :key="`${tool.preview}-${dot}`"
-              class="pixel-dot"
-              :class="pixelTone(tool.preview, dot - 1)"
-            ></span>
+          <div class="pixel-preview-window" :class="tool.accent" :data-preview-kind="tool.preview" aria-hidden="true">
+            <div
+              v-for="frame in previewFrames"
+              :key="`${tool.preview}-frame-${frame}`"
+              class="pixel-preview-frame"
+              :style="{ animationDelay: `${frame * 1.6}s` }"
+            >
+              <span
+                v-for="dot in 96"
+                :key="`${tool.preview}-${frame}-${dot}`"
+                class="pixel-dot"
+                :class="pixelTone(tool.preview, dot - 1, frame)"
+              ></span>
+            </div>
           </div>
         </article>
       </section>

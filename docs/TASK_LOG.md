@@ -441,3 +441,41 @@ Optimize the homepage first by removing messy decorative shape composites and re
 ### Follow-Up
 
 - Continue applying this pixel-preview resource style to any future homepage visual assets.
+
+## 2026-07-08 - Homepage Preview Frame Rotation and Button Readability
+
+### Goal
+
+Fix unreadable Launch button labels and make every homepage tool preview better express its function through multiple rotating pixel example frames.
+
+### Changes
+
+- Fixed homepage Launch button readability by preventing hero tag color classes from overriding button text color.
+- Added explicit `launch-readable` styling with white text and subtle text shadow.
+- Expanded each tool card preview from one static pixel matrix to three rotating pixel frames.
+- Added per-tool frame variation for:
+  - Image conversion
+  - Video frame extraction
+  - Animation frame extraction
+  - Pixel editor
+  - Batch processing
+  - Batch data extraction
+- Added `data-preview-kind` markers for visual/test clarity.
+- Added CSS frame cycling inside each preview window while keeping the window size stable.
+- Added tests for readable Launch buttons and multi-frame previews.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 13 tests.
+- `npm test -- --run` passed with 11 test files and 33 tests.
+- `npm run build` passed.
+- Playwright mobile homepage screenshot confirmed Launch labels are visible and pixel preview windows render correctly.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `style: animate homepage pixel previews`.
+
+### Follow-Up
+
+- Future homepage preview improvements should continue using pixel matrices rather than decorative shape composites.
