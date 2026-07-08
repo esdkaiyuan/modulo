@@ -208,3 +208,37 @@ Make the `#/animation` page decode GIF frames and generate embedded-ready animat
 
 - Batch 5 should make `#/video` extract frames from browser video playback and reuse the same frame-processing pipeline.
 - Future animation improvements can add APNG/WebP decoding and more complete GIF disposal handling.
+
+## 2026-07-08 - Batch 5 Video Modulo Real Function
+
+### Goal
+
+Make the `#/video` page extract frames from uploaded browser video files and generate dot-matrix frame data.
+
+### Changes
+
+- Added video-specific design and implementation plan docs:
+  - `docs/superpowers/specs/2026-07-08-video-modulo-real-function-design.md`
+  - `docs/superpowers/plans/2026-07-08-video-modulo-real-function.md`
+- Added `src/features/video/stores/videoModuloStore.ts`.
+- Added `src/features/video/utils/videoFrameExtractor.ts`.
+- Implemented browser `<video>` metadata loading, seeking, and Canvas frame capture utility.
+- Implemented extracted frame loading, selected frame state, output FPS, estimated bytes, and generated C header source.
+- Reused `imageProcessor`, `bitmapEncoder`, and output blob utilities for video frames.
+- Connected the video page to real video upload, extraction parameters, frame settings, output settings, sampled frame strip, dot-matrix preview, generated output, copy, and download.
+- Added tests for video frame processing, generated source, selected frame metadata, estimated size, and video page smoke controls.
+
+### Verification
+
+- `npm test -- --run` passed with 11 test files and 25 tests.
+- `npm run build` passed.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `feat: implement video modulo processing`.
+
+### Follow-Up
+
+- Batch 6 should enhance `#/handdraw` with the same shared encoding settings and output formats used by the other pages.
+- Future video improvements can add background workers, cancellation/progress feedback during extraction, and FFmpeg.wasm for broader codec support.

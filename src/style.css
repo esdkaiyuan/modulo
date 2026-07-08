@@ -1352,6 +1352,12 @@ code {
     linear-gradient(180deg, #89d7ff 0 34%, #d8ecff 35% 45%, #486f48 46% 63%, #173452 64% 100%);
 }
 
+video.hero-video {
+  width: 100%;
+  object-fit: contain;
+  background: #050505;
+}
+
 .video-workspace {
   grid-template-columns: 1fr 1fr;
 }
@@ -1364,10 +1370,24 @@ code {
 .video-source {
   height: 220px;
   margin: 14px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
 }
 
 .video-thumb span {
   background: linear-gradient(160deg, #87d4ff, #2f814e 52%, #14314e);
+}
+
+.video-thumb.active {
+  outline: 2px solid #21a5ff;
+  border-radius: 8px;
+}
+
+.video-source video {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
 }
 
 .compact .video-thumb {
