@@ -2,6 +2,20 @@
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #2c3238;
   background: #edf0f4;
+  --tool-bg: #f5f8fc;
+  --tool-surface: rgba(255, 255, 255, 0.96);
+  --tool-surface-strong: #ffffff;
+  --tool-border: #dbe4f0;
+  --tool-border-soft: #edf1f6;
+  --tool-text: #101828;
+  --tool-muted: #5d6b82;
+  --tool-primary: #2167e8;
+  --tool-purple: #7352d7;
+  --tool-shadow: 0 10px 24px rgba(30, 47, 72, 0.055);
+  --tool-shadow-soft: 0 6px 16px rgba(30, 47, 72, 0.04);
+  --tool-radius: 10px;
+  --tool-radius-sm: 7px;
+  --tool-gap: 12px;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -25,6 +39,19 @@ input {
 
 button {
   cursor: pointer;
+}
+
+button,
+input,
+select {
+  min-width: 0;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid rgba(33, 103, 232, 0.35);
+  outline-offset: 2px;
 }
 
 .app-shell {
@@ -2259,10 +2286,9 @@ video.hero-video {
 
 .home-status {
   position: fixed;
-  left: 50%;
-  bottom: 16px;
-  transform: translateX(-50%);
-  max-width: 520px;
+  right: 20px;
+  bottom: 18px;
+  max-width: 360px;
   margin: 0;
   padding: 8px 16px;
   border: 1px solid #d7e3f4;
@@ -2270,11 +2296,188 @@ video.hero-video {
   background: rgba(255, 255, 255, 0.94);
   color: #40506b;
   font-size: 12px;
-  box-shadow: 0 12px 28px rgba(24, 43, 74, 0.08);
+  opacity: 0.86;
+  box-shadow: 0 10px 22px rgba(24, 43, 74, 0.07);
+  z-index: 20;
 }
 
 .home-page-dark {
   background: #eef4ff;
+}
+
+.home-page {
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+.home-header,
+.home-main,
+.home-footer {
+  max-width: 1880px;
+  margin-inline: auto;
+}
+
+.home-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.home-hero,
+.tool-card,
+.home-panel {
+  box-shadow: var(--tool-shadow);
+}
+
+.tool-card {
+  min-width: 0;
+}
+
+.tool-card-copy,
+.tool-card header {
+  min-width: 0;
+}
+
+.tool-card h3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.home-bottom {
+  align-items: stretch;
+}
+
+@media (max-width: 1500px) {
+  .home-hero {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+
+  .hero-visual {
+    justify-content: center;
+  }
+
+  .tool-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tool-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tool-card p {
+    min-height: 48px;
+  }
+
+  .tool-card .tool-visual {
+    width: 100%;
+    height: 112px;
+  }
+
+  .home-bottom {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .action-panel {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1501px) {
+  .tool-card {
+    grid-template-columns: minmax(0, 1fr) minmax(138px, 178px);
+  }
+
+  .tool-card .tool-visual {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 860px) {
+  .home-header {
+    height: auto;
+    align-items: flex-start;
+    gap: 12px;
+    flex-direction: column;
+  }
+
+  .home-actions {
+    justify-content: flex-start;
+  }
+
+  .home-hero {
+    padding: 24px;
+  }
+
+  .hero-copy h2 {
+    font-size: 30px;
+  }
+
+  .hero-visual {
+    grid-template-columns: 130px 44px 190px;
+    gap: 12px;
+    transform-origin: center;
+  }
+
+  .blue-matrix {
+    width: 128px;
+    height: 108px;
+    gap: 7px;
+  }
+
+  .hero-arrow {
+    font-size: 42px;
+  }
+
+  .dot-screen {
+    width: 188px;
+    height: 96px;
+    gap: 3px;
+    padding: 10px;
+  }
+
+  .tool-grid,
+  .home-bottom {
+    grid-template-columns: 1fr;
+  }
+
+  .tool-card {
+    grid-template-columns: minmax(0, 1fr) 148px;
+  }
+
+  .tool-visual {
+    width: 140px;
+    height: 112px;
+  }
+}
+
+@media (max-width: 560px) {
+  .home-brand h1 {
+    flex-wrap: wrap;
+    font-size: 21px;
+  }
+
+  .hero-tags,
+  .tool-card-actions,
+  .home-footer,
+  .home-footer div {
+    flex-wrap: wrap;
+  }
+
+  .hero-visual {
+    display: none;
+  }
+
+  .home-status {
+    display: none;
+  }
+
+  .tool-card {
+    grid-template-columns: 1fr;
+  }
+
+  .tool-visual {
+    width: 100%;
+  }
 }
 
 @media (max-width: 1199px) {
@@ -2289,6 +2492,129 @@ video.hero-video {
   min-width: 0;
 }
 
+.tool-ui-frame {
+  color: var(--tool-text);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(33, 103, 232, 0.055), transparent 34%),
+    linear-gradient(180deg, #fbfdff 0%, var(--tool-bg) 100%);
+}
+
+.tool-ui-frame,
+.tool-ui-frame * {
+  scrollbar-width: thin;
+  scrollbar-color: #b8c5d8 transparent;
+}
+
+.tool-ui-frame::-webkit-scrollbar,
+.tool-ui-frame *::-webkit-scrollbar {
+  width: 9px;
+  height: 9px;
+}
+
+.tool-ui-frame::-webkit-scrollbar-thumb,
+.tool-ui-frame *::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 99px;
+  background: #b8c5d8;
+  background-clip: content-box;
+}
+
+.tool-ui-frame .dm-card,
+.tool-ui-frame .panel-card,
+.tool-ui-frame .output-panel,
+.tool-ui-frame .canvas-wrap,
+.tool-ui-frame .status-card {
+  border-color: var(--tool-border);
+  border-radius: var(--tool-radius);
+  background: var(--tool-surface);
+  box-shadow: var(--tool-shadow-soft);
+}
+
+.tool-ui-frame .dm-card {
+  overflow: hidden;
+}
+
+.tool-ui-frame .dm-card-title {
+  min-height: 46px;
+  padding: 9px 14px;
+  border-bottom-color: var(--tool-border-soft);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 251, 255, 0.86));
+}
+
+.tool-ui-frame .dm-card-title h2,
+.tool-ui-frame h2 {
+  color: var(--tool-text);
+  font-weight: 760;
+}
+
+.tool-ui-frame .step-badge {
+  background: var(--tool-primary);
+  box-shadow: 0 4px 10px rgba(33, 103, 232, 0.22);
+}
+
+.tool-ui-frame .header-actions button,
+.tool-ui-frame .ghost-btn,
+.tool-ui-frame .ghost-primary,
+.tool-ui-frame .learn-btn,
+.tool-ui-frame .field-label input,
+.tool-ui-frame .field-label select,
+.tool-ui-frame .option-line input,
+.tool-ui-frame .option-line select,
+.tool-ui-frame .output-panel header select,
+.tool-ui-frame .output-panel header button {
+  border-color: var(--tool-border);
+  border-radius: var(--tool-radius-sm);
+  background: var(--tool-surface-strong);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.tool-ui-frame .primary-btn,
+.tool-ui-frame .export-button {
+  border-radius: var(--tool-radius-sm);
+  background: linear-gradient(180deg, #2f75ee, #145ce4);
+  box-shadow: 0 10px 20px rgba(33, 103, 232, 0.2);
+}
+
+.tool-ui-frame pre,
+.tool-ui-frame .code-block,
+.tool-ui-frame .terminal-log {
+  border-color: var(--tool-border);
+  border-radius: var(--tool-radius-sm);
+}
+
+.tool-ui-frame pre,
+.tool-ui-frame .code-block {
+  background:
+    linear-gradient(90deg, rgba(33, 103, 232, 0.045) 0 42px, transparent 43px),
+    #ffffff;
+  line-height: 1.62;
+}
+
+.tool-ui-frame .table-footer,
+.tool-ui-frame .media-controls,
+.tool-ui-frame .zoom-footer,
+.tool-ui-frame .image-output-stats {
+  border-top: 1px solid var(--tool-border-soft);
+  color: var(--tool-muted);
+}
+
+.tool-ui-frame .tag,
+.tool-ui-frame .status-pill,
+.tool-ui-frame .version,
+.tool-ui-frame .dm-brand h1 span,
+.tool-ui-frame .dm-brand p span {
+  border: 1px solid var(--tool-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.62);
+}
+
+.tool-ui-frame .dot-preview,
+.tool-ui-frame .zoom-matrix,
+.tool-ui-frame .black-player {
+  overflow: hidden;
+  border: 1px solid #101720;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
 .dm-page.responsive-tool-page {
   min-height: 100vh;
   height: 100vh;
@@ -2299,6 +2625,32 @@ video.hero-video {
 .app-shell.responsive-tool-page {
   min-width: 0;
   border-radius: 8px;
+}
+
+.dm-page.responsive-tool-page > main,
+.local-workspace > main {
+  max-width: 1840px;
+  margin-inline: auto;
+}
+
+.tool-ui-frame .dm-header {
+  max-width: 1840px;
+  margin-inline: auto;
+}
+
+.tool-ui-frame .dm-brand {
+  min-width: 0;
+}
+
+.tool-ui-frame .dm-brand h1,
+.tool-ui-frame .dm-brand p {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tool-ui-frame .header-actions button {
+  white-space: nowrap;
 }
 
 .handdraw-page .topbar {
@@ -2400,6 +2752,20 @@ video.hero-video {
   grid-template-columns: 1fr minmax(170px, 260px) 92px 110px;
 }
 
+.handdraw-page .select-wrap,
+.handdraw-page .zoom-control {
+  height: 44px;
+  border-radius: 8px;
+}
+
+.handdraw-page .zoom-control {
+  min-width: 300px;
+}
+
+.handdraw-page .top-actions .saved {
+  white-space: nowrap;
+}
+
 .handdraw-page pre,
 .code-block {
   font-size: 12px;
@@ -2430,6 +2796,10 @@ video.hero-video {
   grid-template-columns: minmax(640px, 1fr) clamp(280px, 22vw, 320px);
   grid-template-rows: minmax(180px, 208px) minmax(330px, 1fr) minmax(250px, 304px);
   min-height: calc(100vh - 90px);
+}
+
+.image-page .image-options {
+  align-self: stretch;
 }
 
 .image-page .drop-zone {
@@ -2494,6 +2864,10 @@ video.hero-video {
   grid-template-columns: 78px 1fr;
 }
 
+.animation-page .local-workspace {
+  min-width: 0;
+}
+
 .animation-page .media-grid {
   grid-template-columns: minmax(650px, 1fr) clamp(360px, 31vw, 480px);
 }
@@ -2528,6 +2902,10 @@ video.hero-video {
   grid-template-columns: minmax(660px, 1fr) clamp(380px, 32vw, 486px);
   grid-template-rows: minmax(360px, 48vh) minmax(156px, 20vh) minmax(220px, 26vh);
   min-height: calc(100vh - 88px);
+}
+
+.batch-page .file-table {
+  min-width: 820px;
 }
 
 .batch-page .file-table th,
@@ -2578,6 +2956,7 @@ video.hero-video {
 
 @media (max-width: 1180px) {
   .app-shell.responsive-tool-page {
+    grid-template-rows: auto 1fr;
     height: auto;
     min-height: 100vh;
     overflow: visible;
@@ -2586,6 +2965,8 @@ video.hero-video {
   .handdraw-page .topbar {
     grid-template-columns: 1fr;
     height: auto;
+    position: relative;
+    z-index: 2;
   }
 
   .handdraw-page .top-controls,
@@ -2604,8 +2985,32 @@ video.hero-video {
     grid-template-columns: repeat(2, minmax(260px, 1fr));
   }
 
+  .handdraw-page .left-panel {
+    grid-template-columns: minmax(300px, 1fr) minmax(260px, 0.95fr) minmax(220px, 0.75fr);
+  }
+
+  .handdraw-page .left-panel .panel-card {
+    min-height: 0;
+  }
+
+  .handdraw-page .tools-card {
+    grid-row: span 2;
+  }
+
+  .handdraw-page .tool-row {
+    height: 46px;
+  }
+
+  .handdraw-page .brush-row .brush-button {
+    height: 48px;
+  }
+
+  .handdraw-page .check-row {
+    margin: 8px 0;
+  }
+
   .handdraw-page .center-stage {
-    grid-template-rows: 68vh 260px;
+    grid-template-rows: minmax(520px, 68vh) 260px;
   }
 
   .dm-page.responsive-tool-page {
@@ -2666,6 +3071,10 @@ video.hero-video {
   .font-page .font-preview-layout,
   .video-page .video-workspace {
     grid-template-columns: 1fr;
+  }
+
+  .handdraw-page .tools-card {
+    grid-row: auto;
   }
 
   .handdraw-page .output-panel header {

@@ -6,7 +6,7 @@ import AnimationOutput from '../features/animation/components/AnimationOutput.vu
 </script>
 
 <template>
-  <div class="dm-page animation-page with-local-rail responsive-tool-page">
+  <div class="dm-page animation-page with-local-rail responsive-tool-page tool-ui-frame">
     <aside class="local-rail">
       <button class="active">▣<span>Extractor</span></button>
       <button>▦<span>Preview</span></button>

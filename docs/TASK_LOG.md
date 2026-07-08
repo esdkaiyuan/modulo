@@ -367,3 +367,42 @@ Refine the six real-function tool subpages against the supplied reference screen
 ### Follow-Up
 
 - A later pass can add Playwright screenshot comparisons if pixel-level visual regression tooling is introduced.
+
+## 2026-07-08 - Visual Layout Framework Optimization
+
+### Goal
+
+Use visual self-review to optimize the page UI layout and shared framework across the homepage and six tool workspaces.
+
+### Changes
+
+- Added a shared `tool-ui-frame` class to all six extractor workspaces.
+- Introduced CSS design tokens for tool surfaces, borders, shadows, radii, colors, spacing, and primary actions.
+- Unified card, panel, form control, output, code block, scrollbar, focus, and status visual treatment across tool pages.
+- Improved homepage responsive layout:
+  - Switches tool cards from three columns to two columns earlier to prevent preview art from overlapping text.
+  - Refined card media behavior and status toast placement.
+  - Added additional mobile layout safeguards.
+- Improved handdraw responsive layout:
+  - Stabilized the top toolbar at medium widths.
+  - Compactly arranges tools, brush, and options panels at tablet width so the canvas appears sooner.
+  - Preserved the desktop workbench layout and real drawing/export functions.
+- Tightened shared tool workspace framing with max-width containers, cleaner header overflow handling, improved scrollbars, and consistent panel density.
+- Added regression coverage ensuring every extractor workspace uses the shared visual frame.
+- Used Playwright screenshots for visual self-check at desktop and tablet sizes.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 11 tests.
+- `npm test -- --run` passed with 11 test files and 31 tests.
+- `npm run build` passed.
+- Playwright visual self-check screenshots were generated under `tmp_ui_shots/` for homepage and representative tool pages at desktop/tablet sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `style: optimize shared visual framework`.
+
+### Follow-Up
+
+- Temporary screenshot files are not required for source control and should remain untracked.

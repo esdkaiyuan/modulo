@@ -7,7 +7,7 @@ import OutputPanel from '../features/handdraw/components/OutputPanel.vue';
 </script>
 
 <template>
-  <div class="app-shell responsive-tool-page handdraw-page">
+  <div class="app-shell responsive-tool-page tool-ui-frame handdraw-page">
     <TopBar />
     <main class="workbench">
       <ToolPanel />

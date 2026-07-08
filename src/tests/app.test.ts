@@ -162,4 +162,19 @@ describe('App', () => {
       expect(wrapper.find('.responsive-tool-page').exists()).toBe(true);
     }
   });
+
+  it('uses the shared visual tool frame across all extractor workspaces', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+
+    for (const route of ['image', 'batch', 'font', 'animation', 'video', 'handdraw']) {
+      window.location.hash = `#/${route}`;
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+      await wrapper.vm.$nextTick();
+      expect(wrapper.find('.tool-ui-frame').exists()).toBe(true);
+    }
+  });
 });
