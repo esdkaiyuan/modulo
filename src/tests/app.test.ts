@@ -70,4 +70,19 @@ describe('App', () => {
     expect(wrapper.find('[data-test="start-batch"]').exists()).toBe(true);
     expect(wrapper.text()).toContain('Summary Statistics');
   });
+
+  it('exposes real font page controls for text rendering', async () => {
+    window.location.hash = '#/font';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('input[aria-label="Font text"]').exists()).toBe(true);
+    expect(wrapper.text()).toContain('Regenerate');
+    expect(wrapper.text()).toContain('Generated Output');
+  });
 });

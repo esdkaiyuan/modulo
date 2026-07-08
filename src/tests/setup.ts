@@ -10,6 +10,7 @@ HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
     data: new Uint8ClampedArray(width * height * 4)
   })),
   drawImage: vi.fn(),
+  fillText: vi.fn(),
   fillRect: vi.fn(),
   getImageData: vi.fn((x: number, y: number, width: number, height: number) => new ImageData(new Uint8ClampedArray(width * height * 4), width, height)),
   lineTo: vi.fn(),
@@ -18,7 +19,10 @@ HTMLCanvasElement.prototype.getContext = vi.fn(() => ({
   stroke: vi.fn(),
   fillStyle: '',
   strokeStyle: '',
-  lineWidth: 1
+  lineWidth: 1,
+  font: '',
+  textAlign: 'start',
+  textBaseline: 'alphabetic'
 })) as unknown as HTMLCanvasElement['getContext'];
 
 class TestImageData {
