@@ -551,6 +551,40 @@ Apply the same homepage/image-page correction method to `#/video`, replacing dec
 
 - Continue with the next page in homepage card order using the same sequence: red test, remove fake composites, add page-specific ordered pixel samples, verify responsive layout.
 
+## 2026-07-09 - Batch Page Pixel Empty State Cleanup
+
+### Goal
+
+Apply the same correction method to `#/batch`, replacing text-only empty states with ordered pixel samples that communicate batch image conversion while preserving real multi-image upload, processing, and merged export behavior.
+
+### Changes
+
+- Added `src/features/batch/components/BatchPixelSample.vue`.
+- Added ordered pixel sample resources to:
+  - Empty input file table
+  - Empty result preview
+  - Export all results panel
+- Kept real file upload, image decoding, batch processing, progress tracking, retry/remove, and merged export logic unchanged.
+- Added route-level responsive body behavior for the batch page.
+- Tightened small-window layout for header text, card actions, table scrolling, result layout, and pixel sample sizing.
+- Added regression coverage requiring batch-page ordered pixel samples in empty table and result preview states.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 18 tests.
+- `npm test -- --run` passed with 11 test files and 38 tests.
+- `npm run build` passed.
+- Chrome headless screenshots were generated for `#/batch` at desktop and small viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+### Follow-Up
+
+- Continue with the remaining homepage page order using the same sequence: red test, remove fake composites, add page-specific ordered pixel samples, verify responsive layout.
+
 ## 2026-07-09 - Handdraw Page Pixel Preview Resource Cleanup
 
 ### Goal

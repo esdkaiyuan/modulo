@@ -103,6 +103,22 @@ describe('App', () => {
     expect(wrapper.text()).toContain('Summary Statistics');
   });
 
+  it('uses ordered pixel samples for the batch page empty previews', async () => {
+    window.location.hash = '#/batch';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.findAll('.batch-pixel-sample').length).toBeGreaterThanOrEqual(3);
+    expect(wrapper.findAll('.batch-pixel-sample .pixel-dot').length).toBeGreaterThan(120);
+    expect(wrapper.find('.empty-row .batch-pixel-sample').exists()).toBe(true);
+    expect(wrapper.find('.batch-preview.sample-preview').exists()).toBe(true);
+  });
+
   it('exposes real font page controls for text rendering', async () => {
     window.location.hash = '#/font';
     const wrapper = mount(App, {

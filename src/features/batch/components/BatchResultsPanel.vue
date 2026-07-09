@@ -2,6 +2,7 @@
 import { nextTick, onMounted, ref, watch } from 'vue';
 import PanelSection from '../../../components/common/PanelSection.vue';
 import { useBatchModuloStore } from '../stores/batchModuloStore';
+import BatchPixelSample from './BatchPixelSample.vue';
 
 const store = useBatchModuloStore();
 const previewCanvas = ref<HTMLCanvasElement | null>(null);
@@ -50,13 +51,14 @@ watch(() => [store.selectedId, store.selectedItem?.bitmap, store.targetWidth, st
       <button class="ghost-btn" @click="copyMerged">⧉ Copy Merged</button>
     </template>
     <div class="result-layout">
-      <div class="batch-preview landscape">
+      <div class="batch-preview landscape" :class="{ 'sample-preview': !store.selectedItem?.bitmap.length }">
         <canvas v-if="store.selectedItem?.bitmap.length" ref="previewCanvas"></canvas>
-        <span v-else>Select a processed image</span>
+        <BatchPixelSample v-else variant="matrix" :frame="1" />
       </div>
       <pre class="code-block">{{ store.selectedItem?.source || 'Process images to generate output.' }}</pre>
       <div class="export-stack">
         <h3>Export All Results</h3>
+        <BatchPixelSample variant="export" :frame="2" compact />
         <button @click="downloadMerged">▧ Merge into One File</button>
         <button>□ Separate Files per Input</button>
         <button>▤ Generate Report (CSV)</button>

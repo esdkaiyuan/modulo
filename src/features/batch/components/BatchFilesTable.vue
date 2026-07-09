@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import PanelSection from '../../../components/common/PanelSection.vue';
 import { useBatchModuloStore } from '../stores/batchModuloStore';
+import BatchPixelSample from './BatchPixelSample.vue';
 
 const store = useBatchModuloStore();
 
@@ -84,7 +85,12 @@ function formatSize(bytes: number) {
           </td>
         </tr>
         <tr v-if="store.items.length === 0">
-          <td colspan="6" class="empty-row">Add images to start batch extraction.</td>
+          <td colspan="6" class="empty-row">
+            <div class="batch-empty-state">
+              <BatchPixelSample variant="queue" compact />
+              <span>Add images to start batch extraction.</span>
+            </div>
+          </td>
         </tr>
       </tbody>
     </table>
