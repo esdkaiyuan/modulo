@@ -51,7 +51,7 @@ watch(() => [store.selectedId, store.selectedItem?.bitmap, store.targetWidth, st
       <button class="ghost-btn" @click="copyMerged">⧉ Copy Merged</button>
     </template>
     <div class="result-layout">
-      <div class="batch-preview landscape" :class="{ 'sample-preview': !store.selectedItem?.bitmap.length }">
+      <div class="batch-preview landscape adaptive-material-window" :class="{ 'sample-preview': !store.selectedItem?.bitmap.length }">
         <canvas v-if="store.selectedItem?.bitmap.length" ref="previewCanvas"></canvas>
         <BatchPixelSample v-else variant="matrix" :frame="1" />
       </div>

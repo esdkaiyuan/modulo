@@ -48,7 +48,7 @@ watch(() => [store.selectedIndex, store.selectedFrame?.bitmap, store.targetWidth
   <PanelSection class="video-output" title="Generated Output (C Array - Hex)">
     <template #actions><button class="ghost-btn" @click="copyOutput">⧉ Copy</button><button class="ghost-btn" @click="downloadOutput">⇩ Download</button></template>
     <pre class="code-block">{{ store.generatedSource }}</pre>
-    <div class="black-player small landscape animation-canvas" :class="{ 'sample-preview': !store.selectedFrame }">
+    <div class="black-player small landscape animation-canvas adaptive-material-window" :class="{ 'sample-preview': !store.selectedFrame }">
       <canvas v-if="store.selectedFrame" ref="preview"></canvas>
       <VideoPixelSample v-else variant="output" :frame="4" />
     </div>

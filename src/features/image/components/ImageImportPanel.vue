@@ -68,14 +68,14 @@ function formatSize(bytes: number) {
 
 <template>
   <PanelSection class="image-import" step="1" title="Import Image">
-    <label class="drop-zone" @dragover.prevent @drop="handleDrop">
+    <label class="drop-zone adaptive-material-window" @dragover.prevent @drop="handleDrop">
       <input class="file-input" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" @change="handleFileChange" />
       <strong>☁ Drop image here or click to browse</strong>
       <span><b>PNG</b><b>JPG</b><b>BMP</b><b>WEBP</b></span>
     </label>
     <div class="image-actions"><button class="ghost-primary">⌗ Crop</button><button class="ghost-btn" @click="store.reset">↺ Reset</button></div>
-    <img v-if="store.previewUrl" class="loaded-image" :src="store.previewUrl" alt="Loaded source" />
-    <div v-else class="loaded-image sample-holder"><ImagePixelSample variant="source" compact /></div>
+    <img v-if="store.previewUrl" class="loaded-image adaptive-material-window" :src="store.previewUrl" alt="Loaded source" />
+    <div v-else class="loaded-image sample-holder adaptive-material-window"><ImagePixelSample variant="source" compact /></div>
     <div class="image-meta">
       <strong>{{ store.fileName || 'No image loaded' }}</strong>
       <span>Dimensions: {{ store.sourceWidth || '-' }} × {{ store.sourceHeight || '-' }} px</span>

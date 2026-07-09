@@ -290,6 +290,30 @@ describe('App', () => {
     }
   });
 
+  it('renders adaptive material windows for every extractor workspace', async () => {
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+
+    const minimumWindows: Record<string, number> = {
+      image: 3,
+      batch: 1,
+      font: 2,
+      animation: 2,
+      video: 3,
+      handdraw: 2
+    };
+
+    for (const [route, minimum] of Object.entries(minimumWindows)) {
+      window.location.hash = `#/${route}`;
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+      await wrapper.vm.$nextTick();
+      expect(wrapper.findAll('.adaptive-material-window').length).toBeGreaterThanOrEqual(minimum);
+    }
+  });
+
   it('renders home previews as pixel particle matrices instead of decorative shape composites', () => {
     window.location.hash = '#/';
     const wrapper = mount(App, {

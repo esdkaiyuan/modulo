@@ -4314,3 +4314,475 @@ video.hero-video {
     min-width: 0;
   }
 }
+
+/* Adaptive material workspace layout: pages resize around real source material, not fixed mock windows. */
+body.route-image {
+  min-width: 0;
+  overflow: auto;
+}
+
+.responsive-tool-page,
+.responsive-tool-page.tool-ui-frame {
+  width: 100%;
+  height: auto;
+  min-height: 100dvh;
+  min-width: 0;
+  overflow: auto;
+}
+
+.responsive-tool-page *,
+.home-page * {
+  min-width: 0;
+}
+
+.tool-ui-frame {
+  --tool-radius: 5px;
+  --tool-radius-sm: 4px;
+  --material-aspect: 4 / 3;
+}
+
+.dm-page,
+.app-shell.handdraw-page {
+  padding: clamp(8px, 1.2vw, 14px);
+  gap: clamp(8px, 1vw, 12px);
+}
+
+.app-shell.handdraw-page {
+  height: auto;
+  min-height: 100dvh;
+  overflow: auto;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.dm-card,
+.panel-card,
+.output-panel,
+.canvas-wrap,
+.status-card,
+.tool-card,
+.home-panel,
+.home-hero,
+.local-rail,
+.drop-zone,
+.loaded-image,
+.hero-video,
+.black-player,
+.zoom-matrix,
+.dot-preview,
+.han-grid,
+.han-mini,
+.preview-box,
+.batch-preview,
+.code-block,
+.terminal-log,
+.pixel-preview-window,
+.font-pixel-sample,
+.image-pixel-sample,
+.video-pixel-sample,
+.animation-pixel-sample,
+.batch-pixel-sample,
+.handdraw-pixel-sample {
+  border-radius: 5px;
+}
+
+.brand-mark,
+.pixel-brand-mark,
+.tool-icon-box,
+.primary-btn,
+.ghost-btn,
+.ghost-primary,
+.header-actions button,
+.field-label input,
+.field-label select,
+.option-line,
+.option-line input,
+.option-line select,
+.segmented button,
+.export-stack button,
+.tool-column button,
+.char-input,
+.layer,
+.thumb,
+.select-wrap,
+.zoom-control,
+.icon-button,
+.export-button {
+  border-radius: 4px;
+}
+
+.step-badge,
+.dm-brand h1 span,
+.dm-brand p span,
+.home-brand h1 span,
+.tool-card small,
+.version,
+.status-pill,
+.progress,
+.style-toggles i,
+.toggle-on {
+  border-radius: 6px;
+}
+
+.image-grid,
+.batch-grid,
+.font-grid,
+.media-grid,
+.video-grid,
+.workbench {
+  grid-auto-rows: minmax(min-content, auto);
+  align-items: stretch;
+}
+
+.image-grid {
+  grid-template-columns: minmax(420px, 1.25fr) minmax(320px, 0.9fr);
+  grid-template-rows: auto auto auto;
+}
+
+.batch-grid {
+  grid-template-columns: minmax(460px, 1.35fr) minmax(300px, 0.85fr);
+  grid-template-rows: auto auto auto;
+}
+
+.font-grid {
+  grid-template-columns: minmax(460px, 1.35fr) minmax(300px, 0.85fr);
+  grid-template-rows: auto auto auto;
+}
+
+.media-grid,
+.video-grid {
+  grid-template-columns: minmax(460px, 1.35fr) minmax(300px, 0.85fr);
+}
+
+.video-workspace,
+.media-workspace {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.video-workspace > :first-child,
+.video-workspace > :last-child,
+.media-workspace > :first-child,
+.media-workspace > :nth-child(2) {
+  grid-column: 1 / -1;
+}
+
+.video-workspace > .landscape,
+.video-workspace > .video-sample-stage,
+.media-workspace > .dm-card:first-child,
+.media-workspace > .dm-card:nth-child(2) {
+  width: 100%;
+  justify-self: stretch;
+}
+
+.video-workspace > .video-sample-stage .video-pixel-sample,
+.video-source .video-pixel-sample,
+.dot-preview .video-pixel-sample,
+.black-player .animation-pixel-sample,
+.zoom-matrix .animation-pixel-sample {
+  width: min(100%, 560px);
+}
+
+.workbench {
+  grid-template-columns: minmax(230px, 0.72fr) minmax(420px, 1.4fr) minmax(260px, 0.82fr);
+}
+
+.dm-card,
+.panel-card,
+.output-panel,
+.canvas-wrap,
+.local-workspace,
+.media-workspace,
+.video-workspace,
+.media-settings,
+.video-settings,
+.batch-files,
+.batch-side,
+.batch-results,
+.batch-log,
+.font-input,
+.font-preview,
+.font-options,
+.font-output,
+.image-preview,
+.image-import,
+.image-options,
+.image-output {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dm-card-title,
+.dm-header,
+.topbar {
+  height: auto;
+}
+
+.dm-header,
+.topbar {
+  min-height: 50px;
+}
+
+.adaptive-material-window,
+.loaded-image,
+.drop-zone,
+.hero-video,
+.black-player,
+.zoom-matrix,
+.dot-preview,
+.han-grid,
+.han-mini,
+.preview-box,
+.batch-preview,
+.video-source,
+.video-sample-stage,
+.animation-canvas,
+.font-canvas-wrap,
+.canvas-wrap {
+  aspect-ratio: var(--material-aspect, 4 / 3);
+  min-height: clamp(150px, 24vh, 320px);
+  max-height: min(58vh, 520px);
+  height: auto;
+  overflow: auto;
+}
+
+.canvas-wrap {
+  --material-aspect: 1 / 1;
+  min-height: clamp(280px, 54vh, 720px);
+  max-height: none;
+}
+
+.preview-box,
+.han-grid,
+.han-mini,
+.batch-preview,
+.dot-preview,
+.zoom-matrix,
+.black-player,
+.hero-video,
+.loaded-image,
+.drop-zone {
+  display: grid;
+  place-items: center;
+}
+
+.font-canvas-wrap canvas,
+.batch-preview canvas,
+.animation-canvas canvas,
+.video-source video,
+.hero-video video,
+.dot-preview canvas,
+.loaded-image img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+.font-page .dm-brand,
+.font-page .dm-brand > div,
+.font-page .dm-brand h1,
+.font-page .dm-brand p {
+  min-width: 0;
+}
+
+.font-page .dm-brand h1,
+.font-page .dm-brand p {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+}
+
+.font-page .han-grid {
+  overflow: hidden;
+}
+
+.font-page .font-canvas-wrap canvas {
+  width: auto;
+  height: auto;
+  max-width: min(100%, 420px);
+  max-height: min(100%, 420px);
+}
+
+.handdraw-page .pixel-canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+.font-input-grid,
+.result-layout,
+.stats-row,
+.compare-grid,
+.output-panel header {
+  grid-template-columns: repeat(auto-fit, minmax(min(180px, 100%), 1fr));
+}
+
+.font-input-grid {
+  gap: clamp(10px, 1.2vw, 18px);
+  padding: clamp(12px, 1.5vw, 18px);
+}
+
+.font-output {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 360px);
+  gap: 12px;
+  padding: 14px;
+}
+
+.font-output .code-block,
+.hex-preview,
+.output-preview,
+.black-player.small {
+  position: static;
+  width: auto;
+  margin: 0;
+}
+
+.media-output,
+.video-output {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 420px);
+  gap: 12px;
+}
+
+.media-output .code-block,
+.video-output .code-block {
+  margin: 14px;
+  width: auto;
+}
+
+.black-player.small {
+  min-height: clamp(130px, 22vh, 220px);
+}
+
+.code-block,
+.terminal-log,
+pre {
+  min-height: clamp(140px, 24vh, 300px);
+  max-height: min(46vh, 420px);
+  overflow: auto;
+}
+
+.right-panel,
+.left-panel {
+  gap: 8px;
+}
+
+.color-card,
+.preview-card,
+.layers-card,
+.handdraw-encoder-card {
+  flex: 1 1 auto;
+}
+
+@media (max-width: 1180px) {
+  .image-grid,
+  .batch-grid,
+  .font-grid,
+  .media-grid,
+  .video-grid,
+  .workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .media-output,
+  .video-output,
+  .font-output {
+    grid-template-columns: 1fr;
+  }
+
+  .video-workspace,
+  .media-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .batch-side {
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .dm-page,
+  .app-shell.handdraw-page {
+    padding: 8px;
+  }
+
+  .adaptive-material-window,
+  .loaded-image,
+  .drop-zone,
+  .hero-video,
+  .black-player,
+  .zoom-matrix,
+  .dot-preview,
+  .han-grid,
+  .han-mini,
+  .preview-box,
+  .batch-preview,
+  .video-source,
+  .video-sample-stage,
+  .animation-canvas,
+  .font-canvas-wrap {
+    min-height: clamp(132px, 36vw, 240px);
+    max-height: none;
+  }
+
+  .canvas-wrap {
+    min-height: clamp(300px, 78vw, 560px);
+  }
+
+  .font-page .font-preview-layout {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  .font-page .dm-brand {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    width: 100%;
+  }
+
+  .font-page .dm-brand p {
+    overflow-wrap: anywhere;
+  }
+
+  .font-page .tool-column {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .font-page .tool-column button {
+    height: 64px;
+  }
+
+  .font-page .han-grid {
+    min-height: clamp(220px, 72vw, 360px);
+    max-height: 380px;
+  }
+
+  .font-page .font-canvas-wrap canvas {
+    width: clamp(160px, 62vw, 260px);
+    height: clamp(160px, 62vw, 260px);
+  }
+
+  .handdraw-page .tool-row small {
+    display: none;
+  }
+
+  .handdraw-page .tool-row {
+    grid-template-columns: 42px minmax(0, 1fr);
+  }
+
+  .handdraw-page .pixel-canvas {
+    max-width: min(100%, 92vw);
+  }
+
+  .stats-row,
+  .result-layout,
+  .font-input-grid,
+  .compare-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .code-block,
+  .terminal-log,
+  pre {
+    max-height: 340px;
+  }
+}

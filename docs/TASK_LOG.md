@@ -655,6 +655,40 @@ Continue the same homepage-first correction method by fixing the next practical 
 
 - Continue page-by-page polishing only where there is a remaining real page, entry, or functional UI issue; avoid reworking already-cleaned pixel resources without a new defect.
 
+## 2026-07-09 - Adaptive Tool Window Layout Pass
+
+### Goal
+
+Fix remaining page window layout problems across all tool pages: windows must resize for different source material, avoid large hollow areas, and use smaller, less rounded panels.
+
+### Changes
+
+- Added a shared adaptive material workspace CSS layer for all extractor pages.
+- Changed responsive page shells from fixed viewport-height layouts to `height: auto` with `min-height: 100dvh`.
+- Added adaptive material window sizing using `aspect-ratio`, `clamp()`, and bounded min/max heights for previews, canvases, video/GIF/image samples, and code panels.
+- Updated image, batch, font, animation, video, and handdraw grids so panels can stack or rebalance instead of leaving fixed empty columns.
+- Reduced tool/page panel border radii from the earlier soft-card look to compact 4-5px window radii.
+- Fixed font page narrow-window preview scaling so the real pixel canvas no longer renders as a huge cropped glyph.
+- Fixed handdraw narrow-window tool rows by hiding shortcut labels and keeping the editable canvas inside its viewport.
+- Reduced media-page hollow space by stretching video/animation source preview rows across the workspace.
+- Added regression coverage requiring each extractor workspace to render real adaptive material windows.
+
+### Verification
+
+- Red test confirmed first: `npm test -- --run src/tests/app.test.ts` failed because the adaptive material workspace contract did not exist.
+- Green test after implementation: `npm test -- --run src/tests/app.test.ts` passed with 21 tests.
+- `npm test -- --run` passed with 11 test files and 41 tests.
+- Chrome headless screenshots were generated for representative image, font, video, and handdraw pages at small and medium viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+### Follow-Up
+
+- Continue tightening individual page density after real-file testing with unusually wide/tall source materials.
+
 ## 2026-07-09 - Handdraw Page Pixel Preview Resource Cleanup
 
 ### Goal

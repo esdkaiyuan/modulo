@@ -35,11 +35,11 @@ watch(() => [store.bitmap, store.targetWidth, store.targetHeight], () => nextTic
   <PanelSection class="image-preview" step="2" title="Original Image (with crop)">
     <template #actions><span>Sync Preview</span><span class="toggle-on"></span><strong>Preview (Dot Matrix)</strong></template>
     <div class="compare-grid">
-      <div class="source-preview crop-box">
+      <div class="source-preview crop-box adaptive-material-window">
         <img v-if="store.previewUrl" :src="store.previewUrl" alt="Source preview" />
         <div v-else class="empty-preview image-sample-empty"><ImagePixelSample variant="source" /><span>Upload an image to preview</span></div>
       </div>
-      <div class="dot-preview matrix-canvas-wrap" :class="{ 'sample-preview': !store.bitmap.length }">
+      <div class="dot-preview matrix-canvas-wrap adaptive-material-window" :class="{ 'sample-preview': !store.bitmap.length }">
         <canvas v-if="store.bitmap.length" ref="matrixCanvas"></canvas>
         <ImagePixelSample v-else variant="matrix" />
       </div>

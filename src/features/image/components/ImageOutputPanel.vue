@@ -57,7 +57,7 @@ watch(() => [store.bitmap, store.targetWidth, store.targetHeight], () => nextTic
     </footer>
     <aside class="output-preview">
       <h2><span class="step-badge">5</span> Output Preview</h2>
-      <div class="dot-preview matrix-canvas-wrap" :class="{ 'sample-preview': !store.bitmap.length }">
+      <div class="dot-preview matrix-canvas-wrap adaptive-material-window" :class="{ 'sample-preview': !store.bitmap.length }">
         <canvas v-if="store.bitmap.length" ref="outputCanvas"></canvas>
         <ImagePixelSample v-else variant="output" />
       </div>

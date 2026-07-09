@@ -37,18 +37,18 @@ watch(() => [store.selectedIndex, store.processedFrames, store.targetWidth, stor
 
 <template>
   <section class="video-workspace">
-    <video v-if="store.objectUrl" class="hero-video landscape" :src="store.objectUrl" controls muted />
-    <div v-else class="video-sample-stage landscape">
+    <video v-if="store.objectUrl" class="hero-video landscape adaptive-material-window" :src="store.objectUrl" controls muted />
+    <div v-else class="video-sample-stage landscape adaptive-material-window">
       <VideoPixelSample variant="source" :frame="1" />
     </div>
     <PanelSection title="Current Frame (Source)">
-      <div class="pixel-art video-source" :class="{ 'sample-preview': !store.objectUrl }">
+      <div class="pixel-art video-source adaptive-material-window" :class="{ 'sample-preview': !store.objectUrl }">
         <video v-if="store.objectUrl" :src="store.objectUrl" muted />
         <VideoPixelSample v-else variant="source" :frame="2" compact />
       </div>
     </PanelSection>
     <PanelSection title="Extracted Frame (Dot Matrix Preview)">
-      <div class="dot-preview landscape animation-canvas" :class="{ 'sample-preview': !store.selectedFrame }">
+      <div class="dot-preview landscape animation-canvas adaptive-material-window" :class="{ 'sample-preview': !store.selectedFrame }">
         <canvas v-if="store.selectedFrame" ref="matrixCanvas"></canvas>
         <VideoPixelSample v-else variant="matrix" :frame="3" />
       </div>

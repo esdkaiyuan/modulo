@@ -55,7 +55,7 @@ watch(() => store.pixels, () => nextTick(renderPreview), { deep: true });
 
     <section class="panel-card preview-card">
       <h2>PREVIEW</h2>
-      <div class="preview-box">
+      <div class="preview-box adaptive-material-window">
         <canvas ref="preview" width="224" height="224"></canvas>
         <HanddrawPixelSample variant="preview" :frame="1" />
       </div>

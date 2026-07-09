@@ -39,7 +39,7 @@ watch(() => [store.selectedIndex, store.processedFrames, store.targetWidth, stor
   <section class="media-workspace">
     <PanelSection title="Source Animation">
       <template #actions><span class="tag green">GIF</span><span class="tag blue">Frames: {{ store.processedFrames.length }}</span><span class="tag purple">{{ store.sourceWidth }} x {{ store.sourceHeight }} px</span><strong>{{ store.targetWidth }} x {{ store.targetHeight }} px</strong></template>
-      <div class="black-player animation-canvas" :class="{ 'sample-preview': !store.selectedFrame }">
+      <div class="black-player animation-canvas adaptive-material-window" :class="{ 'sample-preview': !store.selectedFrame }">
         <canvas v-if="store.selectedFrame" ref="mainCanvas"></canvas>
         <AnimationPixelSample v-else variant="source" :frame="1" />
       </div>
@@ -62,7 +62,7 @@ watch(() => [store.selectedIndex, store.processedFrames, store.targetWidth, stor
       </div>
     </PanelSection>
     <PanelSection title="Zoom">
-      <div class="zoom-matrix animation-canvas" :class="{ 'sample-preview': !store.selectedFrame }">
+      <div class="zoom-matrix animation-canvas adaptive-material-window" :class="{ 'sample-preview': !store.selectedFrame }">
         <canvas v-if="store.selectedFrame" ref="zoomCanvas"></canvas>
         <AnimationPixelSample v-else variant="matrix" :frame="2" />
       </div>
