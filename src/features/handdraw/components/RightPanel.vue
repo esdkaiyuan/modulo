@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from 'vue';
 import { usePixelStore } from '../../../stores/pixelStore';
+import HanddrawPixelSample from './HanddrawPixelSample.vue';
 
 const store = usePixelStore();
 const preview = ref<HTMLCanvasElement | null>(null);
@@ -56,6 +57,7 @@ watch(() => store.pixels, () => nextTick(renderPreview), { deep: true });
       <h2>PREVIEW</h2>
       <div class="preview-box">
         <canvas ref="preview" width="224" height="224"></canvas>
+        <HanddrawPixelSample variant="preview" :frame="1" />
       </div>
       <div class="preview-footer">
         <span>{{ store.width }} x {{ store.height }}</span>
@@ -89,8 +91,8 @@ watch(() => store.pixels, () => nextTick(renderPreview), { deep: true });
 
     <section class="panel-card layers-card">
       <h2>LAYERS <span>＋ ⧉</span></h2>
-      <div class="layer active"><span>◉</span><span class="thumb"></span><strong>Layer 1</strong></div>
-      <div class="layer"><span>⊙</span><span class="thumb blank"></span><strong>Background</strong><small>▣</small></div>
+      <div class="layer active"><span>◉</span><span class="thumb"><HanddrawPixelSample variant="layer" compact /></span><strong>Layer 1</strong></div>
+      <div class="layer"><span>⊙</span><span class="thumb blank"><HanddrawPixelSample variant="blank" compact /></span><strong>Background</strong><small>▣</small></div>
     </section>
 
     <section class="status-card">

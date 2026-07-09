@@ -551,6 +551,42 @@ Apply the same homepage/image-page correction method to `#/video`, replacing dec
 
 - Continue with the next page in homepage card order using the same sequence: red test, remove fake composites, add page-specific ordered pixel samples, verify responsive layout.
 
+## 2026-07-09 - Handdraw Page Pixel Preview Resource Cleanup
+
+### Goal
+
+Apply the same correction method to `#/handdraw`, replacing decorative shape-based preview resources with ordered pixel samples while preserving the real pixel editor canvas, tools, preview canvas, and export workflow.
+
+### Changes
+
+- Added `src/features/handdraw/components/HanddrawPixelSample.vue`.
+- Replaced the old `cat-logo` shape marker with a small ordered pixel brand mark.
+- Added ordered pixel sample resources to:
+  - Right-side preview card
+  - Active layer thumbnail
+  - Background layer thumbnail
+- Kept the real editable `PixelCanvas` and right-side canvas preview rendering intact.
+- Removed gradient-composite layer thumbnails in favor of pixel-grid thumbnails.
+- Added route-level responsive body behavior for the handdraw page.
+- Tightened handdraw small-window layout for header controls, toolbar rows, brush controls, panels, and canvas sizing.
+- Added regression coverage requiring handdraw ordered pixel samples, absence of `.cat-logo`, and preservation of `.pixel-canvas`.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 17 tests.
+- `npm test -- --run` passed with 11 test files and 37 tests.
+- `npm run build` passed.
+- Chrome headless screenshots were generated for `#/handdraw` at desktop and small viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+### Follow-Up
+
+- Continue with the next page in homepage card order using the same sequence: red test, remove fake composites, add page-specific ordered pixel samples, verify responsive layout.
+
 ## 2026-07-09 - Animation Page Pixel Empty State Cleanup
 
 ### Goal

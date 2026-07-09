@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { usePixelStore } from '../../../stores/pixelStore';
+import HanddrawPixelSample from './HanddrawPixelSample.vue';
 
 const store = usePixelStore();
 
@@ -16,7 +17,7 @@ function downloadOutput() {
 <template>
   <header class="topbar">
     <div class="brand">
-      <div class="cat-logo">⌁</div>
+      <div class="pixel-brand-mark"><HanddrawPixelSample variant="mark" compact /></div>
       <strong>PixelCraft Web</strong>
       <span class="version">v1.4.2</span>
     </div>

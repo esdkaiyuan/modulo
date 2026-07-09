@@ -196,6 +196,22 @@ describe('App', () => {
     expect(wrapper.text()).toContain('ENCODING');
   });
 
+  it('uses ordered pixel samples for the handdraw page preview resources', async () => {
+    window.location.hash = '#/handdraw';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.findAll('.handdraw-pixel-sample').length).toBeGreaterThanOrEqual(3);
+    expect(wrapper.findAll('.handdraw-pixel-sample .pixel-dot').length).toBeGreaterThan(100);
+    expect(wrapper.find('.cat-logo').exists()).toBe(false);
+    expect(wrapper.find('.pixel-canvas').exists()).toBe(true);
+  });
+
   it('uses responsive tool page shells for every extractor workspace', async () => {
     const wrapper = mount(App, {
       global: {

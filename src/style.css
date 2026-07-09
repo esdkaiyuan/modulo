@@ -41,6 +41,11 @@ body.route-animation {
   overflow: auto;
 }
 
+body.route-handdraw {
+  min-width: 0;
+  overflow: auto;
+}
+
 button,
 select,
 input {
@@ -101,16 +106,14 @@ select:focus-visible {
   font-size: 22px;
 }
 
-.cat-logo {
+.pixel-brand-mark {
   width: 48px;
   height: 48px;
   display: grid;
   place-items: center;
-  border: 2px dashed #87909a;
   border-radius: 8px;
-  color: #7a5bd6;
   background: #fff;
-  font-size: 30px;
+  box-shadow: inset 0 0 0 1px #d8e0ea;
 }
 
 .version {
@@ -483,6 +486,7 @@ code {
 }
 
 .preview-box {
+  position: relative;
   display: grid;
   place-items: center;
   height: 238px;
@@ -499,6 +503,14 @@ code {
   width: 184px;
   height: 184px;
   image-rendering: pixelated;
+}
+
+.preview-box .handdraw-pixel-sample {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 88px;
+  height: 88px;
 }
 
 .preview-footer {
@@ -549,8 +561,10 @@ code {
   height: 46px;
   border: 1px solid #cfd5db;
   border-radius: 4px;
-  background:
-    linear-gradient(135deg, #b7bbc0 0 35%, #ff8aac 35% 48%, #fff 48% 65%, #7a5bd6 65% 100%);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: #fff;
 }
 
 .thumb.blank {
@@ -2777,20 +2791,66 @@ video.hero-video {
   font-size: 20px;
 }
 
-.handdraw-page .cat-logo {
+.handdraw-page .pixel-brand-mark {
   width: 48px;
   height: 48px;
+  border-radius: 8px;
+  background: #fbfdff;
+}
+
+.handdraw-pixel-sample {
+  width: min(100%, 180px);
+  max-width: 100%;
+  aspect-ratio: 1;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 3px;
+  padding: 8px;
+  border: 1px solid #d8e3f0;
+  border-radius: 8px;
+  background-color: #fbfdff;
+  background-image:
+    linear-gradient(#edf2f8 1px, transparent 1px),
+    linear-gradient(90deg, #edf2f8 1px, transparent 1px);
+  background-size: 12px 12px;
+  box-shadow: 0 8px 18px rgba(26, 47, 79, 0.08);
+}
+
+.handdraw-pixel-sample.sample-mark {
+  grid-template-columns: repeat(8, 1fr);
+  gap: 2px;
+}
+
+.handdraw-pixel-sample.compact {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  gap: 2px;
+  padding: 5px;
   border: 0;
   border-radius: 0;
-  background:
-    radial-gradient(circle at 34% 42%, #20252a 0 5%, transparent 6%),
-    radial-gradient(circle at 64% 42%, #20252a 0 5%, transparent 6%),
-    linear-gradient(135deg, transparent 0 19%, #20252a 20% 31%, transparent 32%),
-    linear-gradient(225deg, transparent 0 19%, #20252a 20% 31%, transparent 32%),
-    radial-gradient(circle at 50% 55%, #fff 0 38%, transparent 39%);
-  color: transparent;
-  box-shadow: inset 0 0 0 2px #dfe4ea;
+  box-shadow: none;
 }
+
+.handdraw-pixel-sample .pixel-dot {
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 2px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(205, 216, 231, 0.82);
+}
+
+.handdraw-pixel-sample .ink { background: #20252a; box-shadow: none; }
+.handdraw-pixel-sample .paper { background: #f8fafc; }
+.handdraw-pixel-sample .blue { background: #3c8cf0; }
+.handdraw-pixel-sample .mint { background: #5eead4; }
+.handdraw-pixel-sample .green { background: #53d769; }
+.handdraw-pixel-sample .yellow { background: #ffd23f; }
+.handdraw-pixel-sample .pink { background: #ff6b9d; }
+.handdraw-pixel-sample .purple { background: #7a5bd6; }
 
 .handdraw-page .workbench {
   grid-template-columns: clamp(250px, 20vw, 308px) minmax(520px, 1fr) clamp(278px, 22vw, 334px);
@@ -3316,6 +3376,11 @@ video.hero-video {
     width: auto;
   }
 
+  .app-shell.handdraw-page.responsive-tool-page {
+    min-width: 0;
+    width: auto;
+  }
+
   .image-page .image-grid,
   .font-page .font-grid,
   .batch-page .batch-grid,
@@ -3555,6 +3620,70 @@ video.hero-video {
     flex: 0 0 96px;
   }
 
+  .handdraw-page .top-controls,
+  .handdraw-page .top-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .handdraw-page .select-wrap,
+  .handdraw-page .zoom-control,
+  .handdraw-page .export-button,
+  .handdraw-page .top-actions .saved {
+    width: 100%;
+  }
+
+  .handdraw-page .zoom-control {
+    min-width: 0;
+  }
+
+  .handdraw-page .workbench,
+  .handdraw-page .left-panel,
+  .handdraw-page .right-panel {
+    grid-template-columns: 1fr;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .handdraw-page .center-stage {
+    grid-template-rows: minmax(360px, 70vh) auto;
+  }
+
+  .handdraw-page .canvas-wrap {
+    overflow: auto;
+    padding: 10px;
+  }
+
+  .handdraw-page .pixel-canvas {
+    max-width: min(100%, 92vw);
+    max-height: 68vh;
+  }
+
+  .handdraw-page .tool-row {
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    width: 100%;
+    padding-inline: 14px;
+  }
+
+  .handdraw-page .brush-row {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .handdraw-page .panel-card,
+  .handdraw-page .output-panel,
+  .handdraw-page .canvas-wrap,
+  .handdraw-page .topbar {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .handdraw-page .select-wrap,
+  .handdraw-page .zoom-control,
+  .handdraw-page .export-button {
+    box-sizing: border-box;
+  }
+
   .handdraw-page .tools-card {
     grid-row: auto;
   }
@@ -3682,6 +3811,23 @@ video.hero-video {
 .video-page .video-pixel-sample .green { background: #22c55e; }
 .video-page .video-pixel-sample .yellow { background: #facc15; }
 .video-page .video-pixel-sample .pink { background: #fb7185; }
+
+.handdraw-page .handdraw-pixel-sample .pixel-dot {
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  box-shadow: inset 0 0 0 1px rgba(205, 216, 231, 0.82);
+}
+
+.handdraw-page .handdraw-pixel-sample .ink { background: #20252a; box-shadow: none; }
+.handdraw-page .handdraw-pixel-sample .paper { background: #f8fafc; }
+.handdraw-page .handdraw-pixel-sample .blue { background: #3c8cf0; }
+.handdraw-page .handdraw-pixel-sample .mint { background: #5eead4; }
+.handdraw-page .handdraw-pixel-sample .green { background: #53d769; }
+.handdraw-page .handdraw-pixel-sample .yellow { background: #ffd23f; }
+.handdraw-page .handdraw-pixel-sample .pink { background: #ff6b9d; }
+.handdraw-page .handdraw-pixel-sample .purple { background: #7a5bd6; }
 
 .home-page .blue-matrix::after,
 .home-page .dot-screen::after {
