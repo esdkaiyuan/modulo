@@ -2,6 +2,7 @@
 import { nextTick, onMounted, ref, watch } from 'vue';
 import PanelSection from '../../../components/common/PanelSection.vue';
 import { useFontModuloStore } from '../stores/fontModuloStore';
+import FontPixelSample from './FontPixelSample.vue';
 
 const store = useFontModuloStore();
 const preview = ref<HTMLCanvasElement | null>(null);
@@ -46,6 +47,6 @@ watch(() => [store.bitmap, store.targetWidth, store.targetHeight], () => nextTic
   <PanelSection class="font-output" step="4" title="Generated Output">
     <template #actions><button class="ghost-primary" @click="copyOutput">⧉ Copy</button><button class="ghost-primary" @click="downloadOutput">⇩ Download</button></template>
     <pre class="code-block">{{ store.generatedSource }}</pre>
-    <aside class="hex-preview"><h3>Hex Preview</h3><div class="han-mini font-canvas-wrap"><canvas ref="preview"></canvas></div><span>{{ store.targetWidth }} x {{ store.targetHeight }} px</span></aside>
+    <aside class="hex-preview"><h3>Hex Preview</h3><div class="han-mini font-canvas-wrap"><canvas ref="preview"></canvas></div><FontPixelSample variant="bytes" compact /><span>{{ store.targetWidth }} x {{ store.targetHeight }} px</span></aside>
   </PanelSection>
 </template>

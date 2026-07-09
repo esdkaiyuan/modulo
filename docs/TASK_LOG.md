@@ -585,6 +585,41 @@ Apply the same correction method to `#/batch`, replacing text-only empty states 
 
 - Continue with the remaining homepage page order using the same sequence: red test, remove fake composites, add page-specific ordered pixel samples, verify responsive layout.
 
+## 2026-07-09 - Font Page Pixel Preview Resource Cleanup
+
+### Goal
+
+Apply the same correction method to `#/font`, replacing text/shape-only supporting preview resources with ordered pixel font samples while preserving the real text-to-bitmap rendering, encoding, preview canvas, and export workflow.
+
+### Changes
+
+- Added `src/features/font/components/FontPixelSample.vue`.
+- Replaced the old `font-mark` text badge with a compact pixel font mark.
+- Added ordered pixel font sample resources to:
+  - Input control row
+  - Hex preview side panel
+  - Header brand mark
+- Kept the real font render canvas, hex preview canvas, generated source, copy, and download behavior unchanged.
+- Added route-level responsive body behavior for the font page.
+- Tightened font page desktop and small-window layout for header actions, input grid sizing, and pixel sample sizing.
+- Added regression coverage requiring font-page ordered pixel samples, removal of `.font-mark`, and preservation of real canvas previews.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 19 tests.
+- `npm test -- --run` passed with 11 test files and 39 tests.
+- `npm run build` passed.
+- Chrome headless screenshots were generated for `#/font` at desktop and small viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+### Follow-Up
+
+- The homepage card order pages have now all received the same pixel-resource cleanup pass. Continue with deeper real-function polishing per page as requested.
+
 ## 2026-07-09 - Handdraw Page Pixel Preview Resource Cleanup
 
 ### Goal

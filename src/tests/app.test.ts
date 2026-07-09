@@ -134,6 +134,22 @@ describe('App', () => {
     expect(wrapper.text()).toContain('Generated Output');
   });
 
+  it('uses ordered pixel samples for the font page preview resources', async () => {
+    window.location.hash = '#/font';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.findAll('.font-pixel-sample').length).toBeGreaterThanOrEqual(3);
+    expect(wrapper.findAll('.font-pixel-sample .pixel-dot').length).toBeGreaterThan(120);
+    expect(wrapper.find('.font-mark').exists()).toBe(false);
+    expect(wrapper.findAll('.font-canvas-wrap canvas').length).toBeGreaterThanOrEqual(2);
+  });
+
   it('exposes real animation page controls for GIF frame extraction', async () => {
     window.location.hash = '#/animation';
     const wrapper = mount(App, {
