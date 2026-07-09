@@ -36,6 +36,11 @@ body.route-video {
   overflow: auto;
 }
 
+body.route-animation {
+  min-width: 0;
+  overflow: auto;
+}
+
 button,
 select,
 input {
@@ -3008,6 +3013,77 @@ video.hero-video {
   grid-column: auto;
 }
 
+.animation-page .black-player.sample-preview,
+.animation-page .zoom-matrix.sample-preview {
+  display: grid;
+  place-items: center;
+  border-color: #d8e3f0;
+  background-color: #fbfdff;
+  background-image:
+    linear-gradient(#edf2f8 1px, transparent 1px),
+    linear-gradient(90deg, #edf2f8 1px, transparent 1px);
+  background-size: 14px 14px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.86);
+}
+
+.animation-pixel-sample {
+  width: min(100%, 440px);
+  max-width: 100%;
+  aspect-ratio: 18 / 11;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: repeat(18, 1fr);
+  gap: 4px;
+  padding: 12px;
+  border: 1px solid #d8e3f0;
+  border-radius: 8px;
+  background: #fbfdff;
+  box-shadow: 0 10px 24px rgba(26, 47, 79, 0.08);
+}
+
+.animation-pixel-sample.compact {
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  gap: 3px;
+  padding: 8px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.animation-pixel-sample .pixel-dot {
+  width: auto;
+  height: auto;
+  min-width: 0;
+  min-height: 0;
+  border-radius: 3px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px rgba(205, 216, 231, 0.82);
+}
+
+.animation-pixel-sample .ink { background: #111827; box-shadow: none; }
+.animation-pixel-sample .paper { background: #f8fafc; }
+.animation-pixel-sample .blue { background: #2563eb; }
+.animation-pixel-sample .cyan { background: #38bdf8; }
+.animation-pixel-sample .mint { background: #5eead4; }
+.animation-pixel-sample .green { background: #22c55e; }
+.animation-pixel-sample .yellow { background: #facc15; }
+.animation-pixel-sample .pink { background: #fb7185; }
+
+.animation-page .frame-strip {
+  overflow-x: auto;
+  align-items: stretch;
+}
+
+.animation-page .frame-thumb.empty-thumb span {
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid #d8e3f0;
+  background: #fbfdff;
+}
+
 .batch-page .batch-grid {
   grid-template-columns: minmax(660px, 1fr) clamp(380px, 32vw, 486px);
   grid-template-rows: minmax(360px, 48vh) minmax(156px, 20vh) minmax(220px, 26vh);
@@ -3282,12 +3358,29 @@ video.hero-video {
     gap: 10px;
   }
 
+  .animation-page .dm-header {
+    height: auto;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
   .video-page .header-actions {
     justify-content: flex-end;
     flex-wrap: wrap;
   }
 
+  .animation-page .header-actions {
+    justify-content: flex-end;
+    flex-wrap: wrap;
+  }
+
   .video-page .black-player.small {
+    position: static;
+    width: auto;
+    margin: 0 14px 14px;
+  }
+
+  .animation-page .black-player.small {
     position: static;
     width: auto;
     margin: 0 14px 14px;
@@ -3317,7 +3410,17 @@ video.hero-video {
     grid-template-columns: 1fr;
   }
 
+  .animation-page .dm-header {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
   .video-page .dm-brand {
+    min-width: 0;
+    align-items: flex-start;
+  }
+
+  .animation-page .dm-brand {
     min-width: 0;
     align-items: flex-start;
   }
@@ -3326,7 +3429,19 @@ video.hero-video {
     min-width: 0;
   }
 
+  .animation-page .dm-brand > div {
+    min-width: 0;
+  }
+
   .video-page .dm-brand h1 {
+    font-size: 22px;
+    overflow-wrap: anywhere;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .animation-page .dm-brand h1 {
     font-size: 22px;
     overflow-wrap: anywhere;
     white-space: normal;
@@ -3344,7 +3459,18 @@ video.hero-video {
     overflow-wrap: anywhere;
   }
 
+  .animation-page .dm-brand p,
+  .animation-page .header-actions {
+    overflow-wrap: anywhere;
+  }
+
   .video-page .dm-brand p {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .animation-page .dm-brand p {
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
@@ -3365,6 +3491,18 @@ video.hero-video {
 
   .video-page .header-actions button {
     justify-self: start;
+  }
+
+  .animation-page .header-actions {
+    justify-content: flex-start;
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .animation-page .header-actions .ghost-btn,
+  .animation-page .header-actions button {
+    width: 100%;
   }
 
   .video-page .video-pixel-sample {
@@ -3397,6 +3535,24 @@ video.hero-video {
 
   .video-page .compact .video-thumb {
     width: 96px;
+  }
+
+  .animation-page .animation-pixel-sample {
+    width: 100%;
+    gap: 2px;
+    padding: 7px;
+  }
+
+  .animation-page .frame-strip {
+    gap: 10px;
+  }
+
+  .animation-page .frame-strip > button {
+    flex: 0 0 34px;
+  }
+
+  .animation-page .frame-thumb {
+    flex: 0 0 96px;
   }
 
   .handdraw-page .tools-card {

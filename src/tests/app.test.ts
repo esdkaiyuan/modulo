@@ -133,6 +133,23 @@ describe('App', () => {
     expect(wrapper.text()).toContain('Generated Code');
   });
 
+  it('uses ordered pixel samples for the animation page empty previews', async () => {
+    window.location.hash = '#/animation';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.findAll('.animation-pixel-sample').length).toBeGreaterThanOrEqual(4);
+    expect(wrapper.findAll('.animation-pixel-sample .pixel-dot').length).toBeGreaterThan(180);
+    expect(wrapper.findAll('.frame-thumb.empty-thumb').length).toBeGreaterThanOrEqual(4);
+    expect(wrapper.find('.black-player.sample-preview').exists()).toBe(true);
+    expect(wrapper.find('.zoom-matrix.sample-preview').exists()).toBe(true);
+  });
+
   it('exposes real video page controls for video frame extraction', async () => {
     window.location.hash = '#/video';
     const wrapper = mount(App, {

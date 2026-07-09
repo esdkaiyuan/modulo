@@ -2,6 +2,7 @@
 import { nextTick, onMounted, ref, watch } from 'vue';
 import PanelSection from '../../../components/common/PanelSection.vue';
 import { useAnimationModuloStore } from '../stores/animationModuloStore';
+import AnimationPixelSample from './AnimationPixelSample.vue';
 
 const store = useAnimationModuloStore();
 const preview = ref<HTMLCanvasElement | null>(null);
@@ -47,6 +48,9 @@ watch(() => [store.selectedIndex, store.selectedFrame?.bitmap, store.targetWidth
   <PanelSection class="media-output" title="Generated Code">
     <template #actions><button class="ghost-btn" @click="copyCode">⧉ Copy Code</button><button class="ghost-btn" @click="downloadCode">⇩ Download .h</button></template>
     <pre class="code-block">{{ store.generatedSource }}</pre>
-    <div class="black-player small animation-canvas"><canvas ref="preview"></canvas></div>
+    <div class="black-player small animation-canvas" :class="{ 'sample-preview': !store.selectedFrame }">
+      <canvas v-if="store.selectedFrame" ref="preview"></canvas>
+      <AnimationPixelSample v-else variant="output" :frame="3" />
+    </div>
   </PanelSection>
 </template>

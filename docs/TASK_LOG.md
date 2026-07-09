@@ -550,3 +550,35 @@ Apply the same homepage/image-page correction method to `#/video`, replacing dec
 ### Follow-Up
 
 - Continue with the next page in homepage card order using the same sequence: red test, remove fake composites, add page-specific ordered pixel samples, verify responsive layout.
+
+## 2026-07-09 - Animation Page Pixel Empty State Cleanup
+
+### Goal
+
+Apply the same correction method to `#/animation`, replacing empty GIF/frame placeholders with ordered pixel animation samples while preserving the real GIF decoding, frame processing, and generated code workflow.
+
+### Changes
+
+- Added `src/features/animation/components/AnimationPixelSample.vue`.
+- Replaced empty animation preview, zoom preview, and output preview with structured pixel sample boards.
+- Added four empty sampled-frame thumbnails that show frame-to-frame pixel variation.
+- Kept real decoded GIF canvas rendering and generated code preview unchanged when frames are loaded.
+- Added route-level responsive body behavior for the animation page.
+- Tightened animation page small-window header wrapping, output preview flow, and thumbnail scrolling.
+- Added regression coverage requiring animation-page ordered pixel samples and empty frame thumbnails.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 16 tests.
+- `npm test -- --run` passed with 11 test files and 36 tests.
+- `npm run build` passed.
+- Chrome headless screenshots were generated for `#/animation` at desktop and small viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+### Follow-Up
+
+- Continue with the next page in homepage card order using the same sequence: red test, remove fake composites, add page-specific ordered pixel samples, verify responsive layout.
