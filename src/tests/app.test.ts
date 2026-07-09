@@ -32,6 +32,22 @@ describe('App', () => {
     expect(wrapper.text()).toContain('PixelCraft Web');
   });
 
+  it('exposes one homepage launch card for every real tool page', async () => {
+    window.location.hash = '#/';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+
+    const launchTargets = ['image', 'video', 'animation', 'handdraw', 'batch', 'font'];
+    for (const route of launchTargets) {
+      const launch = wrapper.get(`[data-test="launch-${route}"]`);
+      await launch.trigger('click');
+      expect(window.location.hash).toBe(`#/${route}`);
+    }
+  });
+
   it('switches between extractor pages by hash route without adding global chrome', async () => {
     const wrapper = mount(App, {
       global: {
@@ -310,6 +326,6 @@ describe('App', () => {
     expect(wrapper.find('[data-preview-kind="animation"]').exists()).toBe(true);
     expect(wrapper.find('[data-preview-kind="editor"]').exists()).toBe(true);
     expect(wrapper.find('[data-preview-kind="batch"]').exists()).toBe(true);
-    expect(wrapper.find('[data-preview-kind="data"]').exists()).toBe(true);
+    expect(wrapper.find('[data-preview-kind="font"]').exists()).toBe(true);
   });
 });

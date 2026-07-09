@@ -31,6 +31,11 @@ body {
   overflow: hidden;
 }
 
+body.route-home {
+  min-width: 0;
+  overflow: auto;
+}
+
 body.route-video {
   min-width: 0;
   overflow: auto;
@@ -3666,6 +3671,11 @@ video.hero-video {
 }
 
 @media (max-width: 760px) {
+  body {
+    min-width: 0;
+    overflow: auto;
+  }
+
   .home-page {
     padding: 14px;
   }
@@ -4261,9 +4271,46 @@ video.hero-video {
     min-height: 38px;
   }
 
+  .home-page .tool-card {
+    grid-template-columns: 1fr;
+    padding: 16px 24px;
+    overflow: hidden;
+  }
+
+  .home-page .tool-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-page .tool-card header {
+    grid-template-columns: auto 1fr auto;
+    min-width: 0;
+  }
+
+  .home-page .tool-card h3,
+  .home-page .tool-card p {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .home-page .tool-card p {
+    overflow-wrap: anywhere;
+  }
+
+  .home-page .tool-card-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
   .home-page .launch-btn,
   .home-page .learn-btn {
-    min-width: 126px;
-    flex: 1 1 126px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .home-page .pixel-preview-window {
+    width: 100%;
+    min-width: 0;
   }
 }

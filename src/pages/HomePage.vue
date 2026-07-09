@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 
-type ToolRoute = 'image' | 'video' | 'animation' | 'handdraw' | 'batch';
+type ToolRoute = 'image' | 'video' | 'animation' | 'handdraw' | 'batch' | 'font';
 
 const statusMessage = ref('Ready to build dot matrix assets.');
 const darkMode = ref(false);
@@ -67,14 +67,14 @@ const tools: Array<{
     testId: 'launch-batch'
   },
   {
-    title: 'Batch Data Extractor',
+    title: 'Font Extractor',
     version: 'v1.3.0',
-    description: 'Extract data from multiple files with configurable parameters',
-    route: 'batch',
+    description: 'Render text and Chinese characters into embedded dot matrix data',
+    route: 'font',
     accent: 'teal',
-    icon: 'database',
-    preview: 'data',
-    testId: 'launch-batch-data'
+    icon: 'font',
+    preview: 'font',
+    testId: 'launch-font'
   }
 ];
 
@@ -84,7 +84,7 @@ const projects = [
   { name: 'cat_pixel_art.h', module: 'Pixel Editor', time: 'Yesterday', size: '32 x 32', preview: 'editor' as const }
 ];
 
-type PixelPreviewKind = 'image' | 'video' | 'animation' | 'editor' | 'batch' | 'data';
+type PixelPreviewKind = 'image' | 'video' | 'animation' | 'editor' | 'batch' | 'font';
 type PixelTone = 'empty' | 'blue' | 'green' | 'mint' | 'purple' | 'orange' | 'pink' | 'dark' | 'white' | 'yellow' | 'red';
 
 const previewPalettes: Record<PixelPreviewKind, PixelTone[]> = {
@@ -93,7 +93,7 @@ const previewPalettes: Record<PixelPreviewKind, PixelTone[]> = {
   animation: ['dark', 'orange', 'yellow', 'pink', 'purple', 'dark', 'empty', 'orange', 'red'],
   editor: ['empty', 'dark', 'white', 'pink', 'purple', 'mint', 'blue', 'dark', 'white'],
   batch: ['blue', 'mint', 'green', 'white', 'dark', 'purple', 'orange', 'yellow', 'empty'],
-  data: ['mint', 'green', 'blue', 'dark', 'yellow', 'orange', 'purple', 'red', 'white']
+  font: ['dark', 'white', 'blue', 'mint', 'purple', 'yellow', 'empty', 'pink', 'green']
 };
 
 const previewFrames = [0, 1, 2];
@@ -112,7 +112,7 @@ function pixelTone(kind: PixelPreviewKind, index: number, frame = 0) {
   if (kind === 'animation' && (((x + frame) % 6 === y % 6) || (x + y > 8 + frame && x + y < 14 + frame) || (x > 6 && y < 3 + frame))) return pick(3);
   if (kind === 'editor' && ((x > 3 && x < 8 && y > 1 + frame && y < 7) || (x === 2 + frame && y < 4) || (x === 9 - frame && y < 4))) return pick();
   if (kind === 'batch' && ((x + frame) % 3 === 1 || (y + frame) % 4 === 2)) return pick(4);
-  if (kind === 'data' && (x < 2 + frame || x > 8 - frame || y === 2 + frame || y === 7 - frame)) return pick(5);
+  if (kind === 'font' && ((x > 1 && x < 4 && y > 1 && y < 7) || (x > 6 && x < 10 && y > 1 + frame && y < 7) || (y === 2 && x > 2 && x < 10) || (x === 10 - frame && y > 3))) return pick(5);
   return 'empty';
 }
 

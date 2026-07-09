@@ -620,6 +620,41 @@ Apply the same correction method to `#/font`, replacing text/shape-only supporti
 
 - The homepage card order pages have now all received the same pixel-resource cleanup pass. Continue with deeper real-function polishing per page as requested.
 
+## 2026-07-09 - Homepage Font Tool Entry Cleanup
+
+### Goal
+
+Continue the same homepage-first correction method by fixing the next practical page/entry issue: every real tool page must be reachable from the homepage, including the already implemented `#/font` page.
+
+### Changes
+
+- Added regression coverage that requires homepage launch cards for all six real tool routes:
+  - `#/image`
+  - `#/video`
+  - `#/animation`
+  - `#/handdraw`
+  - `#/batch`
+  - `#/font`
+- Replaced the duplicated batch-data homepage card with a real Font Extractor card.
+- Added a dedicated `font` homepage pixel preview pattern so the card communicates text/font dot-matrix conversion instead of reusing the batch/data visual.
+- Kept the existing homepage rotating pixel preview framework and readable Launch button treatment.
+- Fixed homepage narrow-window behavior so the tool cards collapse to one column and the page no longer inherits the desktop `body` minimum width.
+
+### Verification
+
+- Red test confirmed first: `npm test -- --run src/tests/app.test.ts` failed because `[data-test="launch-font"]` did not exist.
+- Green test after implementation: `npm test -- --run src/tests/app.test.ts` passed with 20 tests.
+- Chrome headless small-window screenshot confirmed the six homepage tool cards stack cleanly and the Font Extractor card renders with an ordered pixel preview and readable buttons.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+### Follow-Up
+
+- Continue page-by-page polishing only where there is a remaining real page, entry, or functional UI issue; avoid reworking already-cleaned pixel resources without a new defect.
+
 ## 2026-07-09 - Handdraw Page Pixel Preview Resource Cleanup
 
 ### Goal
