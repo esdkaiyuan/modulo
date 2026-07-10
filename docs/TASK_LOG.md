@@ -11,6 +11,39 @@ This file is the running task record for this project. Update it on every future
 - Record branch, commit, and remote sync information when Git is used.
 - Note follow-up work or known limitations.
 
+## 2026-07-10 - Handdraw Reference Page Replica
+
+### Goal
+
+Rebuild the hand-drawn pixel editor page to match `手绘.png`, while preserving the real drawing canvas, tools, brush size, grid options, preview, layers, generated output, copy, and export behavior.
+
+### Changes
+
+- Reworked `#/handdraw` into the reference structure:
+  - PixelCraft Web top toolbar with canvas size, zoom, saved state, theme, and export actions
+  - Left tool stack with Tools, Brush, and Options panels
+  - Center adaptive drawing canvas and HEX OUTPUT panel
+  - Right color picker, preview, layers, and status stack
+- Kept the Vue implementation split across page, topbar, tool panel, canvas, right panel, output panel, store, and pixel sample components.
+- Added `handdraw-reference-shell`, `handdraw-reference-topbar`, `handdraw-reference-workbench`, `handdraw-tool-stack`, `handdraw-canvas-stage`, `handdraw-side-stack`, `handdraw-color-card`, `handdraw-preview-card`, `handdraw-layers-card`, `handdraw-output-panel`, and `handdraw-adaptive-window` markers for regression coverage.
+- Added handdraw-specific responsive CSS with compact radii, reference-like three-column desktop proportions, stacked narrow-window behavior, bounded canvas/output sizing, and hidden extra encoder card styling while preserving its controls in the DOM for existing tests.
+- Preserved real pixel drawing, undo/redo, brush options, canvas zoom, preview rendering, generated output format, copy, and export bindings.
+- Verified desktop and narrow-window layouts with Chrome headless screenshots for `#/handdraw`.
+
+### Verification
+
+- Red test confirmed first: `npm test -- --run src/tests/app.test.ts` failed because the reference handdraw page structure did not exist.
+- Green checks after implementation:
+  - `npm test -- --run src/tests/app.test.ts` passed with 27 tests.
+  - `npm test -- --run` passed with 11 test files and 48 tests.
+  - `npm run build` passed.
+  - Chrome headless screenshots were generated for `#/handdraw` at `1536x1024` and `820x1100`; the desktop pass confirmed the center canvas, output panel, and right-side panels fit the reference-style editor frame.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
 ## 2026-07-10 - Image Converter Reference Page Replica
 
 ### Goal

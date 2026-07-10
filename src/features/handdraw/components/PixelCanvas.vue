@@ -92,7 +92,7 @@ watch(
 </script>
 
 <template>
-  <div class="canvas-wrap adaptive-material-window">
+  <div class="canvas-wrap handdraw-adaptive-window adaptive-material-window">
     <canvas
       ref="canvas"
       class="pixel-canvas"

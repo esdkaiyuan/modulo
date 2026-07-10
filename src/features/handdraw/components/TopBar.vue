@@ -15,7 +15,7 @@ function downloadOutput() {
 </script>
 
 <template>
-  <header class="topbar">
+  <header class="topbar handdraw-reference-topbar">
     <div class="brand">
       <div class="pixel-brand-mark"><HanddrawPixelSample variant="mark" compact /></div>
       <strong>PixelCraft Web</strong>

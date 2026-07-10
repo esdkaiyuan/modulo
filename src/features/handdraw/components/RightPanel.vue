@@ -30,8 +30,8 @@ watch(() => store.pixels, () => nextTick(renderPreview), { deep: true });
 </script>
 
 <template>
-  <aside class="right-panel">
-    <section class="panel-card color-card">
+  <aside class="right-panel handdraw-side-stack">
+    <section class="panel-card color-card handdraw-color-card">
       <h2>COLOR</h2>
       <div class="color-current">
         <input v-model="store.activeColor" type="color" />
@@ -53,9 +53,9 @@ watch(() => store.pixels, () => nextTick(renderPreview), { deep: true });
       </div>
     </section>
 
-    <section class="panel-card preview-card">
+    <section class="panel-card preview-card handdraw-preview-card">
       <h2>PREVIEW</h2>
-      <div class="preview-box adaptive-material-window">
+      <div class="preview-box handdraw-adaptive-window adaptive-material-window">
         <canvas ref="preview" width="224" height="224"></canvas>
         <HanddrawPixelSample variant="preview" :frame="1" />
       </div>
@@ -89,7 +89,7 @@ watch(() => store.pixels, () => nextTick(renderPreview), { deep: true });
       </label>
     </section>
 
-    <section class="panel-card layers-card">
+    <section class="panel-card layers-card handdraw-layers-card">
       <h2>LAYERS <span>＋ ⧉</span></h2>
       <div class="layer active"><span>◉</span><span class="thumb"><HanddrawPixelSample variant="layer" compact /></span><strong>Layer 1</strong></div>
       <div class="layer"><span>⊙</span><span class="thumb blank"><HanddrawPixelSample variant="blank" compact /></span><strong>Background</strong><small>▣</small></div>

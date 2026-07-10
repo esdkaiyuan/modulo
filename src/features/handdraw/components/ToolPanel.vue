@@ -20,7 +20,7 @@ function handleTool(id: Tool | 'undo' | 'redo') {
 </script>
 
 <template>
-  <aside class="left-panel">
+  <aside class="left-panel handdraw-tool-stack">
     <section class="panel-card tools-card">
       <h2>TOOLS</h2>
       <button

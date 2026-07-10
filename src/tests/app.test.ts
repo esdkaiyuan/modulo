@@ -372,6 +372,32 @@ describe('App', () => {
     expect(wrapper.find('.pixel-canvas').exists()).toBe(true);
   });
 
+  it('matches the reference handdraw editor structure with adaptive drawing windows', async () => {
+    window.location.hash = '#/handdraw';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('.handdraw-reference-shell').exists()).toBe(true);
+    expect(wrapper.find('.handdraw-reference-topbar').exists()).toBe(true);
+    expect(wrapper.find('.handdraw-reference-workbench').exists()).toBe(true);
+    expect(wrapper.find('.handdraw-tool-stack').exists()).toBe(true);
+    expect(wrapper.find('.handdraw-canvas-stage').exists()).toBe(true);
+    expect(wrapper.find('.handdraw-side-stack').exists()).toBe(true);
+    expect(wrapper.find('.handdraw-color-card').exists()).toBe(true);
+    expect(wrapper.find('.handdraw-preview-card').exists()).toBe(true);
+    expect(wrapper.find('.handdraw-layers-card').exists()).toBe(true);
+    expect(wrapper.find('.handdraw-output-panel').exists()).toBe(true);
+    expect(wrapper.findAll('.handdraw-adaptive-window').length).toBeGreaterThanOrEqual(2);
+    expect(wrapper.text()).toContain('PixelCraft Web');
+    expect(wrapper.text()).toContain('HEX OUTPUT');
+    expect(wrapper.text()).toContain('LAYERS');
+  });
+
   it('uses responsive tool page shells for every extractor workspace', async () => {
     const wrapper = mount(App, {
       global: {

@@ -7,11 +7,11 @@ import OutputPanel from '../features/handdraw/components/OutputPanel.vue';
 </script>
 
 <template>
-  <div class="app-shell responsive-tool-page tool-ui-frame handdraw-page">
+  <div class="app-shell responsive-tool-page tool-ui-frame handdraw-page handdraw-reference-shell">
     <TopBar />
-    <main class="workbench">
+    <main class="workbench handdraw-reference-workbench">
       <ToolPanel />
-      <section class="center-stage">
+      <section class="center-stage handdraw-canvas-stage">
         <PixelCanvas />
         <OutputPanel />
       </section>

@@ -25,7 +25,7 @@ function downloadOutput() {
 </script>
 
 <template>
-  <section class="output-panel">
+  <section class="output-panel handdraw-output-panel">
     <header>
       <h2>HEX OUTPUT</h2>
       <select v-model="store.outputFormat" data-test="handdraw-output-format">

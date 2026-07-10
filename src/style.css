@@ -7585,3 +7585,363 @@ pre {
     min-height: clamp(170px, 45vw, 260px);
   }
 }
+
+/* Reference replica for PixelCraft Web hand-drawn editor. */
+.handdraw-reference-shell {
+  width: 100vw;
+  min-width: 0;
+  height: 100vh;
+  min-height: 720px;
+  grid-template-rows: 78px minmax(0, 1fr);
+  border: 2px solid #1f2933;
+  border-radius: 8px;
+  background: #f3f4f6;
+  color: #20252a;
+}
+
+.handdraw-reference-shell .handdraw-reference-topbar {
+  display: grid;
+  grid-template-columns: minmax(300px, 360px) minmax(420px, 1fr) minmax(320px, 410px);
+  gap: 18px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid #d2d7de;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 8px rgba(36, 42, 50, 0.08);
+}
+
+.handdraw-reference-shell .brand {
+  gap: 14px;
+  min-width: 0;
+  font-size: 24px;
+}
+
+.handdraw-reference-shell .brand strong {
+  white-space: nowrap;
+}
+
+.handdraw-reference-shell .pixel-brand-mark {
+  width: 48px;
+  height: 48px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.handdraw-reference-shell .version {
+  padding: 4px 10px;
+  border: 1px solid #cbd2da;
+  background: #eef1f4;
+  color: #4b5563;
+}
+
+.handdraw-reference-shell .top-controls {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.handdraw-reference-shell .select-wrap,
+.handdraw-reference-shell .zoom-control {
+  height: 48px;
+  border: 1px solid #d2d7de;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.handdraw-reference-shell .select-wrap {
+  min-width: 184px;
+  justify-content: center;
+}
+
+.handdraw-reference-shell .zoom-control {
+  min-width: min(330px, 100%);
+}
+
+.handdraw-reference-shell .zoom-control input {
+  accent-color: #7a5bd6;
+}
+
+.handdraw-reference-shell .top-actions {
+  gap: 12px;
+}
+
+.handdraw-reference-shell .top-actions .saved {
+  color: #5f6872;
+}
+
+.handdraw-reference-shell .icon-button,
+.handdraw-reference-shell .export-button {
+  height: 48px;
+  border-radius: 8px;
+}
+
+.handdraw-reference-shell .export-button {
+  min-width: 122px;
+  background: #7a5bd6;
+  border-color: #7a5bd6;
+}
+
+.handdraw-reference-workbench {
+  display: grid;
+  grid-template-columns: 308px minmax(560px, 1fr) 334px;
+  gap: 6px;
+  min-height: 0;
+  padding: 0;
+}
+
+.handdraw-reference-shell .handdraw-tool-stack,
+.handdraw-reference-shell .handdraw-side-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+}
+
+.handdraw-reference-shell .handdraw-canvas-stage {
+  display: grid;
+  grid-template-rows: minmax(430px, 70vh) 286px;
+  gap: 6px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.handdraw-reference-shell .panel-card,
+.handdraw-reference-shell .output-panel,
+.handdraw-reference-shell .canvas-wrap,
+.handdraw-reference-shell .status-card {
+  border: 1px solid #d6dbe1;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 6px 24px rgba(39, 45, 52, 0.06);
+}
+
+.handdraw-reference-shell .panel-card {
+  padding: 18px 20px;
+}
+
+.handdraw-reference-shell h2 {
+  margin: 0 0 14px;
+  color: #343b44;
+  font-size: 14px;
+  letter-spacing: 0;
+}
+
+.handdraw-reference-shell .tools-card {
+  flex: 0 0 auto;
+}
+
+.handdraw-reference-shell .tool-row {
+  height: 55px;
+  grid-template-columns: 42px 1fr auto;
+  padding: 0 18px;
+  border-radius: 5px;
+  font-size: 16px;
+}
+
+.handdraw-reference-shell .tool-row.active {
+  background: #7a5bd6;
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(122, 91, 214, 0.28);
+}
+
+.handdraw-reference-shell .tool-icon {
+  font-size: 26px;
+}
+
+.handdraw-reference-shell .brush-row {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border-radius: 6px;
+}
+
+.handdraw-reference-shell .brush-button {
+  height: 62px;
+}
+
+.handdraw-reference-shell .check-row input {
+  accent-color: #7a5bd6;
+}
+
+.handdraw-reference-shell .canvas-wrap {
+  position: relative;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: auto;
+  display: grid;
+  place-items: center;
+  padding: 10px;
+  overflow: auto;
+  background-color: #fbfcfd;
+  background-image:
+    linear-gradient(#dfe3e8 1px, transparent 1px),
+    linear-gradient(90deg, #dfe3e8 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+.handdraw-reference-shell .pixel-canvas {
+  width: auto;
+  height: auto;
+  max-width: min(100%, 78vh);
+  max-height: 100%;
+  image-rendering: pixelated;
+  box-shadow: 0 0 0 1px rgba(40, 48, 56, 0.14), 0 14px 36px rgba(38, 46, 56, 0.16);
+}
+
+.handdraw-reference-shell .output-panel {
+  display: grid;
+  grid-template-rows: 48px minmax(0, 1fr) 44px;
+  min-height: 0;
+  padding: 10px 16px;
+}
+
+.handdraw-reference-shell .output-panel header {
+  display: grid;
+  grid-template-columns: 1fr 260px 104px 116px;
+  gap: 10px;
+  align-items: center;
+}
+
+.handdraw-reference-shell .output-panel header select,
+.handdraw-reference-shell .output-panel header button {
+  height: 34px;
+  border: 1px solid #d4d9df;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #49515a;
+}
+
+.handdraw-reference-shell .output-panel pre {
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+  border-radius: 5px;
+  color: #243042;
+  background: #ffffff;
+}
+
+.handdraw-reference-shell .output-panel footer {
+  gap: 8px;
+  color: #707982;
+}
+
+.handdraw-reference-shell .handdraw-side-stack {
+  overflow: auto;
+}
+
+.handdraw-reference-shell .handdraw-color-card {
+  flex: 0 0 316px;
+}
+
+.handdraw-reference-shell .color-current {
+  height: 48px;
+}
+
+.handdraw-reference-shell .swatches {
+  grid-template-columns: repeat(11, 1fr);
+}
+
+.handdraw-reference-shell .color-field {
+  height: 158px;
+  margin-right: 58px;
+  border-radius: 5px;
+}
+
+.handdraw-reference-shell .hue-strip {
+  right: -58px;
+}
+
+.handdraw-reference-shell .handdraw-preview-card {
+  flex: 0 0 276px;
+}
+
+.handdraw-reference-shell .preview-box {
+  height: 218px;
+  min-height: 0;
+  max-height: none;
+  aspect-ratio: auto;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.handdraw-reference-shell .preview-box canvas {
+  width: 184px;
+  height: 184px;
+}
+
+.handdraw-reference-shell .preview-box .handdraw-pixel-sample {
+  width: 88px;
+  height: 88px;
+}
+
+.handdraw-reference-shell .handdraw-encoder-card {
+  display: none;
+}
+
+.handdraw-reference-shell .handdraw-layers-card {
+  flex: 0 0 198px;
+}
+
+.handdraw-reference-shell .layer {
+  height: 64px;
+  border-radius: 5px;
+}
+
+.handdraw-reference-shell .layer.active {
+  border-color: #bdaef2;
+  background: #f3efff;
+  color: #6f53ca;
+}
+
+.handdraw-reference-shell .status-card {
+  height: 54px;
+  margin-top: auto;
+  border-radius: 6px;
+}
+
+@media (max-width: 1180px) {
+  .handdraw-reference-shell {
+    height: auto;
+    min-height: 100dvh;
+    overflow: auto;
+  }
+
+  .handdraw-reference-shell .handdraw-reference-topbar,
+  .handdraw-reference-workbench {
+    grid-template-columns: 1fr;
+  }
+
+  .handdraw-reference-shell .top-controls,
+  .handdraw-reference-shell .top-actions {
+    justify-content: stretch;
+  }
+
+  .handdraw-reference-shell .handdraw-canvas-stage {
+    grid-template-rows: minmax(420px, 70vh) auto;
+  }
+}
+
+@media (max-width: 760px) {
+  .handdraw-reference-shell .handdraw-reference-topbar,
+  .handdraw-reference-shell .top-controls,
+  .handdraw-reference-shell .top-actions,
+  .handdraw-reference-shell .output-panel header {
+    grid-template-columns: 1fr;
+  }
+
+  .handdraw-reference-shell .top-controls,
+  .handdraw-reference-shell .top-actions {
+    display: grid;
+  }
+
+  .handdraw-reference-shell .select-wrap,
+  .handdraw-reference-shell .zoom-control,
+  .handdraw-reference-shell .export-button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .handdraw-reference-shell .tool-row {
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+  }
+}
