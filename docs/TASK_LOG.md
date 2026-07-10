@@ -11,6 +11,42 @@ This file is the running task record for this project. Update it on every future
 - Record branch, commit, and remote sync information when Git is used.
 - Note follow-up work or known limitations.
 
+## 2026-07-10 - PixelFont Reference Page Replica
+
+### Goal
+
+Rebuild the font extractor page to closely match `字模.png`, while keeping every tool window adaptive instead of fixed-height/fixed-width.
+
+### Changes
+
+- Reworked `#/font` into the reference structure:
+  - Top PixelFont header
+  - Full-width input/generate row
+  - Pixel preview and encoding options middle row
+  - Generated output and Hex preview bottom row
+- Kept the existing Vue component split across page, header, input, preview, options, and output components.
+- Added `font-reference-shell`, row-level layout classes, and `font-adaptive-window` markers for regression coverage.
+- Rebuilt font-specific CSS so rows and preview windows use responsive grid, `clamp()`, and content-driven sizing.
+- Added Byte Order and Output Format controls matching the reference page structure.
+- Updated font rendering so oversized font sizes are fitted into the target bitmap window instead of clipping the glyph.
+- Verified the page with Chrome headless screenshots at desktop and narrow viewport sizes.
+
+### Verification
+
+- Red test confirmed first: `npm test -- --run src/tests/app.test.ts` failed because the reference font page structure did not exist.
+- Red renderer test confirmed first: `npm test -- --run src/tests/fontRenderer.test.ts` failed because bitmap font-size fitting did not exist.
+- Green checks after implementation:
+  - `npm test -- --run src/tests/fontRenderer.test.ts` passed.
+  - `npm test -- --run src/tests/app.test.ts` passed with 22 tests.
+  - `npm test -- --run` passed with 11 test files and 43 tests.
+  - `npm run build` passed.
+  - Chrome headless screenshots were generated for `#/font` at desktop and narrow viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
 ## 2026-07-07 - Vue3 Multi-Page Modulo Tool UI
 
 ### Goal

@@ -32,6 +32,10 @@ export function makeFontIdentifier(text: string, width: number, height: number):
   return `font_${textId}_${width}x${height}`;
 }
 
+export function fitFontSizeToBitmap(fontSize: number, width: number, height: number): number {
+  return Math.max(1, Math.min(fontSize, Math.floor(Math.min(width, height) * 0.9)));
+}
+
 export function renderTextToImageData(options: FontRenderOptions): ImageData {
   const canvas = document.createElement('canvas');
   canvas.width = options.width;
@@ -46,7 +50,8 @@ export function renderTextToImageData(options: FontRenderOptions): ImageData {
   context.fillStyle = '#000000';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
-  context.font = `${options.italic ? 'italic ' : ''}${options.bold ? '700 ' : '400 '}${options.fontSize}px ${options.fontFamily}`;
+  const fittedFontSize = fitFontSizeToBitmap(options.fontSize, options.width, options.height);
+  context.font = `${options.italic ? 'italic ' : ''}${options.bold ? '700 ' : '400 '}${fittedFontSize}px ${options.fontFamily}`;
   context.fillText(options.text || ' ', options.width / 2, options.height / 2);
 
   return context.getImageData(0, 0, options.width, options.height);

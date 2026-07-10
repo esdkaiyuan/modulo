@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fontImageDataToBitmap, makeFontIdentifier } from '../engines/fontRenderer';
+import { fitFontSizeToBitmap, fontImageDataToBitmap, makeFontIdentifier } from '../engines/fontRenderer';
 
 describe('fontRenderer', () => {
   it('converts rendered text image data to a bitmap using alpha and luminance', () => {
@@ -21,5 +21,10 @@ describe('fontRenderer', () => {
   it('creates stable C identifiers for font text', () => {
     expect(makeFontIdentifier('汉', 32, 32)).toBe('font_u6c49_32x32');
     expect(makeFontIdentifier('AB', 16, 8)).toBe('font_AB_16x8');
+  });
+
+  it('fits oversized font sizes into the target bitmap window', () => {
+    expect(fitFontSizeToBitmap(64, 32, 32)).toBe(28);
+    expect(fitFontSizeToBitmap(18, 32, 32)).toBe(18);
   });
 });

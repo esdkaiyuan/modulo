@@ -37,7 +37,7 @@ watch(() => [store.bitmap, store.targetWidth, store.targetHeight], () => nextTic
     <template #actions><span class="tag">Width: {{ store.targetWidth }} px</span><span class="tag">Height: {{ store.targetHeight }} px</span><span class="tag">Total: {{ store.totalBits }} bits</span></template>
     <div class="font-preview-layout">
       <div class="tool-column"><button>■ Pixel</button><button class="active">▦ Grid</button><button @click="store.invert = !store.invert; store.generate()">□ Invert</button></div>
-      <div class="han-grid font-canvas-wrap adaptive-material-window"><canvas ref="canvas"></canvas></div>
+      <div class="han-grid font-canvas-wrap adaptive-material-window font-adaptive-window"><canvas ref="canvas"></canvas></div>
     </div>
     <footer class="zoom-footer"><button>−</button><span>400%</span><button>＋</button><input type="range" value="60" /><button>⌕</button><button>⛶</button></footer>
   </PanelSection>

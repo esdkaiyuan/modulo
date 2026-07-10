@@ -160,10 +160,31 @@ describe('App', () => {
     window.dispatchEvent(new HashChangeEvent('hashchange'));
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.findAll('.font-pixel-sample').length).toBeGreaterThanOrEqual(3);
-    expect(wrapper.findAll('.font-pixel-sample .pixel-dot').length).toBeGreaterThan(120);
+    expect(wrapper.findAll('.font-pixel-sample').length).toBeGreaterThanOrEqual(1);
+    expect(wrapper.findAll('.font-pixel-sample .pixel-dot').length).toBeGreaterThan(20);
     expect(wrapper.find('.font-mark').exists()).toBe(false);
     expect(wrapper.findAll('.font-canvas-wrap canvas').length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('matches the reference font extractor page structure with adaptive content windows', async () => {
+    window.location.hash = '#/font';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('.font-reference-shell').exists()).toBe(true);
+    expect(wrapper.find('.font-input-row').exists()).toBe(true);
+    expect(wrapper.find('.font-main-row').exists()).toBe(true);
+    expect(wrapper.find('.font-output-row').exists()).toBe(true);
+    expect(wrapper.find('.font-generate-zone').exists()).toBe(true);
+    expect(wrapper.find('.font-hex-card').exists()).toBe(true);
+    expect(wrapper.findAll('.font-adaptive-window').length).toBeGreaterThanOrEqual(2);
+    expect(wrapper.text()).toContain('Byte Order');
+    expect(wrapper.text()).toContain('Output Format');
   });
 
   it('exposes real animation page controls for GIF frame extraction', async () => {

@@ -31,16 +31,12 @@ watch(
       <select v-model="store.bitOrder"><option value="msb">MSB First (Bit 7 → Bit 0)</option><option value="lsb">LSB First (Bit 0 → Bit 7)</option></select>
     </label>
     <label class="option-line">
-      <span>□</span> Target Width
-      <input v-model.number="store.targetWidth" type="number" min="1" max="256" />
+      <span>▰</span> Byte Order
+      <select><option>Big Endian</option></select>
     </label>
     <label class="option-line">
-      <span>□</span> Target Height
-      <input v-model.number="store.targetHeight" type="number" min="1" max="256" />
-    </label>
-    <label class="option-line">
-      <span>◐</span> Threshold
-      <input v-model.number="store.threshold" type="number" min="0" max="255" />
+      <span>&lt;/&gt;</span> Output Format
+      <select><option>C Array (uint8_t [])</option></select>
     </label>
     <button class="ghost-primary wide" @click="store.generate">⟳ Regenerate</button>
   </PanelSection>
