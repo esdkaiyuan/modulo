@@ -6,8 +6,8 @@ const store = useBatchModuloStore();
 </script>
 
 <template>
-  <aside class="batch-side">
-    <PanelSection step="3" title="Configuration">
+  <aside class="batch-side batch-config-column">
+    <PanelSection class="batch-config-card" step="3" title="Configuration">
       <label class="field-label">Parameter Preset <select><option>Preset 1</option></select></label>
       <div class="segmented"><button>Preset 1</button><button>Preset 2</button><button>Custom</button><button>▣</button></div>
       <h3>Extraction Parameters <small>(Applied to All Files)</small></h3>
@@ -33,7 +33,7 @@ const store = useBatchModuloStore();
       <label class="field-label">Threshold Value <input v-model.number="store.threshold" type="number" min="0" max="255" /></label>
       <button class="primary-btn wide" @click="store.processAll">⇊ Apply to All</button>
     </PanelSection>
-    <PanelSection title="Summary Statistics">
+    <PanelSection class="batch-summary-card" title="Summary Statistics">
       <div class="stats-row">
         <div><span>Total Files</span><strong>{{ store.summary.total }}</strong></div>
         <div><span>Completed</span><strong>{{ store.summary.completed }}</strong></div>

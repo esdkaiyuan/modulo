@@ -47,6 +47,38 @@ Rebuild the font extractor page to closely match `字模.png`, while keeping eve
 - Branch: `feature/vue3-multi-page-ui`
 - Commit: pending.
 
+## 2026-07-10 - Batch Reference Page Replica
+
+### Goal
+
+Rebuild the batch image extractor page to match `批量图片.png`, while keeping the file table, log, configuration, summary, result preview, and export areas adaptive to real content.
+
+### Changes
+
+- Reworked `#/batch` into the reference structure:
+  - Top Batch Data Extractor header
+  - Main row with left file/log/result stack and right configuration/statistics column
+  - Output area with preview, generated data, and export options
+- Kept the existing Vue component split across page, header, files table, configuration, log, and results components.
+- Added `batch-reference-shell`, `batch-main-row`, `batch-left-stack`, `batch-config-column`, `batch-summary-card`, `batch-export-panel`, and `batch-adaptive-window` markers for regression coverage.
+- Rebuilt batch-specific CSS with responsive grids, compact data-table styling, adaptive terminal/log height, and stacked small-window behavior.
+- Preserved real multi-image upload, batch process, retry/remove, selected preview, copy, and merged download bindings.
+- Kept empty-state content truthful when no real files are loaded instead of faking processed rows.
+- Verified the page with Chrome headless screenshots at desktop and narrow viewport sizes.
+
+### Verification
+
+- Red test confirmed first: `npm test -- --run src/tests/app.test.ts` failed because the reference batch page structure did not exist.
+- Green check after implementation: `npm test -- --run src/tests/app.test.ts` passed with 24 tests.
+- `npm test -- --run` passed with 11 test files and 45 tests.
+- `npm run build` passed.
+- Chrome headless screenshots were generated for `#/batch` at desktop and narrow viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
 ## 2026-07-10 - Video Reference Page Replica
 
 ### Goal

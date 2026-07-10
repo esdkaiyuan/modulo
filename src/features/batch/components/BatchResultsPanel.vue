@@ -51,12 +51,12 @@ watch(() => [store.selectedId, store.selectedItem?.bitmap, store.targetWidth, st
       <button class="ghost-btn" @click="copyMerged">⧉ Copy Merged</button>
     </template>
     <div class="result-layout">
-      <div class="batch-preview landscape adaptive-material-window" :class="{ 'sample-preview': !store.selectedItem?.bitmap.length }">
+      <div class="batch-preview landscape adaptive-material-window batch-adaptive-window" :class="{ 'sample-preview': !store.selectedItem?.bitmap.length }">
         <canvas v-if="store.selectedItem?.bitmap.length" ref="previewCanvas"></canvas>
         <BatchPixelSample v-else variant="matrix" :frame="1" />
       </div>
       <pre class="code-block">{{ store.selectedItem?.source || 'Process images to generate output.' }}</pre>
-      <div class="export-stack">
+      <div class="export-stack batch-export-panel">
         <h3>Export All Results</h3>
         <BatchPixelSample variant="export" :frame="2" compact />
         <button @click="downloadMerged">▧ Merge into One File</button>

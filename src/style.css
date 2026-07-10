@@ -5914,3 +5914,482 @@ pre {
     grid-template-columns: repeat(4, minmax(0, auto));
   }
 }
+
+/* Reference replica for Batch Data Extractor: table/log/results with adaptive side controls. */
+.batch-reference-shell {
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.batch-reference-shell .dm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 12px 18px;
+  min-height: auto;
+  background: #ffffff;
+  border: 1px solid #d9e1eb;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.05);
+}
+
+.batch-reference-shell .dm-brand {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.batch-reference-shell .chip-mark {
+  width: 34px;
+  height: 34px;
+  border: 1px solid #94a3b8;
+  background:
+    linear-gradient(90deg, #2563eb 3px, transparent 3px) center / 6px 6px,
+    linear-gradient(#2563eb 3px, transparent 3px) center / 6px 6px;
+  color: transparent;
+}
+
+.batch-reference-shell .dm-brand h1 {
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.batch-reference-shell .dm-brand p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+.batch-reference-shell .dm-brand p span {
+  margin-left: 8px;
+  padding: 3px 8px;
+  border: 1px solid #bfdbfe;
+  background: #dbeafe;
+  color: #2563eb;
+}
+
+.batch-reference-shell .window-dots {
+  color: #0f172a;
+  letter-spacing: 18px;
+  white-space: nowrap;
+}
+
+.batch-reference-shell .batch-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+}
+
+.batch-reference-shell .batch-main-row {
+  display: grid;
+  grid-template-columns: minmax(680px, 1fr) minmax(360px, 0.48fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.batch-reference-shell .batch-left-stack,
+.batch-reference-shell .batch-config-column {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.batch-reference-shell .dm-card {
+  border: 1px solid #d9e1eb;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.045);
+  overflow: hidden;
+}
+
+.batch-reference-shell .dm-card-title {
+  min-height: auto;
+  padding: 10px 14px 8px;
+  gap: 12px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.batch-reference-shell .dm-card-title h2 {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.batch-reference-shell .step-badge {
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.batch-reference-shell .batch-files .dm-card-title {
+  justify-content: space-between;
+}
+
+.batch-reference-shell .batch-upload {
+  display: none;
+}
+
+.batch-reference-shell .inline-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #334155;
+}
+
+.batch-reference-shell .primary-btn,
+.batch-reference-shell .ghost-btn,
+.batch-reference-shell .ghost-primary {
+  min-height: 34px;
+  border: 1px solid #d9e1eb;
+  background: #ffffff;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+  white-space: nowrap;
+}
+
+.batch-reference-shell .primary-btn {
+  background: #2563eb;
+  color: #ffffff;
+  border-color: #2563eb;
+}
+
+.batch-reference-shell .file-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-size: 14px;
+}
+
+.batch-reference-shell .file-table th,
+.batch-reference-shell .file-table td {
+  padding: 9px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+}
+
+.batch-reference-shell .file-table th {
+  color: #0f172a;
+  font-size: 13px;
+  background: #ffffff;
+}
+
+.batch-reference-shell .file-table th:nth-child(1),
+.batch-reference-shell .file-table td:nth-child(1) {
+  width: 46px;
+}
+
+.batch-reference-shell .file-table th:nth-child(2),
+.batch-reference-shell .file-table td:nth-child(2) {
+  width: 32%;
+}
+
+.batch-reference-shell .file-table th:nth-child(3),
+.batch-reference-shell .file-table td:nth-child(3) {
+  width: 16%;
+}
+
+.batch-reference-shell .file-table th:nth-child(4),
+.batch-reference-shell .file-table td:nth-child(4) {
+  width: 28%;
+}
+
+.batch-reference-shell .file-table th:nth-child(5),
+.batch-reference-shell .file-table td:nth-child(5) {
+  width: 12%;
+}
+
+.batch-reference-shell .file-table td {
+  color: #0f172a;
+}
+
+.batch-reference-shell .file-table td:nth-child(2) {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.batch-reference-shell .mini-image {
+  flex: 0 0 74px;
+  width: 74px;
+  height: 42px;
+  border-radius: 3px;
+  object-fit: cover;
+  background: #e2e8f0;
+}
+
+.batch-reference-shell .status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  text-transform: capitalize;
+  font-weight: 600;
+}
+
+.batch-reference-shell .status-pill.done {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.batch-reference-shell .status-pill.processing {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.batch-reference-shell .status-pill.pending {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.batch-reference-shell .status-pill.error {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.batch-reference-shell .progress {
+  width: min(190px, 58%);
+  height: 7px;
+  background: #edf2f7;
+  border-radius: 999px;
+}
+
+.batch-reference-shell .progress i {
+  background: #22c55e;
+}
+
+.batch-reference-shell .table-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 14px;
+  color: #334155;
+  font-size: 13px;
+}
+
+.batch-reference-shell .batch-log .dm-card-title {
+  display: grid;
+  grid-template-columns: auto auto minmax(120px, 1fr) auto auto;
+  align-items: center;
+}
+
+.batch-reference-shell .wide-progress {
+  width: 100%;
+}
+
+.batch-reference-shell .terminal-log {
+  min-height: clamp(120px, 14vh, 180px);
+  max-height: clamp(140px, 18vh, 220px);
+  margin: 0 10px 10px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 255, 255, 0.08), transparent 38%),
+    #111827;
+  color: #d1fae5;
+  line-height: 1.45;
+}
+
+.batch-reference-shell .batch-config-column {
+  grid-template-rows: auto auto;
+}
+
+.batch-reference-shell .batch-config-card .field-label {
+  display: grid;
+  grid-template-columns: minmax(110px, 0.44fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin: 0 14px 10px;
+  color: #0f172a;
+  font-size: 13px;
+}
+
+.batch-reference-shell .batch-config-card .field-label:first-of-type {
+  grid-template-columns: minmax(120px, 0.34fr) minmax(0, 1fr);
+}
+
+.batch-reference-shell .batch-config-card input,
+.batch-reference-shell .batch-config-card select {
+  min-height: 34px;
+  border: 1px solid #d9e1eb;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.batch-reference-shell .segmented {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 14px 16px;
+}
+
+.batch-reference-shell .segmented button {
+  min-height: 34px;
+  border: 1px solid #d9e1eb;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.batch-reference-shell .segmented button:first-child {
+  border-color: #2563eb;
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.batch-reference-shell .batch-config-card h3 {
+  margin: 14px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 14px;
+}
+
+.batch-reference-shell .batch-config-card h3 small {
+  color: #64748b;
+  font-weight: 400;
+}
+
+.batch-reference-shell .batch-config-card .wide {
+  margin: 8px 14px 14px;
+  width: calc(100% - 28px);
+  min-height: 38px;
+}
+
+.batch-reference-shell .batch-summary-card .stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px;
+}
+
+.batch-reference-shell .stats-row div {
+  display: grid;
+  place-items: center;
+  min-height: 82px;
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+}
+
+.batch-reference-shell .stats-row div:nth-child(2) {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.batch-reference-shell .stats-row div:nth-child(3) {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.batch-reference-shell .stats-row div:nth-child(4) {
+  border-color: #fed7aa;
+  background: #fff7ed;
+}
+
+.batch-reference-shell .stats-row span {
+  color: #2563eb;
+  font-size: 12px;
+}
+
+.batch-reference-shell .stats-row strong {
+  font-size: 28px;
+}
+
+.batch-reference-shell .batch-results .dm-card-title {
+  display: grid;
+  grid-template-columns: auto auto minmax(180px, 300px) minmax(0, 1fr) auto;
+  align-items: center;
+}
+
+.batch-reference-shell .batch-results .dm-card-title select {
+  min-height: 34px;
+  border: 1px solid #d9e1eb;
+}
+
+.batch-reference-shell .result-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 270px) minmax(0, 1fr) minmax(260px, 0.45fr);
+  gap: 14px;
+  padding: 14px;
+  align-items: stretch;
+}
+
+.batch-reference-shell .batch-preview {
+  min-height: clamp(130px, 13vw, 190px);
+  max-height: none;
+  aspect-ratio: 16 / 9;
+}
+
+.batch-reference-shell .batch-preview .batch-pixel-sample {
+  width: 100%;
+  height: 100%;
+}
+
+.batch-reference-shell .batch-results .code-block {
+  min-height: clamp(140px, 16vw, 230px);
+  max-height: clamp(180px, 22vw, 300px);
+  margin: 0;
+  background: #ffffff;
+  overflow: auto;
+}
+
+.batch-reference-shell .batch-export-panel {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+  padding: 14px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.batch-reference-shell .batch-export-panel h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+
+.batch-reference-shell .batch-export-panel .batch-pixel-sample {
+  display: none;
+}
+
+.batch-reference-shell .batch-export-panel button {
+  min-height: 50px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  text-align: left;
+  color: #0f172a;
+}
+
+@media (max-width: 1280px) {
+  .batch-reference-shell .batch-main-row,
+  .batch-reference-shell .result-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .batch-reference-shell .batch-results .dm-card-title {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 860px) {
+  .batch-reference-shell .dm-header,
+  .batch-reference-shell .batch-log .dm-card-title,
+  .batch-reference-shell .batch-config-card .field-label,
+  .batch-reference-shell .batch-config-card .field-label:first-of-type,
+  .batch-reference-shell .batch-summary-card .stats-row {
+    grid-template-columns: 1fr;
+  }
+
+  .batch-reference-shell .file-table {
+    min-width: 640px;
+    font-size: 12px;
+  }
+
+  .batch-reference-shell .batch-files {
+    overflow-x: auto;
+  }
+
+  .batch-reference-shell .file-table th,
+  .batch-reference-shell .file-table td {
+    padding: 8px;
+  }
+}

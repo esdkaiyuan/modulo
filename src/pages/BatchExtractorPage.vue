@@ -7,13 +7,17 @@ import BatchResultsPanel from '../features/batch/components/BatchResultsPanel.vu
 </script>
 
 <template>
-  <div class="dm-page batch-page responsive-tool-page tool-ui-frame">
+  <div class="dm-page batch-page batch-reference-shell responsive-tool-page tool-ui-frame">
     <BatchHeader />
     <main class="batch-grid">
-      <BatchFilesTable />
-      <BatchConfigPanel />
-      <BatchLogPanel />
-      <BatchResultsPanel />
+      <div class="batch-main-row">
+        <div class="batch-left-stack">
+          <BatchFilesTable />
+          <BatchLogPanel />
+          <BatchResultsPanel />
+        </div>
+        <BatchConfigPanel />
+      </div>
     </main>
   </div>
 </template>

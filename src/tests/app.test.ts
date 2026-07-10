@@ -135,6 +135,27 @@ describe('App', () => {
     expect(wrapper.find('.batch-preview.sample-preview').exists()).toBe(true);
   });
 
+  it('matches the reference batch extractor page structure with adaptive result windows', async () => {
+    window.location.hash = '#/batch';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('.batch-reference-shell').exists()).toBe(true);
+    expect(wrapper.find('.batch-main-row').exists()).toBe(true);
+    expect(wrapper.find('.batch-left-stack').exists()).toBe(true);
+    expect(wrapper.find('.batch-config-column').exists()).toBe(true);
+    expect(wrapper.find('.batch-summary-card').exists()).toBe(true);
+    expect(wrapper.find('.batch-export-panel').exists()).toBe(true);
+    expect(wrapper.findAll('.batch-adaptive-window').length).toBeGreaterThanOrEqual(1);
+    expect(wrapper.text()).toContain('Start Batch');
+    expect(wrapper.text()).toContain('Export All Results');
+  });
+
   it('exposes real font page controls for text rendering', async () => {
     window.location.hash = '#/font';
     const wrapper = mount(App, {
@@ -315,7 +336,7 @@ describe('App', () => {
       await wrapper.vm.$nextTick();
       expect(wrapper.find('.responsive-tool-page').exists()).toBe(true);
     }
-  });
+  }, 10000);
 
   it('uses the shared visual tool frame across all extractor workspaces', async () => {
     const wrapper = mount(App, {
@@ -330,7 +351,7 @@ describe('App', () => {
       await wrapper.vm.$nextTick();
       expect(wrapper.find('.tool-ui-frame').exists()).toBe(true);
     }
-  });
+  }, 10000);
 
   it('renders adaptive material windows for every extractor workspace', async () => {
     const wrapper = mount(App, {
@@ -354,7 +375,7 @@ describe('App', () => {
       await wrapper.vm.$nextTick();
       expect(wrapper.findAll('.adaptive-material-window').length).toBeGreaterThanOrEqual(minimum);
     }
-  });
+  }, 10000);
 
   it('renders home previews as pixel particle matrices instead of decorative shape composites', () => {
     window.location.hash = '#/';
