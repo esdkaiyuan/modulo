@@ -7,11 +7,17 @@ import ImageOutputPanel from '../features/image/components/ImageOutputPanel.vue'
 </script>
 
 <template>
-  <div class="dm-page image-page responsive-tool-page tool-ui-frame">
+  <div class="dm-page image-page image-reference-shell responsive-tool-page tool-ui-frame">
     <ImageHeader />
-    <main class="image-grid">
-      <ImageImportPanel />
-      <ImagePreviewPanel />
+    <main class="image-reference-grid">
+      <div class="image-main-stack">
+        <div class="image-import-row">
+          <ImageImportPanel />
+        </div>
+        <div class="image-preview-row">
+          <ImagePreviewPanel />
+        </div>
+      </div>
       <ImageOptionsPanel />
       <ImageOutputPanel />
     </main>

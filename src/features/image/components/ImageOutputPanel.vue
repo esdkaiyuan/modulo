@@ -45,23 +45,29 @@ watch(() => [store.bitmap, store.targetWidth, store.targetHeight], () => nextTic
 </script>
 
 <template>
-  <PanelSection class="image-output" step="4" title="Generated C Array">
-    <template #actions><button class="ghost-btn" @click="copyOutput">⧉ Copy</button><button class="ghost-btn" @click="downloadOutput">⇩ Download</button></template>
-    <pre class="code-block">{{ store.generatedSource }}</pre>
-    <footer class="image-output-stats">
-      <span>Total Bytes: {{ store.bytes.length }}</span>
-      <span>Total Bits: {{ store.totalBits }}</span>
-      <span>Width: {{ store.targetWidth }} px</span>
-      <span>Height: {{ store.targetHeight }} px</span>
-      <span>Memory: {{ store.bytes.length }} B</span>
-    </footer>
-    <aside class="output-preview">
-      <h2><span class="step-badge">5</span> Output Preview</h2>
-      <div class="dot-preview matrix-canvas-wrap adaptive-material-window" :class="{ 'sample-preview': !store.bitmap.length }">
+  <section class="image-output-row">
+    <PanelSection class="image-output image-code-panel" step="4" title="Generated C Array">
+      <template #actions><button class="ghost-btn" @click="copyOutput">⧉ Copy</button><button class="ghost-btn" @click="downloadOutput">⇩ Download</button></template>
+      <pre class="code-block image-adaptive-window">{{ store.generatedSource }}</pre>
+      <footer class="image-output-stats">
+        <span>Total Bytes: {{ store.bytes.length || Math.ceil(store.totalBits / 8) }}</span>
+        <span>Total Bits: {{ store.totalBits }}</span>
+        <span>Width: {{ store.targetWidth }} px</span>
+        <span>Height: {{ store.targetHeight }} px</span>
+        <span>Memory: {{ store.bytes.length || Math.ceil(store.totalBits / 8) }} B</span>
+      </footer>
+    </PanelSection>
+
+    <PanelSection class="output-preview image-output-preview-panel" step="5" title="Output Preview">
+      <div class="dot-preview matrix-canvas-wrap image-adaptive-window adaptive-material-window" :class="{ 'sample-preview': !store.bitmap.length }">
         <canvas v-if="store.bitmap.length" ref="outputCanvas"></canvas>
         <ImagePixelSample v-else variant="output" />
       </div>
-      <footer>Scale: 4x <span>Grid: On</span></footer>
-    </aside>
-  </PanelSection>
+      <footer class="preview-controls">
+        <label>Scale:<select><option>4x</option><option>2x</option><option>1x</option></select></label>
+        <label>Grid:<select><option>On</option><option>Off</option></select></label>
+        <button>⛶</button>
+      </footer>
+    </PanelSection>
+  </section>
 </template>

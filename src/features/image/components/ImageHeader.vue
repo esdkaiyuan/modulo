@@ -7,6 +7,6 @@
         <p>Image to C Array Converter</p>
       </div>
     </div>
-    <div class="header-actions"><button>GitHub</button><button>☼</button><button>Light⌄</button></div>
+    <div class="header-actions"><button>GitHub</button><button>☼</button><button>Light</button></div>
   </header>
 </template>

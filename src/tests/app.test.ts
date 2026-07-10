@@ -104,6 +104,31 @@ describe('App', () => {
     expect(wrapper.find('.loaded-image.panda').exists()).toBe(false);
   });
 
+  it('matches the reference image converter page structure with adaptive preview windows', async () => {
+    window.location.hash = '#/image';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('.image-reference-shell').exists()).toBe(true);
+    expect(wrapper.find('.image-reference-grid').exists()).toBe(true);
+    expect(wrapper.find('.image-import-row').exists()).toBe(true);
+    expect(wrapper.find('.image-preview-row').exists()).toBe(true);
+    expect(wrapper.find('.image-options-panel').exists()).toBe(true);
+    expect(wrapper.find('.image-output-row').exists()).toBe(true);
+    expect(wrapper.find('.image-output-preview-panel').exists()).toBe(true);
+    expect(wrapper.findAll('.image-adaptive-window').length).toBeGreaterThanOrEqual(5);
+    expect(wrapper.text()).toContain('Import Image');
+    expect(wrapper.text()).toContain('Original Image (with crop)');
+    expect(wrapper.text()).toContain('Preview (Dot Matrix)');
+    expect(wrapper.text()).toContain('Processing Options');
+    expect(wrapper.text()).toContain('Output Preview');
+  });
+
   it('exposes real batch page controls for multi-image processing', async () => {
     window.location.hash = '#/batch';
     const wrapper = mount(App, {

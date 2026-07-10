@@ -11,6 +11,40 @@ This file is the running task record for this project. Update it on every future
 - Record branch, commit, and remote sync information when Git is used.
 - Note follow-up work or known limitations.
 
+## 2026-07-10 - Image Converter Reference Page Replica
+
+### Goal
+
+Rebuild the image-to-C-array converter page to match `图片.png`, while preserving real image upload, grayscale processing, dot-matrix preview, generated C output, copy, and download behavior.
+
+### Changes
+
+- Reworked `#/image` into the reference structure:
+  - Dot Matrix Studio header with version and actions
+  - Import Image row with drag/drop area, Crop/Reset actions, preview thumbnail, and file metadata
+  - Original Image and Preview (Dot Matrix) paired windows
+  - Right-side Processing Options panel
+  - Bottom Generated C Array and Output Preview panels
+- Kept the Vue implementation split across page, header, import, preview, options, output, store, and pixel sample components.
+- Added `image-reference-shell`, `image-reference-grid`, `image-import-row`, `image-preview-row`, `image-options-panel`, `image-output-row`, `image-output-preview-panel`, and `image-adaptive-window` markers for regression coverage.
+- Added image-specific responsive CSS with compact radii, two-column desktop layout, stacked narrow-window behavior, bounded drag/drop height, adaptive preview/code windows, and a capped options sidebar to avoid hollow whitespace.
+- Preserved real store bindings for file loading, brightness, contrast, threshold, scaling mode, dithering, scan direction, encoding polarity, byte order, generated source, copy, and header download.
+- Verified desktop and narrow-window layouts with Chrome headless screenshots for `#/image`.
+
+### Verification
+
+- Red test confirmed first: `npm test -- --run src/tests/app.test.ts` failed because the reference image page structure did not exist.
+- Green checks after implementation:
+  - `npm test -- --run src/tests/app.test.ts` passed with 26 tests.
+  - `npm test -- --run` passed with 11 test files and 47 tests.
+  - `npm run build` passed.
+  - Chrome headless screenshots were generated for `#/image` at `1536x1024` and `820x1100`; the desktop pass confirmed the output row no longer leaves a large hollow area.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
 ## 2026-07-10 - Animation Reference Page Replica
 
 ### Goal
