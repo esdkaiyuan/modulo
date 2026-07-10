@@ -28,7 +28,7 @@ async function handleFile(event: Event) {
       </div>
     </div>
     <div class="header-actions">
-      <label class="ghost-btn batch-upload">▣ Open GIF<input type="file" accept="image/gif" @change="handleFile" /></label>
+      <label class="ghost-btn batch-upload">▣ Open<input type="file" accept="image/gif" @change="handleFile" /></label>
       <button @click="store.processFrames">↥ Import</button>
       <button @click="store.loadDecodedFrames({ fileName: '', width: 0, height: 0, frames: [] })">▥ Clear All</button>
       <button>? Help</button>

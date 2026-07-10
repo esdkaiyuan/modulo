@@ -11,6 +11,43 @@ This file is the running task record for this project. Update it on every future
 - Record branch, commit, and remote sync information when Git is used.
 - Note follow-up work or known limitations.
 
+## 2026-07-10 - Animation Reference Page Replica
+
+### Goal
+
+Rebuild the animation/GIF frame extractor page to match `动图.png`, while keeping GIF upload, frame processing, preview, generated code, copy, and download behavior real and usable.
+
+### Changes
+
+- Reworked `#/animation` into the reference structure:
+  - Left extractor rail
+  - DotMatrix Frame Extractor header and action buttons
+  - Source animation preview with format tags and playback controls
+  - Frame range/sampling card
+  - Extracted frame strip
+  - Zoom matrix with controls
+  - Right-side Frame Settings and Output Settings
+  - Bottom Generated Code and Generated Animation Preview panels
+- Kept the Vue implementation split across page, header, workspace, settings, output, store, and pixel sample components.
+- Added `animation-reference-shell`, `animation-main-row`, `animation-center-stack`, `animation-side-rail`, `animation-frame-settings`, `animation-output-settings`, `animation-preview-panel`, and `animation-adaptive-window` markers for regression coverage.
+- Added animation-specific responsive CSS with compact radii, two-column desktop alignment, stacked narrow-window behavior, and content-adaptive preview/code windows using `clamp()` and grid sizing.
+- Preserved real store bindings for GIF frame range, sampling, target size, dithering, scan direction, byte order, generated source, copy, and header download.
+- Verified desktop and narrow-window layouts with Chrome headless screenshots for `#/animation`.
+
+### Verification
+
+- Red test confirmed first: `npm test -- --run src/tests/app.test.ts` failed because the reference animation page structure did not exist.
+- Green checks after implementation:
+  - `npm test -- --run src/tests/app.test.ts` passed with 25 tests.
+  - `npm test -- --run` passed with 11 test files and 46 tests.
+  - `npm run build` passed.
+  - Chrome headless screenshots were generated for `#/animation` at `1536x1024` and `820x1100`; the second desktop pass confirmed code and animation preview align in the reference two-column layout.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `feat: replicate animation extractor reference page`.
+
 ## 2026-07-10 - PixelFont Reference Page Replica
 
 ### Goal

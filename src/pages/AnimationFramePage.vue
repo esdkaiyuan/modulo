@@ -6,8 +6,8 @@ import AnimationOutput from '../features/animation/components/AnimationOutput.vu
 </script>
 
 <template>
-  <div class="dm-page animation-page with-local-rail responsive-tool-page tool-ui-frame">
-    <aside class="local-rail">
+  <div class="dm-page animation-page animation-reference-shell with-local-rail responsive-tool-page tool-ui-frame">
+    <aside class="local-rail animation-tool-rail">
       <button class="active">▣<span>Extractor</span></button>
       <button>▦<span>Preview</span></button>
       <button>◌<span>Palette</span></button>
@@ -18,9 +18,15 @@ import AnimationOutput from '../features/animation/components/AnimationOutput.vu
     </aside>
     <section class="local-workspace">
       <AnimationHeader />
-      <main class="media-grid">
-        <AnimationWorkspace />
-        <AnimationSettings />
+      <main class="animation-reference-grid">
+        <div class="animation-main-row">
+          <div class="animation-center-stack">
+            <AnimationWorkspace />
+          </div>
+          <aside class="animation-side-rail">
+            <AnimationSettings />
+          </aside>
+        </div>
         <AnimationOutput />
       </main>
     </section>

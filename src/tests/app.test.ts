@@ -240,6 +240,30 @@ describe('App', () => {
     expect(wrapper.find('.zoom-matrix.sample-preview').exists()).toBe(true);
   });
 
+  it('matches the reference animation extractor page structure with adaptive work windows', async () => {
+    window.location.hash = '#/animation';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('.animation-reference-shell').exists()).toBe(true);
+    expect(wrapper.find('.animation-main-row').exists()).toBe(true);
+    expect(wrapper.find('.animation-center-stack').exists()).toBe(true);
+    expect(wrapper.find('.animation-side-rail').exists()).toBe(true);
+    expect(wrapper.find('.animation-frame-settings').exists()).toBe(true);
+    expect(wrapper.find('.animation-output-settings').exists()).toBe(true);
+    expect(wrapper.find('.animation-preview-panel').exists()).toBe(true);
+    expect(wrapper.findAll('.animation-adaptive-window').length).toBeGreaterThanOrEqual(4);
+    expect(wrapper.text()).toContain('Frame Settings');
+    expect(wrapper.text()).toContain('Output Settings');
+    expect(wrapper.text()).toContain('Generated Animation Preview');
+    expect(wrapper.text()).toContain('Generate Frame Data');
+  });
+
   it('exposes real video page controls for video frame extraction', async () => {
     window.location.hash = '#/video';
     const wrapper = mount(App, {
