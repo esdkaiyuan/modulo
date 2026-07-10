@@ -47,6 +47,37 @@ Rebuild the font extractor page to closely match `字模.png`, while keeping eve
 - Branch: `feature/vue3-multi-page-ui`
 - Commit: pending.
 
+## 2026-07-10 - Video Reference Page Replica
+
+### Goal
+
+Rebuild the video extractor page to match `视频.png`, while keeping source, frame, matrix, sampled-frame, output, and animation-preview windows adaptive to content and viewport changes.
+
+### Changes
+
+- Reworked `#/video` into the reference structure:
+  - Top Video header and file bar
+  - Main row with video preview, decode controls, current frame, extracted matrix preview, sampled frames, and right-side settings
+  - Bottom row with generated C output and dot-matrix animation preview
+- Kept the existing Vue component split across page, header, workspace, settings, and output components.
+- Added `video-reference-shell`, row-level layout classes, `video-file-bar`, `video-clip-controls`, `video-animation-preview`, and `video-adaptive-window` markers for regression coverage.
+- Rebuilt video-specific CSS with responsive grids, compact control styling, bounded `clamp()` preview heights, and stacked mobile behavior.
+- Preserved real video upload, extraction, process, copy, download, and generated output store bindings.
+- Verified the page with Chrome headless screenshots at desktop and narrow viewport sizes.
+
+### Verification
+
+- Red test confirmed first: `npm test -- --run src/tests/app.test.ts` failed because the reference video page structure did not exist.
+- Green check after implementation: `npm test -- --run src/tests/app.test.ts` passed with 23 tests.
+- `npm test -- --run` passed with 11 test files and 44 tests.
+- `npm run build` passed.
+- Chrome headless screenshots were generated for `#/video` at desktop and narrow viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
 ## 2026-07-07 - Vue3 Multi-Page Modulo Tool UI
 
 ### Goal

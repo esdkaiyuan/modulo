@@ -6,12 +6,16 @@ import VideoOutput from '../features/video/components/VideoOutput.vue';
 </script>
 
 <template>
-  <div class="dm-page video-page responsive-tool-page tool-ui-frame">
+  <div class="dm-page video-page video-reference-shell responsive-tool-page tool-ui-frame">
     <VideoHeader />
     <main class="video-grid">
-      <VideoWorkspace />
-      <VideoSettings />
-      <VideoOutput />
+      <div class="video-main-row">
+        <VideoWorkspace />
+        <VideoSettings />
+      </div>
+      <div class="video-bottom-row">
+        <VideoOutput />
+      </div>
     </main>
   </div>
 </template>

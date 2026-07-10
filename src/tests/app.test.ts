@@ -250,6 +250,27 @@ describe('App', () => {
     expect(wrapper.findAll('.video-thumb.empty-thumb').length).toBeGreaterThanOrEqual(4);
   });
 
+  it('matches the reference video extractor page structure with adaptive content windows', async () => {
+    window.location.hash = '#/video';
+    const wrapper = mount(App, {
+      global: {
+        plugins: [createPinia()]
+      }
+    });
+    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    await wrapper.vm.$nextTick();
+
+    expect(wrapper.find('.video-reference-shell').exists()).toBe(true);
+    expect(wrapper.find('.video-file-bar').exists()).toBe(true);
+    expect(wrapper.find('.video-main-row').exists()).toBe(true);
+    expect(wrapper.find('.video-bottom-row').exists()).toBe(true);
+    expect(wrapper.find('.video-clip-controls').exists()).toBe(true);
+    expect(wrapper.find('.video-animation-preview').exists()).toBe(true);
+    expect(wrapper.findAll('.video-adaptive-window').length).toBeGreaterThanOrEqual(4);
+    expect(wrapper.text()).toContain('Decode & Extract');
+    expect(wrapper.text()).toContain('Extraction Stats');
+  });
+
   it('exposes shared encoding controls on the handdraw page', async () => {
     window.location.hash = '#/handdraw';
     const wrapper = mount(App, {

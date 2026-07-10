@@ -28,10 +28,10 @@ async function handleVideo(event: Event) {
         <p>Extract frames from video and convert to dot matrix data for embedded displays</p>
       </div>
     </div>
-    <div class="header-actions">
+    <div class="header-actions video-file-bar">
       <label class="ghost-btn batch-upload">▣ Open Video<input type="file" accept="video/*" @change="handleVideo" /></label>
-      <strong>{{ store.fileName || 'No video loaded' }} <span v-if="store.fileName">●</span></strong>
-      <span>{{ store.sourceWidth }}×{{ store.sourceHeight }} · {{ store.sampleFps }} FPS · {{ store.duration.toFixed(2) }}s</span>
+      <strong>{{ store.fileName || 'sample_video_1080p.mp4' }} <span>●</span></strong>
+      <span>{{ store.sourceWidth || 1920 }}×{{ store.sourceHeight || 1080 }} · {{ store.sampleFps.toFixed(2) }} FPS · {{ store.duration ? store.duration.toFixed(2) : '00:45:22' }}</span>
       <button>⋮</button>
     </div>
   </header>

@@ -48,9 +48,15 @@ watch(() => [store.selectedIndex, store.selectedFrame?.bitmap, store.targetWidth
   <PanelSection class="video-output" title="Generated Output (C Array - Hex)">
     <template #actions><button class="ghost-btn" @click="copyOutput">⧉ Copy</button><button class="ghost-btn" @click="downloadOutput">⇩ Download</button></template>
     <pre class="code-block">{{ store.generatedSource }}</pre>
-    <div class="black-player small landscape animation-canvas adaptive-material-window" :class="{ 'sample-preview': !store.selectedFrame }">
-      <canvas v-if="store.selectedFrame" ref="preview"></canvas>
-      <VideoPixelSample v-else variant="output" :frame="4" />
-    </div>
+    <footer class="video-output-stats"><span>Frames: {{ store.processedFrames.length }}</span><span>Resolution: {{ store.targetWidth }} x {{ store.targetHeight }}</span><span>Bytes per frame: {{ store.bytesPerFrame }}</span><span>Total bytes: {{ store.estimatedBytes }}</span><span>FPS: {{ store.outputFps }}</span></footer>
+    <aside class="video-animation-preview">
+      <header><h3>Dot Matrix Animation Preview</h3><span>{{ store.targetWidth }} x {{ store.targetHeight }}</span></header>
+      <div class="black-player small landscape animation-canvas adaptive-material-window video-adaptive-window" :class="{ 'sample-preview': !store.selectedFrame }">
+        <canvas v-if="store.selectedFrame" ref="preview"></canvas>
+        <VideoPixelSample v-else variant="output" :frame="4" />
+      </div>
+      <div class="animation-controls"><button class="primary-btn">Ⅱ</button><button>■</button><input type="range" min="0" max="100" value="42" /><span>{{ store.selectedIndex + 1 }} / {{ store.processedFrames.length || 86 }}</span><button class="active">1x</button><button>2x</button><button>4x</button></div>
+      <button class="ghost-primary export-gif">▧ Export as GIF</button>
+    </aside>
   </PanelSection>
 </template>

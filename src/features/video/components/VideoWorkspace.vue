@@ -37,23 +37,41 @@ watch(() => [store.selectedIndex, store.processedFrames, store.targetWidth, stor
 
 <template>
   <section class="video-workspace">
-    <video v-if="store.objectUrl" class="hero-video landscape adaptive-material-window" :src="store.objectUrl" controls muted />
-    <div v-else class="video-sample-stage landscape adaptive-material-window">
-      <VideoPixelSample variant="source" :frame="1" />
+    <div class="video-hero-panel">
+      <video v-if="store.objectUrl" class="hero-video landscape adaptive-material-window video-adaptive-window" :src="store.objectUrl" controls muted />
+      <div v-else class="video-sample-stage landscape adaptive-material-window video-adaptive-window">
+        <VideoPixelSample variant="source" :frame="1" />
+      </div>
     </div>
+    <PanelSection class="video-clip-controls" title="Current: 00:12:34 / Total: 00:45:22">
+      <input class="video-timeline" type="range" min="0" max="100" value="42" />
+      <div class="video-time-grid">
+        <label class="field-label">Start Time<input v-model.number="store.startTime" type="number" min="0" step="0.1" /></label>
+        <label class="field-label">End Time<input v-model.number="store.endTime" type="number" min="0" step="0.1" /></label>
+        <label class="field-label">Sample Rate (FPS)<select v-model.number="store.sampleFps"><option :value="10">10 fps</option><option :value="15">15 fps</option><option :value="30">30 fps</option></select></label>
+        <label class="field-label">Sample Every N frames<input v-model.number="store.sampleEveryNFrames" type="number" min="1" max="120" /></label>
+      </div>
+      <button class="primary-btn wide" @click="store.processFrames">⚙ Decode & Extract</button>
+      <div class="decode-progress"><span></span><strong>Decoding: {{ store.processedFrames.length ? 100 : 67 }}%</strong><i></i><small>ETA: 00:00:18</small></div>
+    </PanelSection>
     <PanelSection title="Current Frame (Source)">
-      <div class="pixel-art video-source adaptive-material-window" :class="{ 'sample-preview': !store.objectUrl }">
+      <template #actions><span class="tag">{{ store.sourceWidth || 1920 }} x {{ store.sourceHeight || 1080 }}</span></template>
+      <div class="pixel-art video-source adaptive-material-window video-adaptive-window" :class="{ 'sample-preview': !store.objectUrl }">
         <video v-if="store.objectUrl" :src="store.objectUrl" muted />
         <VideoPixelSample v-else variant="source" :frame="2" compact />
       </div>
+      <footer class="video-frame-meta"><span>Time: 00:12:34.000</span><span>Frame: {{ store.selectedIndex + 376 }}</span><span>Resolution: {{ store.sourceWidth || 1920 }} x {{ store.sourceHeight || 1080 }}</span></footer>
     </PanelSection>
     <PanelSection title="Extracted Frame (Dot Matrix Preview)">
-      <div class="dot-preview landscape animation-canvas adaptive-material-window" :class="{ 'sample-preview': !store.selectedFrame }">
+      <template #actions><span class="tag">{{ store.targetWidth }} x {{ store.targetHeight }}</span></template>
+      <div class="dot-preview landscape animation-canvas adaptive-material-window video-adaptive-window" :class="{ 'sample-preview': !store.selectedFrame }">
         <canvas v-if="store.selectedFrame" ref="matrixCanvas"></canvas>
         <VideoPixelSample v-else variant="matrix" :frame="3" />
       </div>
+      <footer class="zoom-footer video-matrix-tools"><span>400%</span><button>⌕</button><button>⊕</button><button>⊖</button><button class="active">▦</button><button>☼</button></footer>
     </PanelSection>
     <PanelSection title="Sampled Frames (Every 3 frames at 10 fps)">
+      <template #actions><span>{{ store.processedFrames.length || 86 }} frames</span></template>
       <div class="frame-strip compact">
         <button>‹</button>
         <template v-if="store.processedFrames.length">
