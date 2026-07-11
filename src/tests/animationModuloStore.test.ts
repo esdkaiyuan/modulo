@@ -57,4 +57,20 @@ describe('animationModuloStore', () => {
     expect(store.generatedSource).toContain('const uint16_t walk_delays[2] PROGMEM');
     expect(store.selectedFrame?.sourceIndex).toBe(1);
   });
+
+  it('uses one Palette16 palette for all selected frames and exports binary', () => {
+    const store = useAnimationModuloStore();
+    store.mode = 'palette16';
+    store.targetWidth = 2;
+    store.targetHeight = 2;
+    store.loadDecodedFrames({
+      fileName: 'color.gif', width: 2, height: 2,
+      frames: [{ imageData: frame(true), delay: 80 }, { imageData: frame(false), delay: 120 }]
+    });
+    expect(store.processedFrames[0].result.paletteBytes).toEqual(store.processedFrames[1].result.paletteBytes);
+    expect(store.delayTable).toEqual([80, 120]);
+    store.exportFormat = 'bin';
+    expect(store.outputFileName).toBe('color_animation.bin');
+    expect(store.outputBlob().size).toBe(32 + store.processedFrames.reduce((sum, item) => sum + item.result.bytes.length, 0));
+  });
 });

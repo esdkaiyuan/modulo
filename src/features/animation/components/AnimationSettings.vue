@@ -6,7 +6,7 @@ import { useAnimationModuloStore } from '../stores/animationModuloStore';
 const store = useAnimationModuloStore();
 
 watch(
-  () => [store.startFrame, store.endFrame, store.sampleStep, store.targetWidth, store.targetHeight, store.threshold, store.dithering, store.scanDirection, store.bitOrder, store.polarity],
+  () => [store.startFrame, store.endFrame, store.sampleStep, store.targetWidth, store.targetHeight, store.threshold, store.dithering, store.scanDirection, store.bitOrder, store.polarity, store.mode, store.exportFormat, store.rgb565ByteOrder, store.rgb888Order, store.transparentBackground],
   () => store.processFrames()
 );
 </script>
@@ -50,25 +50,30 @@ watch(
     </PanelSection>
 
     <PanelSection class="animation-output-settings" title="Output Settings">
+      <div class="field-label" data-test="animation-mode"><strong>Modulo Mode</strong><div class="segmented-control"><button type="button" :class="{ active: store.mode === 'mono' }" @click="store.mode = 'mono'">Mono</button><button type="button" :class="{ active: store.mode !== 'mono' }" @click="store.mode = 'rgb565'">Color</button></div></div>
+      <label v-if="store.mode !== 'mono'" class="field-label">Color Encoding<select v-model="store.mode" data-test="animation-color-encoding"><option value="rgb565">RGB565</option><option value="rgb888">RGB888</option><option value="palette16">16-color Palette</option></select></label>
       <div class="scan-grid">
         <label><input v-model="store.scanDirection" type="radio" value="horizontal-ltr" /><span></span><strong>Left → Right<br />Top → Bottom</strong></label>
         <label><input v-model="store.scanDirection" type="radio" value="horizontal-rtl" /><span></span><strong>Right → Left<br />Top → Bottom</strong></label>
         <label><input v-model="store.scanDirection" type="radio" value="vertical-ttb" /><span></span><strong>Left → Right<br />Bottom → Top</strong></label>
         <label><input v-model="store.scanDirection" type="radio" value="vertical-btt" /><span></span><strong>Right → Left<br />Bottom → Top</strong></label>
       </div>
-      <label class="field-label">Encoding Mode
+      <label v-if="store.mode === 'mono'" class="field-label">Encoding Mode
         <select v-model="store.polarity">
           <option value="positive">1 bit per pixel</option>
           <option value="negative">Inverted 1 bit per pixel</option>
         </select>
       </label>
-      <label class="field-label">Byte Order
+      <label v-if="store.mode === 'mono'" class="field-label">Bit Order
         <select v-model="store.bitOrder">
           <option value="msb">MSB First</option>
           <option value="lsb">LSB First</option>
         </select>
       </label>
-      <label class="field-label">Output Format<select><option>C Array (uint8_t)</option></select></label>
+      <label v-if="store.mode === 'rgb565'" class="field-label">Byte Order<select v-model="store.rgb565ByteOrder"><option value="msb-first">High Byte First</option><option value="lsb-first">Low Byte First</option></select></label>
+      <label v-if="store.mode === 'rgb888'" class="field-label">Channel Order<select v-model="store.rgb888Order"><option value="rgb">RGB</option><option value="bgr">BGR</option></select></label>
+      <label v-if="store.mode !== 'mono'" class="field-label">Transparent Pixel Color<input v-model="store.transparentBackground" type="color" /></label>
+      <label class="field-label">Output Format<select v-model="store.exportFormat" data-test="animation-export-format"><option value="c-array">C Array</option><option value="hex">HEX Text</option><option value="bin">BIN Binary</option></select></label>
       <button class="primary-btn wide" @click="store.processFrames">⌘ Generate Frame Data</button>
       <p class="settings-note center">Generates code and preview</p>
     </PanelSection>

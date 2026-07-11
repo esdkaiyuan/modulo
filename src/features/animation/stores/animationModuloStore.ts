@@ -1,8 +1,11 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { encodeBitmap, type BitOrder, type Polarity, type ScanDirection } from '../../../engines/bitmapEncoder';
-import { imageDataToGray, processGrayToBitmap, type DitherMode } from '../../../engines/imageProcessor';
+import { imageDataToGray, processGrayToBitmap, processImageData, type DitherMode } from '../../../engines/imageProcessor';
+import { createPalette16, encodeColorImage } from '../../../engines/colorEncoder';
+import { makeModuloFileName } from '../../../engines/exportFormatter';
 import { makeTextBlob, sanitizeIdentifier } from '../../../engines/outputFormatter';
+import type { EncodedModuloResult, ExportFormat, ModuloMode, Rgb565ByteOrder, Rgb888Order } from '../../shared/moduloTypes';
 
 export interface DecodedAnimationFrame {
   imageData: ImageData;
@@ -21,6 +24,7 @@ export interface ProcessedAnimationFrame {
   delay: number;
   bitmap: Uint8Array;
   bytes: Uint8Array;
+  result: EncodedModuloResult;
 }
 
 export const useAnimationModuloStore = defineStore('animationModulo', () => {
@@ -41,10 +45,15 @@ export const useAnimationModuloStore = defineStore('animationModulo', () => {
   const scanDirection = ref<ScanDirection>('horizontal-ltr');
   const bitOrder = ref<BitOrder>('msb');
   const polarity = ref<Polarity>('positive');
+  const mode = ref<ModuloMode>('mono');
+  const exportFormat = ref<ExportFormat>('c-array');
+  const rgb565ByteOrder = ref<Rgb565ByteOrder>('msb-first');
+  const rgb888Order = ref<Rgb888Order>('rgb');
+  const transparentBackground = ref('#FFFFFF');
 
   const selectedFrame = computed(() => processedFrames.value[selectedIndex.value] ?? processedFrames.value[0] ?? null);
   const delayTable = computed(() => processedFrames.value.map((frame) => frame.delay));
-  const bytesPerFrame = computed(() => Math.ceil(targetWidth.value * targetHeight.value / 8));
+  const bytesPerFrame = computed(() => processedFrames.value[0]?.bytes.length ?? Math.ceil(targetWidth.value * targetHeight.value / 8));
   const outputName = computed(() => sanitizeIdentifier(fileName.value || 'animation_frames'));
   const totalDuration = computed(() => delayTable.value.reduce((sum, delay) => sum + delay, 0));
 
@@ -52,7 +61,7 @@ export const useAnimationModuloStore = defineStore('animationModulo', () => {
     const frameCount = processedFrames.value.length;
     const lines = [
       `// Animation: ${fileName.value || 'untitled'}`,
-      `// Frames: ${frameCount}, Resolution: ${targetWidth.value}x${targetHeight.value}, 1bpp`,
+      `// Frames: ${frameCount}, Resolution: ${targetWidth.value}x${targetHeight.value}, ${mode.value}`,
       `const uint8_t ${outputName.value}_frames[${frameCount}][${bytesPerFrame.value}] PROGMEM = {`
     ];
 
@@ -91,14 +100,24 @@ export const useAnimationModuloStore = defineStore('animationModulo', () => {
     const start = Math.max(0, startFrame.value - 1);
     const end = Math.min(decodedFrames.value.length, endFrame.value);
     const step = Math.max(1, sampleStep.value);
-    const nextFrames: ProcessedAnimationFrame[] = [];
+    const selected = [] as Array<{ index: number; delay: number; imageData: ImageData }>;
 
     for (let index = start; index < end; index += step) {
       const frame = decodedFrames.value[index];
+      selected.push({ index, delay: frame.delay, imageData: processImageData(frame.imageData, {
+        cropX: 0, cropY: 0, cropWidth: frame.imageData.width, cropHeight: frame.imageData.height,
+        targetWidth: targetWidth.value, targetHeight: targetHeight.value, brightness: 0, contrast: 1,
+        scalingAlgorithm: 'nearest'
+      }) });
+    }
+    const sharedPalette = mode.value === 'palette16'
+      ? createPalette16(selected.map((frame) => frame.imageData), transparentBackground.value)
+      : undefined;
+    const nextFrames: ProcessedAnimationFrame[] = selected.map((frame) => {
       const gray = imageDataToGray(frame.imageData);
       const bitmap = processGrayToBitmap(gray, {
-        sourceWidth: frame.imageData.width,
-        sourceHeight: frame.imageData.height,
+        sourceWidth: targetWidth.value,
+        sourceHeight: targetHeight.value,
         targetWidth: targetWidth.value,
         targetHeight: targetHeight.value,
         brightness: 0,
@@ -111,23 +130,31 @@ export const useAnimationModuloStore = defineStore('animationModulo', () => {
         bitOrder: bitOrder.value,
         polarity: polarity.value
       });
-      nextFrames.push({
-        sourceIndex: index + 1,
-        delay: frame.delay,
-        bitmap,
-        bytes
-      });
-    }
+      const result = mode.value === 'mono'
+        ? { mode: 'mono' as const, width: targetWidth.value, height: targetHeight.value, bytes, paletteBytes: new Uint8Array(), previewImageData: frame.imageData }
+        : encodeColorImage(frame.imageData, mode.value, { scan: scanDirection.value, rgb565ByteOrder: rgb565ByteOrder.value, rgb888Order: rgb888Order.value, background: transparentBackground.value, palette: sharedPalette });
+      return { sourceIndex: frame.index + 1, delay: frame.delay, bitmap, bytes: result.bytes, result };
+    });
 
     processedFrames.value = nextFrames;
     selectedIndex.value = Math.min(selectedIndex.value, Math.max(0, nextFrames.length - 1));
   }
 
   function outputBlob() {
-    return makeTextBlob(generatedSource.value);
+    if (exportFormat.value === 'c-array') return makeTextBlob(generatedSource.value);
+    const chunks: Uint8Array[] = [];
+    if (mode.value === 'palette16' && processedFrames.value[0]) chunks.push(processedFrames.value[0].result.paletteBytes);
+    chunks.push(...processedFrames.value.map((frame) => frame.result.bytes));
+    const length = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+    const bytes = new Uint8Array(length);
+    let offset = 0;
+    chunks.forEach((chunk) => { bytes.set(chunk, offset); offset += chunk.length; });
+    if (exportFormat.value === 'bin') return new Blob([bytes], { type: 'application/octet-stream' });
+    const text = Array.from(bytes).map((byte) => byte.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+    return makeTextBlob(text);
   }
 
-  const outputFileName = computed(() => `${outputName.value}_animation.h`);
+  const outputFileName = computed(() => makeModuloFileName(`${outputName.value}_animation`, exportFormat.value));
 
   return {
     fileName,
@@ -146,6 +173,11 @@ export const useAnimationModuloStore = defineStore('animationModulo', () => {
     scanDirection,
     bitOrder,
     polarity,
+    mode,
+    exportFormat,
+    rgb565ByteOrder,
+    rgb888Order,
+    transparentBackground,
     selectedFrame,
     delayTable,
     bytesPerFrame,

@@ -56,4 +56,20 @@ describe('videoModuloStore', () => {
     expect(store.generatedSource).toContain('const uint8_t sample_video_frames[2][1] PROGMEM');
     expect(store.generatedSource).toContain('const uint16_t sample_video_frame_count = 2;');
   });
+
+  it('uses one Palette16 palette for all video frames and retains FPS', () => {
+    const store = useVideoModuloStore();
+    store.mode = 'palette16';
+    store.outputFps = 12;
+    store.targetWidth = 2;
+    store.targetHeight = 2;
+    store.loadExtractedFrames({
+      fileName: 'color.mp4', width: 2, height: 2, duration: 1,
+      frames: [{ imageData: frame(true), time: 0 }, { imageData: frame(false), time: 0.5 }]
+    });
+    expect(store.processedFrames[0].result.paletteBytes).toEqual(store.processedFrames[1].result.paletteBytes);
+    expect(store.generatedSource).toContain('fps = 12');
+    store.exportFormat = 'bin';
+    expect(store.outputFileName).toBe('color_video.bin');
+  });
 });

@@ -28,20 +28,11 @@ function renderPreview() {
   canvas.height = store.targetHeight;
   const context = canvas.getContext('2d');
   if (!context) return;
-  const image = context.createImageData(store.targetWidth, store.targetHeight);
-  for (let index = 0; index < frame.bitmap.length; index += 1) {
-    const offset = index * 4;
-    const value = frame.bitmap[index] ? 0 : 255;
-    image.data[offset] = value;
-    image.data[offset + 1] = value;
-    image.data[offset + 2] = value;
-    image.data[offset + 3] = 255;
-  }
-  context.putImageData(image, 0, 0);
+  context.putImageData(frame.result.previewImageData, 0, 0);
 }
 
 onMounted(renderPreview);
-watch(() => [store.selectedIndex, store.selectedFrame?.bitmap, store.targetWidth, store.targetHeight], () => nextTick(renderPreview), { deep: true });
+watch(() => [store.selectedIndex, store.selectedFrame?.result, store.targetWidth, store.targetHeight], () => nextTick(renderPreview), { deep: true });
 </script>
 
 <template>

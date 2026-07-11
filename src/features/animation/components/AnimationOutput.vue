@@ -28,20 +28,11 @@ function renderPreview() {
   canvas.height = store.targetHeight;
   const context = canvas.getContext('2d');
   if (!context) return;
-  const image = context.createImageData(store.targetWidth, store.targetHeight);
-  for (let index = 0; index < frame.bitmap.length; index += 1) {
-    const offset = index * 4;
-    const value = frame.bitmap[index] ? 0 : 255;
-    image.data[offset] = value;
-    image.data[offset + 1] = value;
-    image.data[offset + 2] = value;
-    image.data[offset + 3] = 255;
-  }
-  context.putImageData(image, 0, 0);
+  context.putImageData(frame.result.previewImageData, 0, 0);
 }
 
 onMounted(renderPreview);
-watch(() => [store.selectedIndex, store.selectedFrame?.bitmap, store.targetWidth, store.targetHeight], () => nextTick(renderPreview), { deep: true });
+watch(() => [store.selectedIndex, store.selectedFrame?.result, store.targetWidth, store.targetHeight], () => nextTick(renderPreview), { deep: true });
 </script>
 
 <template>
@@ -49,13 +40,13 @@ watch(() => [store.selectedIndex, store.selectedFrame?.bitmap, store.targetWidth
     <PanelSection class="media-output animation-code-panel" title="Generated Code">
       <template #actions>
         <button class="ghost-btn" @click="copyCode">⧉ Copy Code</button>
-        <button class="ghost-btn" @click="downloadCode">⇩ Download .h</button>
+        <button class="ghost-btn" @click="downloadCode">⇩ Download</button>
       </template>
       <pre class="code-block animation-adaptive-window">{{ store.generatedSource }}</pre>
       <footer class="animation-output-stats">
         <span>Frames: {{ store.processedFrames.length || 48 }}</span>
         <span>Resolution: {{ store.targetWidth }} x {{ store.targetHeight }}</span>
-        <span>BPP: 1</span>
+        <span>BPP: {{ store.mode === 'mono' ? 1 : store.mode === 'rgb565' ? 16 : store.mode === 'rgb888' ? 24 : 4 }}</span>
         <span>Data Size: {{ ((store.bytesPerFrame * (store.processedFrames.length || 48)) / 1024).toFixed(2) }} KB</span>
         <span>Total Duration: {{ ((store.totalDuration || 9600) / 1000).toFixed(2) }} s</span>
       </footer>
