@@ -26,20 +26,11 @@ function renderHexPreview() {
   canvas.height = store.targetHeight;
   const context = canvas.getContext('2d');
   if (!context) return;
-  const image = context.createImageData(store.targetWidth, store.targetHeight);
-  for (let index = 0; index < store.bitmap.length; index += 1) {
-    const offset = index * 4;
-    const value = store.bitmap[index] ? 0 : 255;
-    image.data[offset] = value;
-    image.data[offset + 1] = value;
-    image.data[offset + 2] = value;
-    image.data[offset + 3] = 255;
-  }
-  context.putImageData(image, 0, 0);
+  context.putImageData(store.result.previewImageData, 0, 0);
 }
 
 onMounted(renderHexPreview);
-watch(() => [store.bitmap, store.targetWidth, store.targetHeight], () => nextTick(renderHexPreview), { deep: true });
+watch(() => [store.result, store.targetWidth, store.targetHeight], () => nextTick(renderHexPreview), { deep: true });
 </script>
 
 <template>

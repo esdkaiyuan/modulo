@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fitFontSizeToBitmap, fontImageDataToBitmap, makeFontIdentifier } from '../engines/fontRenderer';
+import { colorizeFontImageData, fitFontSizeToBitmap, fontImageDataToBitmap, makeFontIdentifier } from '../engines/fontRenderer';
 
 describe('fontRenderer', () => {
   it('converts rendered text image data to a bitmap using alpha and luminance', () => {
@@ -26,5 +26,11 @@ describe('fontRenderer', () => {
   it('fits oversized font sizes into the target bitmap window', () => {
     expect(fitFontSizeToBitmap(64, 32, 32)).toBe(28);
     expect(fitFontSizeToBitmap(18, 32, 32)).toBe(18);
+  });
+
+  it('blends foreground and background using glyph coverage', () => {
+    const coverage = new ImageData(new Uint8ClampedArray([0, 0, 0, 128]), 1, 1);
+    expect(Array.from(colorizeFontImageData(coverage, '#FF0000', '#0000FF', false).data))
+      .toEqual([128, 0, 127, 255]);
   });
 });

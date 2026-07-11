@@ -60,3 +60,35 @@ export function renderTextToImageData(options: FontRenderOptions): ImageData {
 export function renderTextToBitmap(options: FontRenderOptions, threshold: number, invert: boolean): Uint8Array {
   return fontImageDataToBitmap(renderTextToImageData(options), threshold, invert);
 }
+
+function parseColor(value: string): [number, number, number] {
+  const color = /^#[0-9a-f]{6}$/i.test(value) ? value.slice(1) : '000000';
+  return [Number.parseInt(color.slice(0, 2), 16), Number.parseInt(color.slice(2, 4), 16), Number.parseInt(color.slice(4, 6), 16)];
+}
+
+export function colorizeFontImageData(
+  source: ImageData,
+  foregroundColor: string,
+  backgroundColor: string,
+  transparentBackground: boolean
+): ImageData {
+  const foreground = parseColor(foregroundColor);
+  const background = parseColor(backgroundColor);
+  const output = new ImageData(new Uint8ClampedArray(source.width * source.height * 4), source.width, source.height);
+  for (let index = 0; index < source.width * source.height; index += 1) {
+    const offset = index * 4;
+    const luminance = source.data[offset] * 0.299 + source.data[offset + 1] * 0.587 + source.data[offset + 2] * 0.114;
+    const coverage = source.data[offset + 3] / 255 * (1 - luminance / 255);
+    if (transparentBackground) {
+      output.data.set([...foreground, Math.round(coverage * 255)], offset);
+    } else {
+      output.data.set([
+        Math.round(foreground[0] * coverage + background[0] * (1 - coverage)),
+        Math.round(foreground[1] * coverage + background[1] * (1 - coverage)),
+        Math.round(foreground[2] * coverage + background[2] * (1 - coverage)),
+        255
+      ], offset);
+    }
+  }
+  return output;
+}
