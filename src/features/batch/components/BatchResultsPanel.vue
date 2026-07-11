@@ -15,23 +15,15 @@ function renderPreview() {
   canvas.height = store.targetHeight;
   const context = canvas.getContext('2d');
   if (!context) return;
-  const image = context.createImageData(store.targetWidth, store.targetHeight);
-  for (let index = 0; index < item.bitmap.length; index += 1) {
-    const offset = index * 4;
-    const value = item.bitmap[index] ? 0 : 255;
-    image.data[offset] = value;
-    image.data[offset + 1] = value;
-    image.data[offset + 2] = value;
-    image.data[offset + 3] = 255;
-  }
-  context.putImageData(image, 0, 0);
+  context.putImageData(item.result.previewImageData, 0, 0);
 }
 
 function downloadMerged() {
-  const url = URL.createObjectURL(store.mergedBlob());
+  const blob = store.exportFormat === 'bin' && store.selectedItem ? store.itemBlob(store.selectedItem.id) : store.mergedBlob();
+  const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = 'batch_modulo_results.h';
+  anchor.download = store.exportFormat === 'bin' ? `${store.selectedItem?.fileName || 'batch'}.bin` : store.exportFormat === 'hex' ? 'batch_modulo_results.hex.txt' : 'batch_modulo_results.h';
   anchor.click();
   URL.revokeObjectURL(url);
 }
@@ -41,7 +33,7 @@ async function copyMerged() {
 }
 
 onMounted(renderPreview);
-watch(() => [store.selectedId, store.selectedItem?.bitmap, store.targetWidth, store.targetHeight], () => nextTick(renderPreview), { deep: true });
+watch(() => [store.selectedId, store.selectedItem?.result, store.targetWidth, store.targetHeight], () => nextTick(renderPreview), { deep: true });
 </script>
 
 <template>
@@ -51,15 +43,15 @@ watch(() => [store.selectedId, store.selectedItem?.bitmap, store.targetWidth, st
       <button class="ghost-btn" @click="copyMerged">⧉ Copy Merged</button>
     </template>
     <div class="result-layout">
-      <div class="batch-preview landscape adaptive-material-window batch-adaptive-window" :class="{ 'sample-preview': !store.selectedItem?.bitmap.length }">
-        <canvas v-if="store.selectedItem?.bitmap.length" ref="previewCanvas"></canvas>
+      <div class="batch-preview landscape adaptive-material-window batch-adaptive-window" :class="{ 'sample-preview': !store.selectedItem?.result.bytes.length }">
+        <canvas v-if="store.selectedItem?.result.bytes.length" ref="previewCanvas"></canvas>
         <BatchPixelSample v-else variant="matrix" :frame="1" />
       </div>
       <pre class="code-block">{{ store.selectedItem?.source || 'Process images to generate output.' }}</pre>
       <div class="export-stack batch-export-panel">
         <h3>Export All Results</h3>
         <BatchPixelSample variant="export" :frame="2" compact />
-        <button @click="downloadMerged">▧ Merge into One File</button>
+        <button @click="downloadMerged">▧ {{ store.exportFormat === 'bin' ? 'Download Selected Binary' : 'Merge into One File' }}</button>
         <button>□ Separate Files per Input</button>
         <button>▤ Generate Report (CSV)</button>
       </div>

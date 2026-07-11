@@ -22,6 +22,15 @@ function makeImageData(inverted = false) {
   );
 }
 
+function payload(fileName: string, rgba: number[]) {
+  return {
+    fileName,
+    size: rgba.length,
+    type: 'image/png',
+    imageData: new ImageData(new Uint8ClampedArray(rgba), 1, 1)
+  };
+}
+
 describe('batchModuloStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -61,5 +70,29 @@ describe('batchModuloStore', () => {
 
     expect(store.items[0].status).toBe('done');
     expect(store.items[0].progress).toBe(100);
+  });
+
+  it.each(['rgb565', 'rgb888', 'palette16'] as const)('processes queued images in %s mode', async (mode) => {
+    const store = useBatchModuloStore();
+    store.targetWidth = 1;
+    store.targetHeight = 1;
+    store.mode = mode;
+    store.addImageData(payload('red.png', [255, 0, 0, 255]));
+    await store.processAll();
+    expect(store.items[0].status).toBe('done');
+    expect(store.items[0].result.mode).toBe(mode);
+    expect(store.items[0].result.bytes.length).toBeGreaterThan(0);
+  });
+
+  it('supports all batch export formats', async () => {
+    const store = useBatchModuloStore();
+    store.targetWidth = 1;
+    store.targetHeight = 1;
+    store.addImageData(payload('one.png', [255, 0, 0, 255]));
+    await store.processAll();
+    store.exportFormat = 'hex';
+    expect(store.mergedBlob().size).toBeGreaterThan(0);
+    store.exportFormat = 'bin';
+    expect(store.itemBlob(store.items[0].id).size).toBe(store.items[0].result.bytes.length);
   });
 });

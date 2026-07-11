@@ -2,7 +2,11 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { encodeBitmap, type BitOrder, type Polarity, type ScanDirection } from '../../../engines/bitmapEncoder';
 import { imageDataToGray, processGrayToBitmap, type DitherMode } from '../../../engines/imageProcessor';
-import { formatCArray, makeTextBlob, sanitizeIdentifier } from '../../../engines/outputFormatter';
+import { processImageData } from '../../../engines/imageProcessor';
+import { encodeColorImage } from '../../../engines/colorEncoder';
+import { formatModuloC, formatModuloHex, makeModuloBlob } from '../../../engines/exportFormatter';
+import { makeTextBlob, sanitizeIdentifier } from '../../../engines/outputFormatter';
+import type { EncodedModuloResult, ExportFormat, ModuloMode, Rgb565ByteOrder, Rgb888Order } from '../../shared/moduloTypes';
 
 export type BatchStatus = 'pending' | 'processing' | 'done' | 'error';
 
@@ -29,9 +33,17 @@ export interface BatchItem {
   bytes: Uint8Array;
   source: string;
   error: string;
+  result: EncodedModuloResult;
 }
 
 let nextId = 1;
+
+function emptyResult(): EncodedModuloResult {
+  return {
+    mode: 'mono', width: 0, height: 0, bytes: new Uint8Array(), paletteBytes: new Uint8Array(),
+    previewImageData: new ImageData(new Uint8ClampedArray(4), 1, 1)
+  };
+}
 
 function makeId() {
   nextId += 1;
@@ -52,6 +64,11 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
   const scanDirection = ref<ScanDirection>('horizontal-ltr');
   const bitOrder = ref<BitOrder>('msb');
   const polarity = ref<Polarity>('positive');
+  const mode = ref<ModuloMode>('mono');
+  const exportFormat = ref<ExportFormat>('c-array');
+  const rgb565ByteOrder = ref<Rgb565ByteOrder>('msb-first');
+  const rgb888Order = ref<Rgb888Order>('rgb');
+  const transparentBackground = ref('#FFFFFF');
 
   const selectedItem = computed(() => items.value.find((item) => item.id === selectedId.value) ?? items.value[0] ?? null);
   const summary = computed(() => ({
@@ -67,7 +84,7 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
   });
   const mergedSource = computed(() => items.value
     .filter((item) => item.status === 'done' && item.source)
-    .map((item) => `// File: ${item.fileName}\n${item.source}`)
+    .map((item) => `// File: ${item.fileName}\n${exportFormat.value === 'hex' ? formatModuloHex(item.result) : formatModuloC(item.result, { name: item.fileName })}`)
     .join('\n\n'));
 
   function log(message: string) {
@@ -91,6 +108,7 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
       bytes: new Uint8Array(),
       source: '',
       error: ''
+      ,result: emptyResult()
     };
     items.value.push(item);
     selectedId.value ||= item.id;
@@ -104,11 +122,16 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
     item.error = '';
 
     try {
-      const gray = imageDataToGray(item.imageData);
+      const processed = processImageData(item.imageData, {
+        cropX: 0, cropY: 0, cropWidth: item.width, cropHeight: item.height,
+        targetWidth: targetWidth.value, targetHeight: targetHeight.value,
+        brightness: brightness.value, contrast: contrast.value, scalingAlgorithm: 'nearest'
+      });
+      const gray = imageDataToGray(processed);
       item.progress = 65;
       item.bitmap = processGrayToBitmap(gray, {
-        sourceWidth: item.width,
-        sourceHeight: item.height,
+        sourceWidth: processed.width,
+        sourceHeight: processed.height,
         targetWidth: targetWidth.value,
         targetHeight: targetHeight.value,
         brightness: brightness.value,
@@ -116,16 +139,19 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
         threshold: threshold.value,
         dither: dithering.value
       });
-      item.bytes = encodeBitmap(item.bitmap, targetWidth.value, targetHeight.value, {
-        scan: scanDirection.value,
-        bitOrder: bitOrder.value,
-        polarity: polarity.value
-      });
-      item.source = formatCArray(item.bytes, {
-        name: sanitizeIdentifier(item.fileName),
-        width: targetWidth.value,
-        height: targetHeight.value
-      });
+      if (mode.value === 'mono') {
+        item.bytes = encodeBitmap(item.bitmap, targetWidth.value, targetHeight.value, {
+          scan: scanDirection.value, bitOrder: bitOrder.value, polarity: polarity.value
+        });
+        item.result = { mode: 'mono', width: targetWidth.value, height: targetHeight.value, bytes: item.bytes, paletteBytes: new Uint8Array(), previewImageData: processed };
+      } else {
+        item.result = encodeColorImage(processed, mode.value, {
+          scan: scanDirection.value, rgb565ByteOrder: rgb565ByteOrder.value,
+          rgb888Order: rgb888Order.value, background: transparentBackground.value
+        });
+        item.bytes = item.result.bytes;
+      }
+      item.source = formatModuloC(item.result, { name: sanitizeIdentifier(item.fileName) });
       item.status = 'done';
       item.progress = 100;
       log(`Done ${item.fileName} (${item.bytes.length} bytes)`);
@@ -171,6 +197,11 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
     return makeTextBlob(mergedSource.value);
   }
 
+  function itemBlob(id: string) {
+    const item = items.value.find((candidate) => candidate.id === id);
+    return item ? makeModuloBlob(item.result, exportFormat.value, { name: item.fileName }) : new Blob();
+  }
+
   return {
     items,
     selectedId,
@@ -184,6 +215,11 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
     scanDirection,
     bitOrder,
     polarity,
+    mode,
+    exportFormat,
+    rgb565ByteOrder,
+    rgb888Order,
+    transparentBackground,
     selectedItem,
     summary,
     overallProgress,
@@ -193,6 +229,7 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
     retryItem,
     removeItem,
     clearAll,
-    mergedBlob
+    mergedBlob,
+    itemBlob
   };
 });
