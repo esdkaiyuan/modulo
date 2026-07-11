@@ -129,7 +129,7 @@ export function processImageData(source: ImageData, options: ProcessColorImageOp
   const cropHeight = Math.max(1, Math.min(source.height - cropY, Math.floor(options.cropHeight)));
   const targetWidth = Math.max(1, Math.floor(options.targetWidth));
   const targetHeight = Math.max(1, Math.floor(options.targetHeight));
-  const output = new ImageData(targetWidth, targetHeight);
+  const output = new ImageData(new Uint8ClampedArray(targetWidth * targetHeight * 4), targetWidth, targetHeight);
 
   const read = (x: number, y: number, channel: number) => {
     const safeX = Math.max(cropX, Math.min(cropX + cropWidth - 1, x));
