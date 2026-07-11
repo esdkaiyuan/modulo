@@ -11,6 +11,18 @@ export interface ProcessImageOptions {
   dither: DitherMode;
 }
 
+export interface ProcessColorImageOptions {
+  cropX: number;
+  cropY: number;
+  cropWidth: number;
+  cropHeight: number;
+  targetWidth: number;
+  targetHeight: number;
+  brightness: number;
+  contrast: number;
+  scalingAlgorithm: 'nearest' | 'bilinear';
+}
+
 export function clampByte(value: number): number {
   return Math.max(0, Math.min(255, Math.round(value)));
 }
@@ -108,4 +120,51 @@ export function imageDataToBitmap(imageData: ImageData, options: Omit<ProcessIma
     sourceWidth: imageData.width,
     sourceHeight: imageData.height
   });
+}
+
+export function processImageData(source: ImageData, options: ProcessColorImageOptions): ImageData {
+  const cropX = Math.max(0, Math.min(source.width - 1, Math.floor(options.cropX)));
+  const cropY = Math.max(0, Math.min(source.height - 1, Math.floor(options.cropY)));
+  const cropWidth = Math.max(1, Math.min(source.width - cropX, Math.floor(options.cropWidth)));
+  const cropHeight = Math.max(1, Math.min(source.height - cropY, Math.floor(options.cropHeight)));
+  const targetWidth = Math.max(1, Math.floor(options.targetWidth));
+  const targetHeight = Math.max(1, Math.floor(options.targetHeight));
+  const output = new ImageData(targetWidth, targetHeight);
+
+  const read = (x: number, y: number, channel: number) => {
+    const safeX = Math.max(cropX, Math.min(cropX + cropWidth - 1, x));
+    const safeY = Math.max(cropY, Math.min(cropY + cropHeight - 1, y));
+    return source.data[(safeY * source.width + safeX) * 4 + channel];
+  };
+
+  for (let y = 0; y < targetHeight; y += 1) {
+    for (let x = 0; x < targetWidth; x += 1) {
+      const destinationOffset = (y * targetWidth + x) * 4;
+      const sourceX = cropX + (x + 0.5) * cropWidth / targetWidth - 0.5;
+      const sourceY = cropY + (y + 0.5) * cropHeight / targetHeight - 0.5;
+
+      for (let channel = 0; channel < 4; channel += 1) {
+        let value: number;
+        if (options.scalingAlgorithm === 'bilinear') {
+          const x0 = Math.floor(sourceX);
+          const y0 = Math.floor(sourceY);
+          const x1 = x0 + 1;
+          const y1 = y0 + 1;
+          const xFraction = sourceX - x0;
+          const yFraction = sourceY - y0;
+          const top = read(x0, y0, channel) * (1 - xFraction) + read(x1, y0, channel) * xFraction;
+          const bottom = read(x0, y1, channel) * (1 - xFraction) + read(x1, y1, channel) * xFraction;
+          value = top * (1 - yFraction) + bottom * yFraction;
+        } else {
+          value = read(Math.floor(cropX + x * cropWidth / targetWidth), Math.floor(cropY + y * cropHeight / targetHeight), channel);
+        }
+
+        output.data[destinationOffset + channel] = channel === 3
+          ? clampByte(value)
+          : adjustGray(value, options.brightness, options.contrast);
+      }
+    }
+  }
+
+  return output;
 }
