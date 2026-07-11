@@ -4,6 +4,11 @@ import { createPinia } from 'pinia';
 import App from '../App.vue';
 
 describe('App', () => {
+  it('runs component tests in a browser-like DOM', () => {
+    expect(window).toBeDefined();
+    expect(document.createElement('canvas')).toBeInstanceOf(HTMLCanvasElement);
+  });
+
   it('renders the Dot Matrix Studio home page by default', () => {
     window.location.hash = '#/';
     const wrapper = mount(App, {
