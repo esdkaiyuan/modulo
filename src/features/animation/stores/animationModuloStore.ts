@@ -58,12 +58,21 @@ export const useAnimationModuloStore = defineStore('animationModulo', () => {
   const totalDuration = computed(() => delayTable.value.reduce((sum, delay) => sum + delay, 0));
 
   const generatedSource = computed(() => {
+    if (exportFormat.value !== 'c-array') {
+      const data = sequenceBytes();
+      return exportFormat.value === 'bin'
+        ? `[binary output] ${data.length} bytes`
+        : Array.from(data).map((byte) => byte.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+    }
     const frameCount = processedFrames.value.length;
     const lines = [
       `// Animation: ${fileName.value || 'untitled'}`,
       `// Frames: ${frameCount}, Resolution: ${targetWidth.value}x${targetHeight.value}, ${mode.value}`,
       `const uint8_t ${outputName.value}_frames[${frameCount}][${bytesPerFrame.value}] PROGMEM = {`
     ];
+    if (mode.value === 'palette16' && processedFrames.value[0]) {
+      lines.splice(2, 0, `const uint8_t ${outputName.value}_palette[32] PROGMEM = { ${Array.from(processedFrames.value[0].result.paletteBytes).map((byte) => `0x${byte.toString(16).padStart(2, '0').toUpperCase()}`).join(', ')} };`);
+    }
 
     processedFrames.value.forEach((frame, frameIndex) => {
       const values = Array.from(frame.bytes)
@@ -140,8 +149,7 @@ export const useAnimationModuloStore = defineStore('animationModulo', () => {
     selectedIndex.value = Math.min(selectedIndex.value, Math.max(0, nextFrames.length - 1));
   }
 
-  function outputBlob() {
-    if (exportFormat.value === 'c-array') return makeTextBlob(generatedSource.value);
+  function sequenceBytes() {
     const chunks: Uint8Array[] = [];
     if (mode.value === 'palette16' && processedFrames.value[0]) chunks.push(processedFrames.value[0].result.paletteBytes);
     chunks.push(...processedFrames.value.map((frame) => frame.result.bytes));
@@ -149,9 +157,14 @@ export const useAnimationModuloStore = defineStore('animationModulo', () => {
     const bytes = new Uint8Array(length);
     let offset = 0;
     chunks.forEach((chunk) => { bytes.set(chunk, offset); offset += chunk.length; });
+    return bytes;
+  }
+
+  function outputBlob() {
+    if (exportFormat.value === 'c-array') return makeTextBlob(generatedSource.value);
+    const bytes = sequenceBytes();
     if (exportFormat.value === 'bin') return new Blob([bytes], { type: 'application/octet-stream' });
-    const text = Array.from(bytes).map((byte) => byte.toString(16).padStart(2, '0').toUpperCase()).join(' ');
-    return makeTextBlob(text);
+    return makeTextBlob(generatedSource.value);
   }
 
   const outputFileName = computed(() => makeModuloFileName(`${outputName.value}_animation`, exportFormat.value));

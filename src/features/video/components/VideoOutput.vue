@@ -16,7 +16,9 @@ function downloadOutput() {
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = store.outputFileName;
+  document.body.appendChild(anchor);
   anchor.click();
+  document.body.removeChild(anchor);
   URL.revokeObjectURL(url);
 }
 

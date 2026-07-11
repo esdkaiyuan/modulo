@@ -71,5 +71,8 @@ describe('videoModuloStore', () => {
     expect(store.generatedSource).toContain('fps = 12');
     store.exportFormat = 'bin';
     expect(store.outputFileName).toBe('color_video.bin');
+    store.exportFormat = 'hex';
+    expect(store.generatedSource).not.toContain('const uint8_t');
+    expect(store.generatedSource).toMatch(/[0-9A-F]{2}/);
   });
 });

@@ -1,36 +1,29 @@
-import { readFileSync } from 'node:fs'
-import assert from 'node:assert/strict'
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 
-const source = readFileSync(new URL('../src/App.vue', import.meta.url), 'utf8')
+const downloadComponents = [
+  '../src/features/image/components/ImageOutputPanel.vue',
+  '../src/features/batch/components/BatchResultsPanel.vue',
+  '../src/features/animation/components/AnimationOutput.vue',
+  '../src/features/video/components/VideoOutput.vue',
+  '../src/features/font/components/FontOutputPanel.vue',
+  '../src/features/handdraw/components/OutputPanel.vue',
+  '../src/features/handdraw/components/TopBar.vue'
+];
 
-const script = source.match(/<script setup>([\s\S]*?)<\/script>/)?.[1] ?? ''
-
-const declaredFunctions = new Set(
-  [...script.matchAll(/const\s+([A-Za-z_$][\w$]*)\s*=\s*(?:async\s*)?\(/g)].map(match => match[1])
-)
-
-for (const match of script.matchAll(/\b(format[A-Za-z]+Data)\s*\(/g)) {
-  const functionName = match[1]
-  assert(
-    declaredFunctions.has(functionName),
-    `${functionName} is called but is not declared`
-  )
+for (const component of downloadComponents) {
+  const source = readFileSync(new URL(component, import.meta.url), 'utf8');
+  const append = source.indexOf('document.body.appendChild(anchor)');
+  const click = source.indexOf('anchor.click()');
+  const remove = source.indexOf('document.body.removeChild(anchor)');
+  const revoke = source.indexOf('URL.revokeObjectURL(url)');
+  assert(append >= 0 && append < click, `${component} must append its link before clicking`);
+  assert(remove > click, `${component} must remove its link after clicking`);
+  assert(revoke > remove, `${component} must revoke its object URL after removing the link`);
 }
 
-for (const exportName of ['exportCFile', 'exportBatchCFile', 'exportDrawCFile']) {
-  const exportBody = script.match(
-    new RegExp(`const\\s+${exportName}\\s*=\\s*\\(\\)\\s*=>\\s*{([\\s\\S]*?)\\n}`)
-  )?.[1] ?? ''
-
-  assert(exportBody.includes('document.body.appendChild(a)'), `${exportName} must append its link before clicking`)
-  assert(exportBody.includes('document.body.removeChild(a)'), `${exportName} must remove its link after clicking`)
-  assert(exportBody.includes('URL.revokeObjectURL(url)'), `${exportName} must revoke its object URL`)
-}
-
-const style = source.match(/<style scoped>([\s\S]*?)<\/style>/)?.[1] ?? ''
-
-assert.match(style, /@media\s*\(max-width:\s*768px\)/, 'mobile styles must include a phone breakpoint')
-assert.match(style, /\.main-content\s*{[\s\S]*?flex-direction:\s*column/, 'mobile layout must stack sidebar and content')
-assert.match(style, /\.nav-menu\s*{[\s\S]*?overflow-x:\s*auto/, 'mobile nav must scroll horizontally')
-assert.match(style, /\.image-result\s*,\s*\.media-result-layout\s*{[\s\S]*?grid-template-columns:\s*1fr/, 'mobile previews must use one column')
-assert.match(style, /\.result-actions\s*{[\s\S]*?flex-wrap:\s*wrap/, 'mobile result buttons must wrap')
+const formatter = readFileSync(new URL('../src/engines/exportFormatter.ts', import.meta.url), 'utf8');
+assert.match(formatter, /export function formatModuloC/);
+assert.match(formatter, /export function formatModuloHex/);
+assert.match(formatter, /export function makeModuloBlob/);
+assert.match(formatter, /result\.paletteBytes\.length \+ result\.bytes\.length/);

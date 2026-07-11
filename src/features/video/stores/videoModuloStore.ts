@@ -24,6 +24,10 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
   const estimatedBytes = computed(() => processedFrames.value.reduce((sum, frame) => sum + frame.bytes.length, mode.value === 'palette16' && processedFrames.value.length ? 32 : 0));
   const outputName = computed(() => `${sanitizeIdentifier(fileName.value || 'video')}_video`);
   const generatedSource = computed(() => {
+    if (exportFormat.value !== 'c-array') {
+      const data = sequenceBytes();
+      return exportFormat.value === 'bin' ? `[binary output] ${data.length} bytes` : Array.from(data).map((byte) => byte.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+    }
     const frameCount = processedFrames.value.length;
     const lines = [`// Video: ${fileName.value || 'untitled'}`, `// Resolution: ${targetWidth.value}x${targetHeight.value}, FPS: ${outputFps.value}, Frames: ${frameCount}, ${mode.value}`];
     if (mode.value === 'palette16' && processedFrames.value[0]) lines.push(`const uint8_t ${outputName.value}_palette[32] PROGMEM = { ${Array.from(processedFrames.value[0].result.paletteBytes).map(hex).join(', ')} };`);
@@ -54,7 +58,7 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
     const chunks = [...(mode.value === 'palette16' && processedFrames.value[0] ? [processedFrames.value[0].result.paletteBytes] : []), ...processedFrames.value.map((frame) => frame.result.bytes)];
     const output = new Uint8Array(chunks.reduce((sum, chunk) => sum + chunk.length, 0)); let offset = 0; chunks.forEach((chunk) => { output.set(chunk, offset); offset += chunk.length; }); return output;
   }
-  function outputBlob() { if (exportFormat.value === 'c-array') return makeTextBlob(generatedSource.value); const data = sequenceBytes(); return exportFormat.value === 'bin' ? new Blob([data], { type: 'application/octet-stream' }) : makeTextBlob(Array.from(data).map((byte) => byte.toString(16).padStart(2, '0').toUpperCase()).join(' ')); }
+  function outputBlob() { if (exportFormat.value === 'c-array') return makeTextBlob(generatedSource.value); const data = sequenceBytes(); return exportFormat.value === 'bin' ? new Blob([data], { type: 'application/octet-stream' }) : makeTextBlob(generatedSource.value); }
 
   return { fileName, sourceWidth, sourceHeight, duration, objectUrl, extractedFrames, processedFrames, selectedIndex, startTime, endTime, sampleFps, sampleEveryNFrames, outputFps, targetWidth, targetHeight, brightness, contrast, threshold, dithering, scanDirection, bitOrder, polarity, mode, exportFormat, rgb565ByteOrder, rgb888Order, transparentBackground, selectedFrame, bytesPerFrame, estimatedBytes, outputName, generatedSource, outputFileName, loadExtractedFrames, processFrames, outputBlob };
 });

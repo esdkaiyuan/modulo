@@ -24,7 +24,9 @@ function downloadMerged() {
   const anchor = document.createElement('a');
   anchor.href = url;
   anchor.download = store.exportFormat === 'bin' ? `${store.selectedItem?.fileName || 'batch'}.bin` : store.exportFormat === 'hex' ? 'batch_modulo_results.hex.txt' : 'batch_modulo_results.h';
+  document.body.appendChild(anchor);
   anchor.click();
+  document.body.removeChild(anchor);
   URL.revokeObjectURL(url);
 }
 

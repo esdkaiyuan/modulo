@@ -72,5 +72,8 @@ describe('animationModuloStore', () => {
     store.exportFormat = 'bin';
     expect(store.outputFileName).toBe('color_animation.bin');
     expect(store.outputBlob().size).toBe(32 + store.processedFrames.reduce((sum, item) => sum + item.result.bytes.length, 0));
+    store.exportFormat = 'hex';
+    expect(store.generatedSource).not.toContain('const uint8_t');
+    expect(store.generatedSource).toMatch(/[0-9A-F]{2}/);
   });
 });
