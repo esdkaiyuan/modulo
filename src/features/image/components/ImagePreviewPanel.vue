@@ -15,20 +15,11 @@ function renderMatrix() {
   const context = canvas.getContext('2d');
   if (!context) return;
 
-  const image = context.createImageData(store.targetWidth, store.targetHeight);
-  for (let index = 0; index < store.bitmap.length; index += 1) {
-    const offset = index * 4;
-    const value = store.bitmap[index] ? 0 : 255;
-    image.data[offset] = value;
-    image.data[offset + 1] = value;
-    image.data[offset + 2] = value;
-    image.data[offset + 3] = 255;
-  }
-  context.putImageData(image, 0, 0);
+  context.putImageData(store.result.previewImageData, 0, 0);
 }
 
 onMounted(renderMatrix);
-watch(() => [store.bitmap, store.targetWidth, store.targetHeight], () => nextTick(renderMatrix), { deep: true });
+watch(() => [store.result, store.targetWidth, store.targetHeight], () => nextTick(renderMatrix), { deep: true });
 </script>
 
 <template>
@@ -45,8 +36,8 @@ watch(() => [store.bitmap, store.targetWidth, store.targetHeight], () => nextTic
           <span>Zoom: 100%</span>
         </footer>
       </div>
-      <div class="dot-preview matrix-canvas-wrap image-adaptive-window adaptive-material-window" :class="{ 'sample-preview': !store.bitmap.length }">
-        <canvas v-if="store.bitmap.length" ref="matrixCanvas"></canvas>
+      <div class="dot-preview matrix-canvas-wrap image-adaptive-window adaptive-material-window" :class="{ 'sample-preview': !store.result.bytes.length }">
+        <canvas v-if="store.result.bytes.length" ref="matrixCanvas"></canvas>
         <ImagePixelSample v-else variant="matrix" />
         <footer class="matrix-status">
           <span><b class="legend on"></b>1 (On)</span>

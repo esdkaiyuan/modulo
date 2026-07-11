@@ -99,6 +99,46 @@ export function encodeRgb888(
   return output;
 }
 
+function emptyImageData(width: number, height: number): ImageData {
+  return new ImageData(new Uint8ClampedArray(width * height * 4), width, height);
+}
+
+export function decodeRgb565(
+  bytes: Uint8Array,
+  width: number,
+  height: number,
+  options: ColorScanOptions,
+  order: Rgb565ByteOrder
+): ImageData {
+  const output = emptyImageData(width, height);
+  scanPixelIndices(width, height, options.scan).forEach((destinationIndex, inputIndex) => {
+    const first = bytes[inputIndex * 2] ?? 0;
+    const second = bytes[inputIndex * 2 + 1] ?? 0;
+    const value = order === 'msb-first' ? (first << 8) | second : (second << 8) | first;
+    const [r, g, b] = rgb565ToRgb(value);
+    output.data.set([r, g, b, 255], destinationIndex * 4);
+  });
+  return output;
+}
+
+export function decodeRgb888(
+  bytes: Uint8Array,
+  width: number,
+  height: number,
+  options: ColorScanOptions,
+  order: Rgb888Order
+): ImageData {
+  const output = emptyImageData(width, height);
+  scanPixelIndices(width, height, options.scan).forEach((destinationIndex, inputIndex) => {
+    const offset = inputIndex * 3;
+    const first = bytes[offset] ?? 0;
+    const green = bytes[offset + 1] ?? 0;
+    const third = bytes[offset + 2] ?? 0;
+    output.data.set(order === 'rgb' ? [first, green, third, 255] : [third, green, first, 255], destinationIndex * 4);
+  });
+  return output;
+}
+
 interface ColorPoint extends Rgb {
   count: number;
 }
@@ -201,4 +241,21 @@ export function encodePalette16(
     else pixelBytes[Math.floor(index / 2)] |= paletteIndex;
   });
   return { pixelBytes, paletteBytes: new Uint8Array(palette), indices };
+}
+
+export function decodePalette16(
+  pixelBytes: Uint8Array,
+  palette: Uint8Array,
+  width: number,
+  height: number,
+  options: ColorScanOptions
+): ImageData {
+  const output = emptyImageData(width, height);
+  const colors = paletteColors(palette);
+  scanPixelIndices(width, height, options.scan).forEach((destinationIndex, inputIndex) => {
+    const packed = pixelBytes[Math.floor(inputIndex / 2)] ?? 0;
+    const paletteIndex = inputIndex % 2 === 0 ? packed >> 4 : packed & 0x0F;
+    output.data.set([...colors[paletteIndex], 255], destinationIndex * 4);
+  });
+  return output;
 }

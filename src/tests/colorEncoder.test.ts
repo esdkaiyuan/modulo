@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   createPalette16,
+  decodeRgb565,
+  decodeRgb888,
   encodePalette16,
   encodeRgb565,
   encodeRgb888,
@@ -43,5 +45,17 @@ describe('colorEncoder', () => {
     expect(result.pixelBytes[0] & 0x0F).toBe(result.indices[1]);
     expect(result.pixelBytes[1] >> 4).toBe(result.indices[2]);
     expect(result.pixelBytes[1] & 0x0F).toBe(0);
+  });
+
+  it('decodes encoded bytes back into raster preview order', () => {
+    const source = imageData([[255, 0, 0, 255], [0, 255, 0, 255]], 2, 1);
+    const rgb565 = encodeRgb565(source, { scan: 'horizontal-rtl' }, 'msb-first');
+    const preview565 = decodeRgb565(rgb565, 2, 1, { scan: 'horizontal-rtl' }, 'msb-first');
+    expect(preview565.data[0]).toBeGreaterThan(240);
+    expect(preview565.data[5]).toBeGreaterThan(240);
+
+    const rgb888 = encodeRgb888(source, { scan: 'horizontal-rtl' }, 'bgr');
+    expect(Array.from(decodeRgb888(rgb888, 2, 1, { scan: 'horizontal-rtl' }, 'bgr').data))
+      .toEqual(Array.from(source.data));
   });
 });

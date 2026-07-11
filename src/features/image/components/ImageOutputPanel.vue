@@ -28,29 +28,20 @@ function renderOutputPreview() {
   const context = canvas.getContext('2d');
   if (!context) return;
 
-  const image = context.createImageData(store.targetWidth, store.targetHeight);
-  for (let index = 0; index < store.bitmap.length; index += 1) {
-    const offset = index * 4;
-    const value = store.bitmap[index] ? 0 : 255;
-    image.data[offset] = value;
-    image.data[offset + 1] = value;
-    image.data[offset + 2] = value;
-    image.data[offset + 3] = 255;
-  }
-  context.putImageData(image, 0, 0);
+  context.putImageData(store.result.previewImageData, 0, 0);
 }
 
 onMounted(renderOutputPreview);
-watch(() => [store.bitmap, store.targetWidth, store.targetHeight], () => nextTick(renderOutputPreview), { deep: true });
+watch(() => [store.result, store.targetWidth, store.targetHeight], () => nextTick(renderOutputPreview), { deep: true });
 </script>
 
 <template>
   <section class="image-output-row">
-    <PanelSection class="image-output image-code-panel" step="4" title="Generated C Array">
+    <PanelSection class="image-output image-code-panel" step="4" :title="store.exportFormat === 'c-array' ? 'Generated C Array' : store.exportFormat === 'hex' ? 'Generated HEX' : 'Binary Output'">
       <template #actions><button class="ghost-btn" @click="copyOutput">⧉ Copy</button><button class="ghost-btn" @click="downloadOutput">⇩ Download</button></template>
       <pre class="code-block image-adaptive-window">{{ store.generatedSource }}</pre>
       <footer class="image-output-stats">
-        <span>Total Bytes: {{ store.bytes.length || Math.ceil(store.totalBits / 8) }}</span>
+        <span>Total Bytes: {{ store.result.bytes.length + store.result.paletteBytes.length }}</span>
         <span>Total Bits: {{ store.totalBits }}</span>
         <span>Width: {{ store.targetWidth }} px</span>
         <span>Height: {{ store.targetHeight }} px</span>
@@ -59,8 +50,8 @@ watch(() => [store.bitmap, store.targetWidth, store.targetHeight], () => nextTic
     </PanelSection>
 
     <PanelSection class="output-preview image-output-preview-panel" step="5" title="Output Preview">
-      <div class="dot-preview matrix-canvas-wrap image-adaptive-window adaptive-material-window" :class="{ 'sample-preview': !store.bitmap.length }">
-        <canvas v-if="store.bitmap.length" ref="outputCanvas"></canvas>
+      <div class="dot-preview matrix-canvas-wrap image-adaptive-window adaptive-material-window" :class="{ 'sample-preview': !store.result.bytes.length }">
+        <canvas v-if="store.result.bytes.length" ref="outputCanvas"></canvas>
         <ImagePixelSample v-else variant="output" />
       </div>
       <footer class="preview-controls">
