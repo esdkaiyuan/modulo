@@ -495,4 +495,20 @@ describe('App', () => {
     expect(wrapper.find('[data-preview-kind="batch"]').exists()).toBe(true);
     expect(wrapper.find('[data-preview-kind="font"]').exists()).toBe(true);
   });
+
+  it.each(['image', 'batch', 'animation', 'video', 'font', 'handdraw'])(
+    '%s exposes mono, color, C, HEX, and BIN controls', async (route) => {
+      window.location.hash = `#/${route}`;
+      const wrapper = mount(App, { global: { plugins: [createPinia()] } });
+      window.dispatchEvent(new HashChangeEvent('hashchange'));
+      await wrapper.vm.$nextTick();
+      const mode = wrapper.get(`[data-test="${route}-mode"]`);
+      expect(mode.text()).toContain('Mono');
+      expect(mode.text()).toContain('Color');
+      const exportSelector = route === 'handdraw' ? 'handdraw-output-format' : `${route}-export-format`;
+      const options = wrapper.get(`[data-test="${exportSelector}"]`).findAll('option').map((option) => option.attributes('value'));
+      expect(options).toEqual(['c-array', 'hex', 'bin']);
+      wrapper.unmount();
+    }
+  );
 });
