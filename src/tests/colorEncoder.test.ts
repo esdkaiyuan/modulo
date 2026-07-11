@@ -4,6 +4,7 @@ import {
   decodeRgb565,
   decodeRgb888,
   encodePalette16,
+  encodeColorImage,
   encodeRgb565,
   encodeRgb888,
   scanPixelIndices
@@ -57,5 +58,19 @@ describe('colorEncoder', () => {
     const rgb888 = encodeRgb888(source, { scan: 'horizontal-rtl' }, 'bgr');
     expect(Array.from(decodeRgb888(rgb888, 2, 1, { scan: 'horizontal-rtl' }, 'bgr').data))
       .toEqual(Array.from(source.data));
+  });
+
+  it.each(['rgb565', 'rgb888', 'palette16'] as const)('builds a complete %s result', (mode) => {
+    const source = imageData([[255, 0, 0, 255]], 1, 1);
+    const result = encodeColorImage(source, mode, {
+      scan: 'horizontal-ltr',
+      rgb565ByteOrder: 'msb-first',
+      rgb888Order: 'rgb',
+      background: '#FFFFFF'
+    });
+    expect(result.mode).toBe(mode);
+    expect(result.width).toBe(1);
+    expect(result.bytes.length).toBeGreaterThan(0);
+    expect(result.previewImageData.data[3]).toBe(255);
   });
 });

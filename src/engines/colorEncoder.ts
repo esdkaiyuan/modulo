@@ -1,5 +1,5 @@
 import type { ScanDirection } from './bitmapEncoder';
-import type { Rgb565ByteOrder, Rgb888Order } from '../features/shared/moduloTypes';
+import type { EncodedModuloResult, ModuloMode, Rgb565ByteOrder, Rgb888Order } from '../features/shared/moduloTypes';
 
 export interface ColorScanOptions {
   scan: ScanDirection;
@@ -9,6 +9,13 @@ export interface Palette16Result {
   pixelBytes: Uint8Array;
   paletteBytes: Uint8Array;
   indices: Uint8Array;
+}
+
+export interface EncodeColorImageOptions extends ColorScanOptions {
+  rgb565ByteOrder: Rgb565ByteOrder;
+  rgb888Order: Rgb888Order;
+  background: string;
+  palette?: Uint8Array;
 }
 
 type Rgb = [number, number, number];
@@ -258,4 +265,42 @@ export function decodePalette16(
     output.data.set([...colors[paletteIndex], 255], destinationIndex * 4);
   });
   return output;
+}
+
+export function encodeColorImage(
+  image: ImageData,
+  mode: Exclude<ModuloMode, 'mono'>,
+  options: EncodeColorImageOptions
+): EncodedModuloResult {
+  if (mode === 'rgb565') {
+    const bytes = encodeRgb565(image, options, options.rgb565ByteOrder, options.background);
+    return {
+      mode,
+      width: image.width,
+      height: image.height,
+      bytes,
+      paletteBytes: new Uint8Array(),
+      previewImageData: decodeRgb565(bytes, image.width, image.height, options, options.rgb565ByteOrder)
+    };
+  }
+  if (mode === 'rgb888') {
+    const bytes = encodeRgb888(image, options, options.rgb888Order, options.background);
+    return {
+      mode,
+      width: image.width,
+      height: image.height,
+      bytes,
+      paletteBytes: new Uint8Array(),
+      previewImageData: decodeRgb888(bytes, image.width, image.height, options, options.rgb888Order)
+    };
+  }
+  const encoded = encodePalette16(image, options, options.palette, options.background);
+  return {
+    mode,
+    width: image.width,
+    height: image.height,
+    bytes: encoded.pixelBytes,
+    paletteBytes: encoded.paletteBytes,
+    previewImageData: decodePalette16(encoded.pixelBytes, encoded.paletteBytes, image.width, image.height, options)
+  };
 }
