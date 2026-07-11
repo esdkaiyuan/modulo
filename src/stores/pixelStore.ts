@@ -4,6 +4,9 @@ import { encodeBitmap, type BitOrder, type Polarity, type ScanDirection } from '
 import { floodFill } from '../engines/fill';
 import { type PixelValue } from '../engines/modulo';
 import { formatCArray, makeTextBlob } from '../engines/outputFormatter';
+import { encodeColorImage } from '../engines/colorEncoder';
+import { formatModuloC, formatModuloHex, makeModuloBlob, makeModuloFileName } from '../engines/exportFormatter';
+import type { EncodedModuloResult, ModuloMode, Rgb565ByteOrder, Rgb888Order } from '../features/shared/moduloTypes';
 
 export type Tool = 'pencil' | 'eraser' | 'fill' | 'eyedropper';
 export type HanddrawOutputFormat = 'c-array' | 'hex' | 'bin';
@@ -113,6 +116,10 @@ export const usePixelStore = defineStore('pixel', () => {
   const bitOrder = ref<BitOrder>('msb');
   const polarity = ref<Polarity>('positive');
   const outputFormat = ref<HanddrawOutputFormat>('c-array');
+  const mode = ref<ModuloMode>('mono');
+  const rgb565ByteOrder = ref<Rgb565ByteOrder>('msb-first');
+  const rgb888Order = ref<Rgb888Order>('rgb');
+  const transparentBackground = ref('#FFFFFF');
 
   const bitmapOutput = computed(() => Uint8Array.from(pixels.value, (pixel) => (pixel ? 1 : 0)));
   const byteOutput = computed(() => encodeBitmap(bitmapOutput.value, width.value, height.value, {
@@ -126,15 +133,48 @@ export const usePixelStore = defineStore('pixel', () => {
     width: width.value,
     height: height.value
   }));
+  const colorImageData = computed(() => {
+    const image = new ImageData(new Uint8ClampedArray(width.value * height.value * 4), width.value, height.value);
+    pixels.value.forEach((color, index) => {
+      if (!color) return;
+      const normalized = color.replace('#', '');
+      image.data.set([
+        Number.parseInt(normalized.slice(0, 2), 16),
+        Number.parseInt(normalized.slice(2, 4), 16),
+        Number.parseInt(normalized.slice(4, 6), 16),
+        255
+      ], index * 4);
+    });
+    return image;
+  });
+  const monoPreview = computed(() => {
+    const image = new ImageData(new Uint8ClampedArray(width.value * height.value * 4), width.value, height.value);
+    bitmapOutput.value.forEach((bit, index) => image.data.set(bit ? [255, 255, 255, 255] : [0, 0, 0, 255], index * 4));
+    return image;
+  });
+  const result = computed<EncodedModuloResult>(() => mode.value === 'mono'
+    ? { mode: 'mono', width: width.value, height: height.value, bytes: byteOutput.value, paletteBytes: new Uint8Array(), previewImageData: monoPreview.value }
+    : encodeColorImage(colorImageData.value, mode.value, {
+      scan: scanDirection.value,
+      rgb565ByteOrder: rgb565ByteOrder.value,
+      rgb888Order: rgb888Order.value,
+      background: transparentBackground.value
+    }));
   const hexOutput = computed(() => Array.from(byteOutput.value)
     .map((byte) => `0x${byte.toString(16).padStart(2, '0').toUpperCase()}`)
     .join(', '));
   const currentOutput = computed(() => {
+    if (mode.value !== 'mono') {
+      if (outputFormat.value === 'c-array') return formatModuloC(result.value, { name: outputBaseName.value });
+      if (outputFormat.value === 'hex') return formatModuloHex(result.value);
+      return `[binary output] ${result.value.bytes.length + result.value.paletteBytes.length} bytes`;
+    }
     if (outputFormat.value === 'hex') return hexOutput.value;
     if (outputFormat.value === 'bin') return `[binary output] ${byteOutput.value.length} bytes`;
     return cArrayOutput.value;
   });
   const outputFileName = computed(() => {
+    if (mode.value !== 'mono') return makeModuloFileName(outputBaseName.value, outputFormat.value);
     if (outputFormat.value === 'hex') return `${outputBaseName.value}.hex.txt`;
     if (outputFormat.value === 'bin') return `${outputBaseName.value}.bin`;
     return `${outputBaseName.value}.h`;
@@ -228,6 +268,7 @@ export const usePixelStore = defineStore('pixel', () => {
   }
 
   function outputBlob() {
+    if (mode.value !== 'mono') return makeModuloBlob(result.value, outputFormat.value, { name: outputBaseName.value });
     if (outputFormat.value === 'bin') {
       return new Blob([new Uint8Array(byteOutput.value)], { type: 'application/octet-stream' });
     }
@@ -252,11 +293,16 @@ export const usePixelStore = defineStore('pixel', () => {
     bitOrder,
     polarity,
     outputFormat,
+    mode,
+    rgb565ByteOrder,
+    rgb888Order,
+    transparentBackground,
     bitmapOutput,
     byteOutput,
     cArrayOutput,
     hexOutput,
     currentOutput,
+    result,
     outputFileName,
     pixelAt,
     paintPixel,

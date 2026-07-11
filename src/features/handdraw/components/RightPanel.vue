@@ -67,6 +67,8 @@ watch(() => store.pixels, () => nextTick(renderPreview), { deep: true });
 
     <section class="panel-card handdraw-encoder-card">
       <h2>ENCODING</h2>
+      <div class="field-label" data-test="handdraw-mode"><strong>Modulo Mode</strong><div class="segmented-control"><button type="button" :class="{ active: store.mode === 'mono' }" @click="store.mode = 'mono'">Mono</button><button type="button" :class="{ active: store.mode !== 'mono' }" @click="store.mode = 'rgb565'">Color</button></div></div>
+      <label v-if="store.mode !== 'mono'" class="field-label">Color Encoding<select v-model="store.mode" data-test="handdraw-color-encoding"><option value="rgb565">RGB565</option><option value="rgb888">RGB888</option><option value="palette16">16-color Palette</option></select></label>
       <label class="field-label">Scan
         <select v-model="store.scanDirection" data-test="handdraw-scan">
           <option value="horizontal-ltr">Left → Right, Top → Bottom</option>
@@ -75,18 +77,21 @@ watch(() => store.pixels, () => nextTick(renderPreview), { deep: true });
           <option value="vertical-btt">Bottom → Top, Left → Right</option>
         </select>
       </label>
-      <label class="field-label">Bit Order
+      <label v-if="store.mode === 'mono'" class="field-label">Bit Order
         <select v-model="store.bitOrder">
           <option value="msb">MSB First</option>
           <option value="lsb">LSB First</option>
         </select>
       </label>
-      <label class="field-label">Polarity
+      <label v-if="store.mode === 'mono'" class="field-label">Polarity
         <select v-model="store.polarity">
           <option value="positive">Positive</option>
           <option value="negative">Negative</option>
         </select>
       </label>
+      <label v-if="store.mode === 'rgb565'" class="field-label">Byte Order<select v-model="store.rgb565ByteOrder"><option value="msb-first">High Byte First</option><option value="lsb-first">Low Byte First</option></select></label>
+      <label v-if="store.mode === 'rgb888'" class="field-label">Channel Order<select v-model="store.rgb888Order"><option value="rgb">RGB</option><option value="bgr">BGR</option></select></label>
+      <label v-if="store.mode !== 'mono'" class="field-label">Transparent Pixel Color<input v-model="store.transparentBackground" type="color" /></label>
     </section>
 
     <section class="panel-card layers-card handdraw-layers-card">

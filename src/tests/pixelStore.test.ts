@@ -55,4 +55,16 @@ describe('pixel store', () => {
     expect(store.outputBlob().size).toBe(store.byteOutput.length);
     expect(store.outputFileName).toBe('image_16x16.bin');
   });
+
+  it('encodes painted colors and transparent cells in color mode', () => {
+    const store = usePixelStore();
+    store.setCanvasSize(16);
+    store.activeColor = '#FF0000';
+    store.paintPixel(0, 0);
+    store.mode = 'rgb888';
+    store.transparentBackground = '#FFFFFF';
+    expect(Array.from(store.result.bytes.slice(0, 6))).toEqual([255, 0, 0, 255, 255, 255]);
+    store.undo();
+    expect(Array.from(store.result.bytes.slice(0, 3))).toEqual([255, 255, 255]);
+  });
 });

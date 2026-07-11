@@ -4,7 +4,7 @@ import { usePixelStore } from '../../../stores/pixelStore';
 
 const store = usePixelStore();
 const copied = ref(false);
-const byteCount = computed(() => store.byteOutput.length);
+const byteCount = computed(() => store.mode === 'mono' ? store.byteOutput.length : store.result.bytes.length + store.result.paletteBytes.length);
 
 async function copyOutput() {
   await navigator.clipboard?.writeText(store.currentOutput);
