@@ -1,14 +1,31 @@
 <script setup lang="ts">
-import { watch } from 'vue';
+import { ref } from 'vue';
 import PanelSection from '../../../components/common/PanelSection.vue';
 import { useFontModuloStore } from '../stores/fontModuloStore';
 
+// Regeneration on setting change is handled by a debounced watch in the store.
 const store = useFontModuloStore();
 
-watch(
-  () => [store.text, store.fontFamily, store.fontSize, store.bold, store.italic, store.targetWidth, store.targetHeight, store.threshold],
-  () => store.generate()
-);
+const fontFileInput = ref<HTMLInputElement | null>(null);
+const uploadedFontName = ref('');
+const uploadError = ref('');
+
+async function onFontFile(e: Event) {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  input.value = '';
+  if (!file) return;
+  uploadError.value = '';
+  try {
+    const face = new FontFace('PixelCraftUploadedFont', await file.arrayBuffer());
+    await face.load();
+    document.fonts.add(face);
+    uploadedFontName.value = file.name;
+    store.fontFamily = 'PixelCraftUploadedFont';
+  } catch {
+    uploadError.value = `Cannot load font: ${file.name}`;
+  }
+}
 </script>
 
 <template>
@@ -21,8 +38,11 @@ watch(
           <option value="Microsoft YaHei, Noto Sans CJK SC, sans-serif">Microsoft YaHei Regular</option>
           <option value="SimSun, Noto Sans CJK SC, serif">SimSun Regular</option>
           <option value="Arial, sans-serif">Arial Regular</option>
+          <option v-if="uploadedFontName" value="PixelCraftUploadedFont">{{ uploadedFontName }} (uploaded)</option>
         </select>
-        <button>↥ Upload TTF / OTF</button>
+        <button type="button" @click="fontFileInput?.click()">↥ Upload TTF / OTF</button>
+        <input ref="fontFileInput" type="file" accept=".ttf,.otf,.woff,.woff2" style="display:none" @change="onFontFile" />
+        <small v-if="uploadError" class="upload-error">{{ uploadError }}</small>
       </label>
       <label class="field-label font-size-field">Font Size
         <span class="number-with-unit"><input v-model.number="store.fontSize" type="number" min="6" max="256" /><b>px</b></span>
@@ -33,3 +53,10 @@ watch(
     </div>
   </PanelSection>
 </template>
+
+<style scoped>
+.upload-error {
+  color: #b91c1c;
+  font-size: 11px;
+}
+</style>

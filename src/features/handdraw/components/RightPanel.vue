@@ -1,10 +1,23 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from 'vue';
 import { usePixelStore } from '../../../stores/pixelStore';
-import HanddrawPixelSample from './HanddrawPixelSample.vue';
 
 const store = usePixelStore();
 const preview = ref<HTMLCanvasElement | null>(null);
+const addColorInput = ref<HTMLInputElement | null>(null);
+
+function addPaletteColor() {
+  addColorInput.value?.click();
+}
+
+function onAddColor(event: Event) {
+  const input = event.target as HTMLInputElement;
+  const color = input.value;
+  if (color && !store.palette.includes(color)) {
+    store.palette.push(color);
+  }
+  input.value = '';
+}
 
 function renderPreview() {
   const el = preview.value;
@@ -45,23 +58,18 @@ watch(() => store.pixels, () => nextTick(renderPreview), { deep: true });
           :title="color"
           @click="store.activeColor = color"
         />
-        <button class="plus">+</button>
+        <button class="plus" @click="addPaletteColor">+</button>
       </div>
-      <div class="color-field">
-        <div class="picker-dot"></div>
-        <div class="hue-strip"></div>
-      </div>
+      <input ref="addColorInput" type="color" class="hidden-color-input" @change="onAddColor" />
     </section>
 
     <section class="panel-card preview-card handdraw-preview-card">
       <h2>PREVIEW</h2>
       <div class="preview-box handdraw-adaptive-window adaptive-material-window">
         <canvas ref="preview" width="224" height="224"></canvas>
-        <HanddrawPixelSample variant="preview" :frame="1" />
       </div>
       <div class="preview-footer">
         <span>{{ store.width }} x {{ store.height }}</span>
-        <span>□ ↗</span>
       </div>
     </section>
 
@@ -87,12 +95,15 @@ watch(() => store.pixels, () => nextTick(renderPreview), { deep: true });
           <option value="negative">Negative</option>
         </select>
       </label>
-    </section>
-
-    <section class="panel-card layers-card handdraw-layers-card">
-      <h2>LAYERS <span>＋ ⧉</span></h2>
-      <div class="layer active"><span>◉</span><span class="thumb"><HanddrawPixelSample variant="layer" compact /></span><strong>Layer 1</strong></div>
-      <div class="layer"><span>⊙</span><span class="thumb blank"><HanddrawPixelSample variant="blank" compact /></span><strong>Background</strong><small>▣</small></div>
+      <label class="field-label">Brush Size
+        <select v-model.number="store.brushSize">
+          <option :value="1">1 px</option>
+          <option :value="2">2 px</option>
+          <option :value="3">3 px</option>
+          <option :value="4">4 px</option>
+        </select>
+      </label>
+      <label class="inline-check"><input v-model="store.symmetry" type="checkbox" /> Mirror symmetry</label>
     </section>
 
     <section class="status-card">

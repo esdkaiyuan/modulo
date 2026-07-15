@@ -9,6 +9,7 @@ export interface ProcessImageOptions {
   contrast: number;
   threshold: number;
   dither: DitherMode;
+  scalingAlgorithm?: 'nearest' | 'bilinear';
 }
 
 export function clampByte(value: number): number {
@@ -53,12 +54,56 @@ export function resizeNearest(
   targetHeight: number
 ): Uint8ClampedArray {
   const result = new Uint8ClampedArray(targetWidth * targetHeight);
+  const xRatio = sourceWidth / targetWidth;
+  const yRatio = sourceHeight / targetHeight;
 
   for (let y = 0; y < targetHeight; y += 1) {
-    const sourceY = Math.min(sourceHeight - 1, Math.floor((y / targetHeight) * sourceHeight));
+    const srcY = Math.min(sourceHeight - 1, Math.floor(y * yRatio));
+    const yOffset = srcY * sourceWidth;
     for (let x = 0; x < targetWidth; x += 1) {
-      const sourceX = Math.min(sourceWidth - 1, Math.floor((x / targetWidth) * sourceWidth));
-      result[y * targetWidth + x] = gray[sourceY * sourceWidth + sourceX];
+      const srcX = Math.min(sourceWidth - 1, Math.floor(x * xRatio));
+      result[y * targetWidth + x] = gray[yOffset + srcX];
+    }
+  }
+
+  return result;
+}
+
+export function resizeBilinear(
+  gray: Uint8ClampedArray,
+  sourceWidth: number,
+  sourceHeight: number,
+  targetWidth: number,
+  targetHeight: number
+): Uint8ClampedArray {
+  const result = new Uint8ClampedArray(targetWidth * targetHeight);
+  const xRatio = (sourceWidth - 1) / Math.max(1, targetWidth - 1);
+  const yRatio = (sourceHeight - 1) / Math.max(1, targetHeight - 1);
+
+  for (let y = 0; y < targetHeight; y += 1) {
+    const srcY = Math.min(sourceHeight - 1.001, y * yRatio);
+    const y0 = Math.floor(srcY);
+    const y1 = Math.min(y0 + 1, sourceHeight - 1);
+    const yFrac = srcY - y0;
+    const row0Offset = y0 * sourceWidth;
+    const row1Offset = y1 * sourceWidth;
+
+    for (let x = 0; x < targetWidth; x += 1) {
+      const srcX = Math.min(sourceWidth - 1.001, x * xRatio);
+      const x0 = Math.floor(srcX);
+      const x1 = Math.min(x0 + 1, sourceWidth - 1);
+      const xFrac = srcX - x0;
+
+      const v00 = gray[row0Offset + x0];
+      const v10 = gray[row0Offset + x1];
+      const v01 = gray[row1Offset + x0];
+      const v11 = gray[row1Offset + x1];
+
+      const top = v00 + (v10 - v00) * xFrac;
+      const bottom = v01 + (v11 - v01) * xFrac;
+      const value = top + (bottom - top) * yFrac;
+
+      result[y * targetWidth + x] = clampByte(value);
     }
   }
 
@@ -92,7 +137,8 @@ export function floydSteinbergDither(gray: Uint8ClampedArray, width: number, hei
 }
 
 export function processGrayToBitmap(gray: Uint8ClampedArray, options: ProcessImageOptions): Uint8Array {
-  const resized = resizeNearest(gray, options.sourceWidth, options.sourceHeight, options.targetWidth, options.targetHeight);
+  const resizeFn = options.scalingAlgorithm === 'bilinear' ? resizeBilinear : resizeNearest;
+  const resized = resizeFn(gray, options.sourceWidth, options.sourceHeight, options.targetWidth, options.targetHeight);
   const adjusted = applyAdjustments(resized, options.brightness, options.contrast);
 
   if (options.dither === 'floyd-steinberg') {
@@ -109,3 +155,64 @@ export function imageDataToBitmap(imageData: ImageData, options: Omit<ProcessIma
     sourceHeight: imageData.height
   });
 }
+
+function rgbToRgb565(r: number, g: number, b: number): number {
+  return ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+}
+
+function rgb565ToRgb(color: number): [number, number, number] {
+  const r = ((color >> 11) & 0x1F) << 3;
+  const g = ((color >> 5) & 0x3F) << 2;
+  const b = (color & 0x1F) << 3;
+  return [r, g, b];
+}
+
+function findClosestPaletteColor(r: number, g: number, b: number, palette: [number, number, number][]): number {
+  let minDist = Infinity;
+  let bestIdx = 0;
+  for (let i = 0; i < palette.length; i++) {
+    const dr = r - palette[i][0];
+    const dg = g - palette[i][1];
+    const db = b - palette[i][2];
+    const dist = dr * dr + dg * dg + db * db;
+    if (dist < minDist) {
+      minDist = dist;
+      bestIdx = i;
+    }
+  }
+  return bestIdx;
+}
+
+export function quantizeToRgb565(imageData: ImageData): Uint16Array {
+  const result = new Uint16Array(imageData.width * imageData.height);
+  const data = imageData.data;
+  for (let i = 0; i < result.length; i++) {
+    const offset = i * 4;
+    result[i] = rgbToRgb565(data[offset], data[offset + 1], data[offset + 2]);
+  }
+  return result;
+}
+
+export function quantizeToPalette16(imageData: ImageData): Uint8Array {
+  const palette: [number, number, number][] = [
+    [0, 0, 0], [255, 255, 255], [255, 0, 0], [0, 255, 0],
+    [0, 0, 255], [255, 255, 0], [255, 0, 255], [0, 255, 255],
+    [128, 0, 0], [0, 128, 0], [0, 0, 128], [128, 128, 0],
+    [128, 0, 128], [0, 128, 128], [128, 128, 128], [64, 64, 64]
+  ];
+
+  const result = new Uint8Array(imageData.width * imageData.height);
+  const data = imageData.data;
+  for (let i = 0; i < result.length; i++) {
+    const offset = i * 4;
+    result[i] = findClosestPaletteColor(data[offset], data[offset + 1], data[offset + 2], palette);
+  }
+  return result;
+}
+
+export const PALETTE_16_COLORS: [number, number, number][] = [
+  [0, 0, 0], [255, 255, 255], [255, 0, 0], [0, 255, 0],
+  [0, 0, 255], [255, 255, 0], [255, 0, 255], [0, 255, 255],
+  [128, 0, 0], [0, 128, 0], [0, 0, 128], [128, 128, 0],
+  [128, 0, 128], [0, 128, 128], [128, 128, 128], [64, 64, 64]
+];

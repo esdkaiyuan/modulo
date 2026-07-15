@@ -4,6 +4,13 @@ import { extractVideoFrames } from '../utils/videoFrameExtractor';
 
 const store = useVideoModuloStore();
 
+function formatDuration(seconds: number): string {
+  if (!seconds) return '00:00:00';
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
 async function handleVideo(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
@@ -31,7 +38,7 @@ async function handleVideo(event: Event) {
     <div class="header-actions video-file-bar">
       <label class="ghost-btn batch-upload">▣ Open Video<input type="file" accept="video/*" @change="handleVideo" /></label>
       <strong>{{ store.fileName || 'sample_video_1080p.mp4' }} <span>●</span></strong>
-      <span>{{ store.sourceWidth || 1920 }}×{{ store.sourceHeight || 1080 }} · {{ store.sampleFps.toFixed(2) }} FPS · {{ store.duration ? store.duration.toFixed(2) : '00:45:22' }}</span>
+      <span>{{ store.sourceWidth || 1920 }}×{{ store.sourceHeight || 1080 }} · {{ store.sampleFps.toFixed(2) }} FPS · {{ formatDuration(store.duration) }}</span>
       <button>⋮</button>
     </div>
   </header>

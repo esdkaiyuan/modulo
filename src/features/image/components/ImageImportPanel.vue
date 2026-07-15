@@ -68,21 +68,25 @@ function formatSize(bytes: number) {
 
 <template>
   <PanelSection class="image-import" step="1" title="Import Image">
-    <label class="drop-zone image-adaptive-window adaptive-material-window" @dragover.prevent @drop="handleDrop">
-      <input class="file-input" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" @change="handleFileChange" />
-      <strong>☁ Drop image here or click to browse</strong>
-      <span><b>PNG</b><b>JPG</b><b>BMP</b><b>WEBP</b></span>
-    </label>
-    <div class="image-actions"><button class="ghost-primary">⌗ Crop</button><button class="ghost-btn" @click="store.reset">↺ Reset</button></div>
-    <img v-if="store.previewUrl" class="loaded-image image-adaptive-window adaptive-material-window" :src="store.previewUrl" alt="Loaded source" />
-    <div v-else class="loaded-image sample-holder image-adaptive-window adaptive-material-window"><ImagePixelSample variant="source" compact /></div>
-    <div class="image-meta">
-      <strong>{{ store.fileName || 'panda_128x64.png' }}</strong>
-      <span>Dimensions: {{ store.sourceWidth || '-' }} × {{ store.sourceHeight || '-' }} px</span>
-      <span>File Size: {{ formatSize(store.fileSize) }}</span>
-      <span>Type: {{ store.fileType ? store.fileType.split('/').pop()?.toUpperCase() : 'PNG' }}</span>
-      <span>Color: Grayscale</span>
-      <span :class="store.fileName ? 'ok' : 'tag'">{{ store.fileName ? '✓ Image loaded' : 'Waiting for image' }}</span>
+    <div class="image-import-body">
+      <label class="drop-zone" @dragover.prevent @drop="handleDrop">
+        <input class="file-input" type="file" accept="image/png,image/jpeg,image/webp,image/bmp" @change="handleFileChange" />
+        <strong>☁ Drop image here or click to browse</strong>
+        <span><b>PNG</b><b>JPG</b><b>BMP</b><b>WEBP</b></span>
+      </label>
+      <div class="image-import-sidebar">
+        <div class="image-actions"><button class="ghost-btn" @click="store.reset">↺ Reset</button></div>
+        <img v-if="store.previewUrl" class="loaded-image" :src="store.previewUrl" alt="Loaded source" :style="{ aspectRatio: store.sourceWidth && store.sourceHeight ? `${store.sourceWidth} / ${store.sourceHeight}` : undefined }" />
+        <div v-else class="loaded-image sample-holder"><ImagePixelSample variant="source" compact /></div>
+        <div class="image-meta">
+          <strong>{{ store.fileName || 'panda_128x64.png' }}</strong>
+          <span>Dimensions: {{ store.sourceWidth || '-' }} × {{ store.sourceHeight || '-' }} px</span>
+          <span>File Size: {{ formatSize(store.fileSize) }}</span>
+          <span>Type: {{ store.fileType ? store.fileType.split('/').pop()?.toUpperCase() : 'PNG' }}</span>
+          <span>Color: {{ store.colorMode || 'Grayscale' }}</span>
+          <span :class="store.fileName ? 'ok' : 'tag'">{{ store.fileName ? '✓ Image loaded' : 'Waiting for image' }}</span>
+        </div>
+      </div>
     </div>
   </PanelSection>
 </template>

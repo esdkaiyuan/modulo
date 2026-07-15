@@ -67,6 +67,9 @@ function drawAt(event: PointerEvent) {
 function handlePointerDown(event: PointerEvent) {
   isDrawing.value = true;
   canvas.value?.setPointerCapture(event.pointerId);
+  if (store.activeTool === 'pencil' || store.activeTool === 'eraser') {
+    store.beginStroke();
+  }
   drawAt(event);
 }
 
@@ -79,6 +82,7 @@ function handlePointerMove(event: PointerEvent) {
 }
 
 function handlePointerUp(event: PointerEvent) {
+  if (isDrawing.value) store.endStroke();
   isDrawing.value = false;
   canvas.value?.releasePointerCapture(event.pointerId);
 }

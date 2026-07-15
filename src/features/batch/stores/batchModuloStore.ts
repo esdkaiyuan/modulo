@@ -141,9 +141,19 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
     for (const item of items.value) {
       if (item.status === 'pending' || item.status === 'error') {
         processItem(item);
-        await Promise.resolve();
+        // Yield a macrotask so per-item status/progress actually renders.
+        await new Promise((resolve) => setTimeout(resolve, 0));
       }
     }
+  }
+
+  /** Re-run every item (including done ones) with the current settings. */
+  async function reprocessAll() {
+    for (const item of items.value) {
+      item.status = 'pending';
+      item.progress = 0;
+    }
+    await processAll();
   }
 
   async function retryItem(id: string) {
@@ -151,10 +161,16 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
     if (!item) return;
     item.status = 'pending';
     item.progress = 0;
-    await processAll();
+    processItem(item);
+  }
+
+  function releaseUrl(item: BatchItem) {
+    if (item.dataUrl.startsWith('blob:')) URL.revokeObjectURL(item.dataUrl);
   }
 
   function removeItem(id: string) {
+    const removed = items.value.find((item) => item.id === id);
+    if (removed) releaseUrl(removed);
     items.value = items.value.filter((item) => item.id !== id);
     if (selectedId.value === id) {
       selectedId.value = items.value[0]?.id ?? '';
@@ -162,6 +178,7 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
   }
 
   function clearAll() {
+    items.value.forEach(releaseUrl);
     items.value = [];
     selectedId.value = '';
     logs.value = [];
@@ -190,6 +207,7 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
     mergedSource,
     addImageData,
     processAll,
+    reprocessAll,
     retryItem,
     removeItem,
     clearAll,

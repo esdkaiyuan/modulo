@@ -38,3 +38,18 @@ class TestImageData {
 }
 
 globalThis.ImageData = TestImageData as unknown as typeof ImageData;
+
+// jsdom lacks ResizeObserver (used by CropOverlay / ImageOutputPanel)
+class TestResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+globalThis.ResizeObserver = globalThis.ResizeObserver ?? (TestResizeObserver as unknown as typeof ResizeObserver);
+
+// jsdom lacks FontFace / document.fonts (used by FontInputPanel upload)
+if (!('fonts' in document)) {
+  Object.defineProperty(document, 'fonts', {
+    value: { add: () => {}, delete: () => {}, load: () => Promise.resolve([]) }
+  });
+}

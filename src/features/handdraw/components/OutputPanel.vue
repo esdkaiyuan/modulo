@@ -27,7 +27,7 @@ function downloadOutput() {
 <template>
   <section class="output-panel handdraw-output-panel">
     <header>
-      <h2>HEX OUTPUT</h2>
+      <h2>{{ store.outputFormat === 'c-array' ? 'C ARRAY OUTPUT' : store.outputFormat === 'hex' ? 'HEX OUTPUT' : 'BINARY OUTPUT' }}</h2>
       <select v-model="store.outputFormat" data-test="handdraw-output-format">
         <option value="c-array">C Array (uint8_t)</option>
         <option value="hex">HEX Bytes</option>

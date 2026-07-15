@@ -1,10 +1,29 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onBeforeUnmount } from 'vue';
 
 type ToolRoute = 'image' | 'video' | 'animation' | 'handdraw' | 'batch' | 'font';
 
 const statusMessage = ref('Ready to build dot matrix assets.');
 const darkMode = ref(false);
+const accountMenuOpen = ref(false);
+
+const accountUser = {
+  name: 'PixelCraft Developer',
+  username: '@kaiyuan',
+  userId: 'U-1024-7788',
+  email: 'kaiyuan@pixelcraft.dev',
+  role: 'Pro Developer',
+  avatarSeed: 'K'
+};
+
+const accountMenuItems = [
+  { key: 'profile', label: 'View detailed personal info', icon: 'user' },
+  { key: 'projects', label: 'My Projects', icon: 'folder' },
+  { key: 'billing', label: 'Billing & Plan', icon: 'card' },
+  { key: 'preferences', label: 'Preferences', icon: 'gear' },
+  { key: 'help', label: 'Help & Support', icon: 'help' },
+  { key: 'logout', label: 'Sign out', icon: 'logout', danger: true }
+];
 
 const tools: Array<{
   title: string;
@@ -13,6 +32,7 @@ const tools: Array<{
   route: ToolRoute;
   accent: string;
   icon: string;
+  svgIcon: string;
   preview: PixelPreviewKind;
   testId: string;
 }> = [
@@ -23,6 +43,7 @@ const tools: Array<{
     route: 'image',
     accent: 'blue',
     icon: 'image',
+    svgIcon: 'image',
     preview: 'image',
     testId: 'launch-image'
   },
@@ -33,6 +54,7 @@ const tools: Array<{
     route: 'video',
     accent: 'green',
     icon: 'film',
+    svgIcon: 'video',
     preview: 'video',
     testId: 'launch-video'
   },
@@ -43,6 +65,7 @@ const tools: Array<{
     route: 'animation',
     accent: 'purple',
     icon: 'grid',
+    svgIcon: 'animation',
     preview: 'animation',
     testId: 'launch-animation'
   },
@@ -53,6 +76,7 @@ const tools: Array<{
     route: 'handdraw',
     accent: 'orange',
     icon: 'cat',
+    svgIcon: 'editor',
     preview: 'editor',
     testId: 'launch-handdraw'
   },
@@ -63,6 +87,7 @@ const tools: Array<{
     route: 'batch',
     accent: 'blue',
     icon: 'layers',
+    svgIcon: 'batch',
     preview: 'batch',
     testId: 'launch-batch'
   },
@@ -73,6 +98,7 @@ const tools: Array<{
     route: 'font',
     accent: 'teal',
     icon: 'font',
+    svgIcon: 'font',
     preview: 'font',
     testId: 'launch-font'
   }
@@ -115,6 +141,21 @@ function pixelTone(kind: PixelPreviewKind, index: number, frame = 0) {
   if (kind === 'font' && ((x > 1 && x < 4 && y > 1 && y < 7) || (x > 6 && x < 10 && y > 1 + frame && y < 7) || (y === 2 && x > 2 && x < 10) || (x === 10 - frame && y > 3))) return pick(5);
   return 'empty';
 }
+
+const svgIcons: Record<string, string> = {
+  image: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>`,
+  video: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>`,
+  animation: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="8" height="8" rx="1"/><rect x="14" y="2" width="8" height="8" rx="1"/><rect x="2" y="14" width="8" height="8" rx="1"/><rect x="14" y="14" width="8" height="8" rx="1"/></svg>`,
+  editor: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`,
+  batch: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 16h6"/><path d="M19 13v6"/><path d="M21 3H9l-7 7 7 7h10a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2Z"/></svg>`,
+  font: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>`,
+  user: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
+  folder: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`,
+  card: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>`,
+  gear: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/></svg>`,
+  help: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`,
+  logout: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`
+};
 
 const guideSteps = [
   ['Choose Your Tool', 'Select the tool that matches your needs from above'],
@@ -159,6 +200,45 @@ function checkUpdates() {
 function openGithub() {
   window.open('https://github.com/esdkaiyuan/modulo', '_blank', 'noopener,noreferrer');
 }
+
+function toggleAccountMenu(event: MouseEvent) {
+  event.stopPropagation();
+  accountMenuOpen.value = !accountMenuOpen.value;
+}
+
+function closeAccountMenu() {
+  accountMenuOpen.value = false;
+}
+
+function handleAccountAction(key: string, label: string) {
+  if (key === 'logout') {
+    accountMenuOpen.value = false;
+    setStatus(`Signed out of ${accountUser.name}. See you soon!`);
+    return;
+  }
+  if (key === 'profile') {
+    setStatus(`Opening detailed profile for ${accountUser.name} (${accountUser.userId}).`);
+  } else {
+    setStatus(`${label} is ready inside the account workspace.`);
+  }
+  accountMenuOpen.value = false;
+}
+
+function handleAccountClickOutside(event: MouseEvent) {
+  const target = event.target as HTMLElement | null;
+  if (!target) return;
+  if (!target.closest('.account-menu')) {
+    accountMenuOpen.value = false;
+  }
+}
+
+onMounted(() => {
+  document.addEventListener('click', handleAccountClickOutside);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', handleAccountClickOutside);
+});
 </script>
 
 <template>
@@ -177,10 +257,51 @@ function openGithub() {
         <button title="Theme" @click="toggleTheme">☼</button>
         <button @click="openDocs">▱ Docs</button>
         <button @click="openSettings">⚙ Settings</button>
-        <button class="avatar-btn" title="Account" @click="setStatus('Developer profile is active.')">
-          <span></span>
-          ⌄
-        </button>
+        <div class="account-menu" :class="{ open: accountMenuOpen }">
+          <button
+            class="avatar-btn"
+            title="Account"
+            :aria-expanded="accountMenuOpen"
+            aria-haspopup="menu"
+            @click="toggleAccountMenu"
+          >
+            <span>{{ accountUser.avatarSeed }}</span>
+            <em>{{ accountUser.username }}</em>
+            <i class="caret" :class="{ flipped: accountMenuOpen }">⌄</i>
+          </button>
+          <div v-if="accountMenuOpen" class="account-dropdown" role="menu">
+            <header class="account-card">
+              <div class="account-avatar" aria-hidden="true">{{ accountUser.avatarSeed }}</div>
+              <div class="account-identity">
+                <strong>{{ accountUser.name }}</strong>
+                <small>{{ accountUser.username }}</small>
+                <span class="role-badge">{{ accountUser.role }}</span>
+              </div>
+            </header>
+            <dl class="account-meta">
+              <div>
+                <dt>User ID</dt>
+                <dd>{{ accountUser.userId }}</dd>
+              </div>
+              <div>
+                <dt>Email</dt>
+                <dd>{{ accountUser.email }}</dd>
+              </div>
+            </dl>
+            <ul class="account-actions">
+              <li v-for="item in accountMenuItems" :key="item.key">
+                <button
+                  role="menuitem"
+                  :class="{ 'is-danger': item.danger }"
+                  @click="handleAccountAction(item.key, item.label)"
+                >
+                  <span class="account-action-icon" v-html="svgIcons[item.icon]" aria-hidden="true"></span>
+                  <span>{{ item.label }}</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </header>
 
@@ -210,7 +331,7 @@ function openGithub() {
         <article v-for="tool in tools" :key="tool.title" class="tool-card">
           <div class="tool-card-copy">
             <header>
-              <span class="tool-icon-box" :class="tool.accent">{{ tool.icon }}</span>
+              <span class="tool-icon-box" :class="tool.accent" v-html="svgIcons[tool.svgIcon]"></span>
               <h3>{{ tool.title }}</h3>
               <small>{{ tool.version }}</small>
             </header>

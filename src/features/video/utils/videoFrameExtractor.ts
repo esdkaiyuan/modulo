@@ -37,6 +37,9 @@ function waitForEvent(target: EventTarget, event: string): Promise<void> {
 }
 
 export async function extractVideoFrames(options: VideoExtractionOptions): Promise<ExtractedVideoResult> {
+  if (options.sampleFps <= 0) {
+    throw new Error('Sample FPS must be greater than 0');
+  }
   const objectUrl = URL.createObjectURL(options.file);
   const video = document.createElement('video');
   video.src = objectUrl;
@@ -57,9 +60,13 @@ export async function extractVideoFrames(options: VideoExtractionOptions): Promi
   if (!context) throw new Error('Canvas 2D is unavailable');
 
   const frames: ExtractedVideoFrame[] = [];
+  let lastActualTime = -1;
   for (let time = Math.max(0, options.startTime); time <= end + 0.0001; time += step) {
-    video.currentTime = Math.min(time, duration);
+    const clampedTime = Math.min(time, duration);
+    video.currentTime = clampedTime;
     await waitForEvent(video, 'seeked');
+    if (Math.abs(video.currentTime - lastActualTime) < 0.0005) continue;
+    lastActualTime = video.currentTime;
     context.drawImage(video, 0, 0, width, height);
     frames.push({
       time: video.currentTime,

@@ -160,6 +160,24 @@ export const usePixelStore = defineStore('pixel', () => {
     historyIndex.value = history.value.length - 1;
   }
 
+  // ── Stroke batching: one history entry per drag stroke ──
+  let strokeActive = false;
+  let strokeChanged = false;
+
+  function beginStroke() {
+    strokeActive = true;
+    strokeChanged = false;
+  }
+
+  function endStroke() {
+    if (strokeActive && strokeChanged) {
+      // Pixels were mutated in place during the stroke; snapshot once.
+      commit([...pixels.value]);
+    }
+    strokeActive = false;
+    strokeChanged = false;
+  }
+
   function writePixel(nextPixels: PixelValue[], x: number, y: number, value: PixelValue) {
     if (!inBounds(x, y)) return;
 
@@ -187,14 +205,23 @@ export const usePixelStore = defineStore('pixel', () => {
       return;
     }
 
-    const nextPixels = [...pixels.value];
-
     if (activeTool.value === 'fill') {
-      commit(floodFill(nextPixels, width.value, height.value, x, y, activeColor.value));
+      commit(floodFill([...pixels.value], width.value, height.value, x, y, activeColor.value));
       return;
     }
 
-    writePixel(nextPixels, x, y, activeTool.value === 'eraser' ? null : activeColor.value);
+    const value = activeTool.value === 'eraser' ? null : activeColor.value;
+    if (strokeActive) {
+      // Mutate in place during a stroke; endStroke() commits one history entry.
+      const nextPixels = [...pixels.value];
+      writePixel(nextPixels, x, y, value);
+      pixels.value = nextPixels;
+      strokeChanged = true;
+      return;
+    }
+
+    const nextPixels = [...pixels.value];
+    writePixel(nextPixels, x, y, value);
     commit(nextPixels);
   }
 
@@ -208,11 +235,23 @@ export const usePixelStore = defineStore('pixel', () => {
   }
 
   function setCanvasSize(size: number) {
+    if (size === width.value && size === height.value) return;
+    // Preserve the overlapping region instead of wiping the drawing.
+    const next = createEmptyPixels(size, size);
+    const copyW = Math.min(size, width.value);
+    const copyH = Math.min(size, height.value);
+    for (let y = 0; y < copyH; y += 1) {
+      for (let x = 0; x < copyW; x += 1) {
+        next[y * size + x] = pixels.value[y * width.value + x];
+      }
+    }
     width.value = size;
     height.value = size;
-    pixels.value = createEmptyPixels(size, size);
-    history.value = [[...pixels.value]];
-    historyIndex.value = 0;
+    commit(next);
+  }
+
+  function clearCanvas() {
+    commit(createEmptyPixels(width.value, height.value));
   }
 
   function undo() {
@@ -226,6 +265,9 @@ export const usePixelStore = defineStore('pixel', () => {
     historyIndex.value += 1;
     pixels.value = [...history.value[historyIndex.value]];
   }
+
+  const canUndo = computed(() => historyIndex.value > 0);
+  const canRedo = computed(() => historyIndex.value < history.value.length - 1);
 
   function outputBlob() {
     if (outputFormat.value === 'bin') {
@@ -258,11 +300,16 @@ export const usePixelStore = defineStore('pixel', () => {
     hexOutput,
     currentOutput,
     outputFileName,
+    canUndo,
+    canRedo,
     pixelAt,
     paintPixel,
+    beginStroke,
+    endStroke,
     setCursor,
     setTool,
     setCanvasSize,
+    clearCanvas,
     undo,
     redo,
     outputBlob

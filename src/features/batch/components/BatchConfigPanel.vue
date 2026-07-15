@@ -8,8 +8,6 @@ const store = useBatchModuloStore();
 <template>
   <aside class="batch-side batch-config-column">
     <PanelSection class="batch-config-card" step="3" title="Configuration">
-      <label class="field-label">Parameter Preset <select><option>Preset 1</option></select></label>
-      <div class="segmented"><button>Preset 1</button><button>Preset 2</button><button>Custom</button><button>▣</button></div>
       <h3>Extraction Parameters <small>(Applied to All Files)</small></h3>
       <label class="field-label">Scanning Direction
         <select v-model="store.scanDirection">
@@ -31,7 +29,7 @@ const store = useBatchModuloStore();
       <label class="field-label">Target Width <input v-model.number="store.targetWidth" type="number" min="1" max="512" /></label>
       <label class="field-label">Target Height <input v-model.number="store.targetHeight" type="number" min="1" max="512" /></label>
       <label class="field-label">Threshold Value <input v-model.number="store.threshold" type="number" min="0" max="255" /></label>
-      <button class="primary-btn wide" @click="store.processAll">⇊ Apply to All</button>
+      <button class="primary-btn wide" @click="store.reprocessAll">⇊ Apply to All</button>
     </PanelSection>
     <PanelSection class="batch-summary-card" title="Summary Statistics">
       <div class="stats-row">

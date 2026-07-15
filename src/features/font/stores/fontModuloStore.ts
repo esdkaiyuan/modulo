@@ -1,8 +1,14 @@
 import { defineStore } from 'pinia';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { encodeBitmap, type BitOrder, type Polarity, type ScanDirection } from '../../../engines/bitmapEncoder';
 import { fontImageDataToBitmap, makeFontIdentifier, renderTextToBitmap } from '../../../engines/fontRenderer';
 import { formatCArray, makeTextBlob } from '../../../engines/outputFormatter';
+
+export interface FontGlyph {
+  char: string;
+  bitmap: Uint8Array;
+  bytes: Uint8Array;
+}
 
 export const useFontModuloStore = defineStore('fontModulo', () => {
   const text = ref('汉');
@@ -17,50 +23,106 @@ export const useFontModuloStore = defineStore('fontModulo', () => {
   const scanDirection = ref<ScanDirection>('horizontal-ltr');
   const bitOrder = ref<BitOrder>('msb');
   const polarity = ref<Polarity>('positive');
-  const bitmap = ref<Uint8Array>(new Uint8Array());
-  const bytes = ref<Uint8Array>(new Uint8Array());
+  const glyphs = ref<FontGlyph[]>([]);
+  const selectedGlyphIndex = ref(0);
 
-  const totalBits = computed(() => targetWidth.value * targetHeight.value);
+  // Selected glyph (preview target); falls back to the first one.
+  const selectedGlyph = computed(() =>
+    glyphs.value[selectedGlyphIndex.value] ?? glyphs.value[0] ?? null
+  );
+  const bitmap = computed(() => selectedGlyph.value?.bitmap ?? new Uint8Array());
+  const bytes = computed(() => selectedGlyph.value?.bytes ?? new Uint8Array());
+
+  const totalBits = computed(() => targetWidth.value * targetHeight.value * Math.max(1, glyphs.value.length));
   const outputName = computed(() => makeFontIdentifier(text.value, targetWidth.value, targetHeight.value));
-  const generatedSource = computed(() => formatCArray(bytes.value, {
-    name: outputName.value,
-    width: targetWidth.value,
-    height: targetHeight.value
-  }));
 
-  function encodeCurrentBitmap() {
-    bytes.value = encodeBitmap(bitmap.value, targetWidth.value, targetHeight.value, {
+  const generatedSource = computed(() => {
+    if (!glyphs.value.length) return '';
+    if (glyphs.value.length === 1) {
+      return formatCArray(glyphs.value[0].bytes, {
+        name: outputName.value,
+        width: targetWidth.value,
+        height: targetHeight.value
+      });
+    }
+    // One array per character plus an index table.
+    const sections = glyphs.value.map((glyph) =>
+      formatCArray(glyph.bytes, {
+        name: makeFontIdentifier(glyph.char, targetWidth.value, targetHeight.value),
+        width: targetWidth.value,
+        height: targetHeight.value
+      })
+    );
+    const names = glyphs.value.map((glyph) =>
+      makeFontIdentifier(glyph.char, targetWidth.value, targetHeight.value)
+    );
+    sections.push([
+      `// Glyph table: "${text.value}"`,
+      `const uint8_t* const ${outputName.value}_glyphs[${glyphs.value.length}] PROGMEM = {`,
+      `  ${names.join(', ')}`,
+      `};`,
+      `const uint16_t ${outputName.value}_glyph_count = ${glyphs.value.length};`
+    ].join('\n'));
+    return sections.join('\n\n');
+  });
+
+  function generate() {
+    const chars = Array.from(text.value || ' ');
+    glyphs.value = chars.map((char) => {
+      const glyphBitmap = renderTextToBitmap({
+        text: char,
+        fontFamily: fontFamily.value,
+        fontSize: fontSize.value,
+        bold: bold.value,
+        italic: italic.value,
+        width: targetWidth.value,
+        height: targetHeight.value
+      }, threshold.value, invert.value);
+      const glyphBytes = encodeBitmap(glyphBitmap, targetWidth.value, targetHeight.value, {
+        scan: scanDirection.value,
+        bitOrder: bitOrder.value,
+        polarity: polarity.value
+      });
+      return { char, bitmap: glyphBitmap, bytes: glyphBytes };
+    });
+    selectedGlyphIndex.value = Math.min(selectedGlyphIndex.value, Math.max(0, glyphs.value.length - 1));
+  }
+
+  function generateFromImageData(imageData: ImageData) {
+    const glyphBitmap = fontImageDataToBitmap(imageData, threshold.value, invert.value);
+    const glyphBytes = encodeBitmap(glyphBitmap, targetWidth.value, targetHeight.value, {
       scan: scanDirection.value,
       bitOrder: bitOrder.value,
       polarity: polarity.value
     });
-  }
-
-  function generate() {
-    bitmap.value = renderTextToBitmap({
-      text: text.value,
-      fontFamily: fontFamily.value,
-      fontSize: fontSize.value,
-      bold: bold.value,
-      italic: italic.value,
-      width: targetWidth.value,
-      height: targetHeight.value
-    }, threshold.value, invert.value);
-    encodeCurrentBitmap();
-  }
-
-  function generateFromImageData(imageData: ImageData) {
-    bitmap.value = fontImageDataToBitmap(imageData, threshold.value, invert.value);
-    encodeCurrentBitmap();
+    glyphs.value = [{ char: text.value || '?', bitmap: glyphBitmap, bytes: glyphBytes }];
+    selectedGlyphIndex.value = 0;
   }
 
   function outputBlob() {
     return makeTextBlob(generatedSource.value);
   }
 
-  const outputFileName = computed(() => `${outputName.value}.h`);
+  // Auto-regenerate on any setting change (debounced).
+  // Encoding-only changes could re-encode without re-rendering, but the render
+  // is cheap enough that a single path keeps this simple.
+  let generateTimer: ReturnType<typeof setTimeout> | null = null;
+  watch(
+    () => [
+      text.value, fontFamily.value, fontSize.value, bold.value, italic.value,
+      targetWidth.value, targetHeight.value, threshold.value, invert.value,
+      scanDirection.value, bitOrder.value, polarity.value
+    ],
+    () => {
+      if (generateTimer) clearTimeout(generateTimer);
+      generateTimer = setTimeout(() => {
+        generateTimer = null;
+        generate();
+      }, 120);
+    }
+  );
 
-  generateFromImageData(new ImageData(new Uint8ClampedArray(targetWidth.value * targetHeight.value * 4), targetWidth.value, targetHeight.value));
+  const outputFileName = computed(() => `${outputName.value}.h`);
 
   return {
     text,
@@ -75,6 +137,9 @@ export const useFontModuloStore = defineStore('fontModulo', () => {
     scanDirection,
     bitOrder,
     polarity,
+    glyphs,
+    selectedGlyphIndex,
+    selectedGlyph,
     bitmap,
     bytes,
     totalBits,

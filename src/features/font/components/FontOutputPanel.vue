@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { nextTick, onMounted, ref, watch } from 'vue';
+import { computed, nextTick, onMounted, ref, watch } from 'vue';
 import PanelSection from '../../../components/common/PanelSection.vue';
 import { useFontModuloStore } from '../stores/fontModuloStore';
 
 const store = useFontModuloStore();
 const preview = ref<HTMLCanvasElement | null>(null);
+
+const lineCount = computed(() => Math.max(1, store.generatedSource.split('\n').length));
 
 async function copyOutput() {
   await navigator.clipboard?.writeText(store.generatedSource);
@@ -46,7 +48,7 @@ watch(() => [store.bitmap, store.targetWidth, store.targetHeight], () => nextTic
   <PanelSection class="font-output" step="4" title="Generated Output">
     <template #actions><button class="ghost-primary" @click="copyOutput">⧉ Copy</button><button class="ghost-primary" @click="downloadOutput">⇩ Download</button></template>
     <div class="font-code-shell">
-      <ol class="font-line-gutter" aria-hidden="true"><li v-for="line in 10" :key="line">{{ line }}</li></ol>
+      <ol class="font-line-gutter" aria-hidden="true"><li v-for="line in lineCount" :key="line">{{ line }}</li></ol>
       <pre class="code-block">{{ store.generatedSource }}</pre>
     </div>
     <aside class="hex-preview font-hex-card">

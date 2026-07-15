@@ -1,14 +1,9 @@
 <script setup lang="ts">
-import { watch } from 'vue';
 import PanelSection from '../../../components/common/PanelSection.vue';
 import { useFontModuloStore } from '../stores/fontModuloStore';
 
+// Regeneration on setting change is handled by a debounced watch in the store.
 const store = useFontModuloStore();
-
-watch(
-  () => [store.scanDirection, store.bitOrder, store.polarity, store.invert],
-  () => store.generate()
-);
 </script>
 
 <template>
@@ -31,12 +26,8 @@ watch(
       <select v-model="store.bitOrder"><option value="msb">MSB First (Bit 7 → Bit 0)</option><option value="lsb">LSB First (Bit 0 → Bit 7)</option></select>
     </label>
     <label class="option-line">
-      <span>▰</span> Byte Order
-      <select><option>Big Endian</option></select>
-    </label>
-    <label class="option-line">
-      <span>&lt;/&gt;</span> Output Format
-      <select><option>C Array (uint8_t [])</option></select>
+      <span>◐</span> Threshold ({{ store.threshold }})
+      <input v-model.number="store.threshold" type="range" min="0" max="255" />
     </label>
     <button class="ghost-primary wide" @click="store.generate">⟳ Regenerate</button>
   </PanelSection>

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { encodeBitmap, type BitOrder, type Polarity, type ScanDirection } from '../../../engines/bitmapEncoder';
 import { imageDataToGray, processGrayToBitmap, type DitherMode } from '../../../engines/imageProcessor';
 import { makeTextBlob, sanitizeIdentifier } from '../../../engines/outputFormatter';
@@ -36,6 +36,8 @@ export const useAnimationModuloStore = defineStore('animationModulo', () => {
   const sampleStep = ref(1);
   const targetWidth = ref(64);
   const targetHeight = ref(64);
+  const brightness = ref(0);
+  const contrast = ref(1);
   const threshold = ref(128);
   const dithering = ref<DitherMode>('none');
   const scanDirection = ref<ScanDirection>('horizontal-ltr');
@@ -101,8 +103,8 @@ export const useAnimationModuloStore = defineStore('animationModulo', () => {
         sourceHeight: frame.imageData.height,
         targetWidth: targetWidth.value,
         targetHeight: targetHeight.value,
-        brightness: 0,
-        contrast: 1,
+        brightness: brightness.value,
+        contrast: contrast.value,
         threshold: threshold.value,
         dither: dithering.value
       });
@@ -127,6 +129,24 @@ export const useAnimationModuloStore = defineStore('animationModulo', () => {
     return makeTextBlob(generatedSource.value);
   }
 
+  // Auto re-process when any setting changes (debounced)
+  let processTimer: ReturnType<typeof setTimeout> | null = null;
+  watch(
+    () => [
+      startFrame.value, endFrame.value, sampleStep.value,
+      targetWidth.value, targetHeight.value, brightness.value, contrast.value,
+      threshold.value, dithering.value, scanDirection.value, bitOrder.value, polarity.value
+    ],
+    () => {
+      if (!decodedFrames.value.length) return;
+      if (processTimer) clearTimeout(processTimer);
+      processTimer = setTimeout(() => {
+        processTimer = null;
+        processFrames();
+      }, 80);
+    }
+  );
+
   const outputFileName = computed(() => `${outputName.value}_animation.h`);
 
   return {
@@ -141,6 +161,8 @@ export const useAnimationModuloStore = defineStore('animationModulo', () => {
     sampleStep,
     targetWidth,
     targetHeight,
+    brightness,
+    contrast,
     threshold,
     dithering,
     scanDirection,

@@ -12,6 +12,8 @@ defineProps<{
       <h2>{{ title }}</h2>
       <slot name="actions" />
     </header>
-    <slot />
+    <div class="dm-card-body">
+      <slot />
+    </div>
   </section>
 </template>

@@ -34,19 +34,24 @@ function decodeImage(dataUrl: string): Promise<ImageData> {
   });
 }
 
-async function addFiles(files: FileList | null) {
+async function addFiles(files: FileList | null, inputEl?: HTMLInputElement) {
   if (!files) return;
   for (const file of Array.from(files)) {
-    const dataUrl = await readAsDataUrl(file);
-    const imageData = await decodeImage(dataUrl);
-    store.addImageData({
-      fileName: file.name,
-      size: file.size,
-      type: file.type || 'image/*',
-      imageData,
-      dataUrl
-    });
+    try {
+      const dataUrl = await readAsDataUrl(file);
+      const imageData = await decodeImage(dataUrl);
+      store.addImageData({
+        fileName: file.name,
+        size: file.size,
+        type: file.type || 'image/*',
+        imageData,
+        dataUrl
+      });
+    } catch {
+      // Skip unreadable files instead of aborting the whole batch.
+    }
   }
+  if (inputEl) inputEl.value = ''; // allow re-selecting the same files
 }
 
 function formatSize(bytes: number) {
@@ -57,14 +62,13 @@ function formatSize(bytes: number) {
 <template>
   <PanelSection class="batch-files" step="1" title="Input Files">
     <template #actions>
-      <label class="ghost-btn batch-upload">＋ Add Images<input type="file" multiple accept="image/png,image/jpeg,image/webp,image/bmp" @change="addFiles(($event.target as HTMLInputElement).files)" /></label>
-      <label class="inline-check"><input type="checkbox" /> Select All ({{ store.items.length }})</label>
+      <label class="ghost-btn batch-upload">＋ Add Images<input type="file" multiple accept="image/png,image/jpeg,image/webp,image/bmp" @change="addFiles(($event.target as HTMLInputElement).files, $event.target as HTMLInputElement)" /></label>
+      <button class="ghost-btn" :disabled="!store.items.length" @click="store.clearAll">✕ Clear All</button>
       <button class="primary-btn" data-test="start-batch" @click="store.processAll">▶ Start Batch</button>
     </template>
     <table class="file-table">
       <thead>
         <tr>
-          <th><input type="checkbox" /></th>
           <th>File Name</th>
           <th>Status</th>
           <th>Progress</th>
@@ -74,9 +78,8 @@ function formatSize(bytes: number) {
       </thead>
       <tbody>
         <tr v-for="item in store.items" :key="item.id" :class="{ selected: store.selectedId === item.id }" @click="store.selectedId = item.id">
-          <td><input type="checkbox" /></td>
           <td><img v-if="item.dataUrl" class="mini-image" :src="item.dataUrl" alt="" /><span v-else class="mini-image"></span>{{ item.fileName }}</td>
-          <td><span class="status-pill" :class="item.status">{{ item.status }}</span></td>
+          <td><span class="status-pill" :class="item.status">{{ item.status }}</span><small v-if="item.error" class="row-error">{{ item.error }}</small></td>
           <td><span class="progress"><i :style="{ width: `${item.progress}%` }"></i></span>{{ item.progress }}%</td>
           <td>{{ formatSize(item.size) }}</td>
           <td>
@@ -85,7 +88,7 @@ function formatSize(bytes: number) {
           </td>
         </tr>
         <tr v-if="store.items.length === 0">
-          <td colspan="6" class="empty-row">
+          <td colspan="5" class="empty-row">
             <div class="batch-empty-state">
               <BatchPixelSample variant="queue" compact />
               <span>Add images to start batch extraction.</span>
@@ -97,3 +100,25 @@ function formatSize(bytes: number) {
     <footer class="table-footer">Showing {{ store.items.length }} files <span>Completed {{ store.summary.completed }} / {{ store.summary.total }}</span></footer>
   </PanelSection>
 </template>
+
+<style scoped>
+.row-error {
+  display: block;
+  color: #b91c1c;
+  font-size: 10px;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-table {
+  width: 100%;
+  table-layout: fixed;
+}
+
+.file-table td {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+</style>
