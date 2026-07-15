@@ -1,152 +1,218 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import ToolLayout from '../components/common/ToolLayout.vue';
-import AnimationWorkspace from '../features/animation/components/AnimationWorkspace.vue';
-import AnimationSettings from '../features/animation/components/AnimationSettings.vue';
-import AnimationOutput from '../features/animation/components/AnimationOutput.vue';
+import { computed, onBeforeUnmount, ref } from 'vue';
+import Panel from '../components/Panel.vue';
+import BitmapCanvas from '../components/BitmapCanvas.vue';
+import CodeOutput from '../components/CodeOutput.vue';
+import EncodingFields from '../components/EncodingFields.vue';
 import { useAnimationModuloStore } from '../features/animation/stores/animationModuloStore';
 import { decodeGif } from '../features/animation/utils/gifDecoder';
-import { buildExport, downloadExport } from '../features/shared/exportVariants';
 
 const store = useAnimationModuloStore();
-const activeMode = ref('frames');
+const fileInput = ref<HTMLInputElement | null>(null);
 const loadError = ref('');
+const isPlaying = ref(false);
+let playTimer: ReturnType<typeof setTimeout> | null = null;
 
-const modes = [
-  { key: 'frames', label: 'Frames', icon: '◐' },
-  { key: 'output', label: 'Output', icon: '⌘' },
-];
+const MAX_THUMBS = 40;
+const visibleFrames = computed(() => store.processedFrames.slice(0, MAX_THUMBS));
+const hiddenCount = computed(() => Math.max(0, store.processedFrames.length - MAX_THUMBS));
+const previewScale = computed(() => {
+  const max = Math.max(store.targetWidth, store.targetHeight);
+  return max <= 64 ? 5 : max <= 128 ? 3 : 2;
+});
 
-function onImport() {
-  document.querySelector<HTMLInputElement>('.animation-file-input')?.click();
+function pickFile() {
+  fileInput.value?.click();
 }
 
-async function loadAnimationFile(e: Event) {
+async function onFileChange(e: Event) {
   const input = e.target as HTMLInputElement;
   const file = input.files?.[0];
-  input.value = ''; // allow re-selecting the same file
+  input.value = '';
   if (!file) return;
   loadError.value = '';
+  stop();
   try {
     const decoded = decodeGif(await file.arrayBuffer());
     if (!decoded.frames.length) throw new Error('No frames found in this GIF');
     store.loadDecodedFrames({ fileName: file.name, width: decoded.width, height: decoded.height, frames: decoded.frames });
   } catch (error) {
-    loadError.value = error instanceof Error ? error.message : 'Failed to decode GIF file';
+    loadError.value = error instanceof Error ? error.message : 'GIF decode failed';
   }
 }
 
-function onExport(format: string) {
-  if (format === 'clipboard') {
-    navigator.clipboard?.writeText(store.generatedSource);
-    return;
-  }
-  const result = buildExport(format, {
-    name: store.outputName,
-    source: store.generatedSource,
-    frames: store.processedFrames.map((f) => Array.from(f.bytes)),
-    width: store.targetWidth,
-    height: store.targetHeight,
-    extra: { delays: store.delayTable }
-  });
-  downloadExport(store.outputName, result);
+// ── Delay-accurate playback ──────────────────────────
+function scheduleNext() {
+  const frame = store.selectedFrame;
+  const delay = Math.max(20, frame?.delay ?? 100);
+  playTimer = setTimeout(() => {
+    store.selectedIndex = store.selectedIndex >= store.processedFrames.length - 1
+      ? 0
+      : store.selectedIndex + 1;
+    if (isPlaying.value) scheduleNext();
+  }, delay);
 }
 
-function onSettingChange(key: string, value: unknown) {
-  if (key === 'width') store.targetWidth = value as number;
-  if (key === 'height') store.targetHeight = value as number;
+function play() {
+  if (isPlaying.value || !store.processedFrames.length) return;
+  isPlaying.value = true;
+  scheduleNext();
 }
+
+function stop() {
+  isPlaying.value = false;
+  if (playTimer) {
+    clearTimeout(playTimer);
+    playTimer = null;
+  }
+}
+
+function togglePlay() {
+  isPlaying.value ? stop() : play();
+}
+
+function step(delta: number) {
+  stop();
+  const count = store.processedFrames.length;
+  if (!count) return;
+  store.selectedIndex = (store.selectedIndex + delta + count) % count;
+}
+
+onBeforeUnmount(stop);
 </script>
 
 <template>
-  <ToolLayout
-    tool="animation"
-    title="DotMatrix Frame Extractor"
-    subtitle="Extract frames from animations and generate embedded-ready data"
-    :width="store.targetWidth"
-    :height="store.targetHeight"
-    :code-panel-source="store.generatedSource"
-    @import="onImport"
-    @export="onExport"
-    @setting-change="onSettingChange"
-    @mode-change="(m: string) => { activeMode = m; }"
-  >
-    <template #left-rail>
-      <button
-        v-for="m in modes"
-        :key="m.key"
-        class="rail-btn"
-        :class="{ active: activeMode === m.key }"
-        @click="activeMode = m.key"
-      >
-        <span class="rail-icon">{{ m.icon }}</span>
-        <span class="rail-label">{{ m.label }}</span>
-      </button>
-    </template>
+  <div class="tool-page">
+    <div class="tool-toolbar">
+      <span class="tool-title">◧ Animation Frames</span>
+      <button class="btn primary" data-test="open-gif" @click="pickFile">Open GIF</button>
+      <span class="toolbar-spacer"></span>
+      <span v-if="store.fileName" class="toolbar-info">
+        {{ store.fileName }} · {{ store.sourceWidth }}×{{ store.sourceHeight }} ·
+        {{ store.decodedFrames.length }} frames · {{ (store.totalDuration / 1000).toFixed(2) }}s
+      </span>
+    </div>
 
-    <template #right-rail>
-      <AnimationSettings />
-    </template>
+    <div class="tool-main">
+      <div v-if="loadError" class="alert-error">{{ loadError }}</div>
 
-    <template #top-actions>
-      <label class="toolbar-field toolbar-select-field">
-        <span>Dither</span>
-        <select v-model="store.dithering">
-          <option value="none">None</option>
-          <option value="floyd-steinberg">Floyd</option>
-        </select>
-      </label>
-      <label class="toolbar-field toolbar-select-field">
-        <span>Scan</span>
-        <select v-model="store.scanDirection">
-          <option value="horizontal-ltr">L→R</option>
-          <option value="horizontal-rtl">R→L</option>
-          <option value="vertical-ttb">T→B</option>
-          <option value="vertical-btt">B→T</option>
-        </select>
-      </label>
-    </template>
+      <Panel :title="`Animation Preview (${store.targetWidth}×${store.targetHeight})`">
+        <div class="canvas-frame">
+          <BitmapCanvas
+            v-if="store.selectedFrame"
+            :bitmap="store.selectedFrame.bitmap"
+            :width="store.targetWidth"
+            :height="store.targetHeight"
+            :scale="previewScale"
+          />
+          <div v-else class="empty-state">
+            <span class="big">◧</span>
+            <span>Load a GIF to extract and preview frames</span>
+          </div>
+        </div>
+        <div v-if="store.processedFrames.length" class="media-controls">
+          <button class="btn sm icon" data-test="anim-play" @click="togglePlay">{{ isPlaying ? '⏸' : '▶' }}</button>
+          <button class="btn sm icon" @click="step(-1)">‹</button>
+          <button class="btn sm icon" @click="step(1)">›</button>
+          <input
+            :value="store.selectedIndex"
+            type="range"
+            min="0"
+            :max="Math.max(0, store.processedFrames.length - 1)"
+            @input="stop(); store.selectedIndex = Number(($event.target as HTMLInputElement).value)"
+          />
+          <span class="media-counter">
+            {{ store.selectedIndex + 1 }} / {{ store.processedFrames.length }} ·
+            {{ store.selectedFrame?.delay ?? 0 }} ms
+          </span>
+        </div>
+      </Panel>
 
-    <template #default>
-      <div class="center-stack">
-        <div v-if="loadError" class="load-error">{{ loadError }}</div>
-        <AnimationWorkspace />
-        <AnimationOutput v-if="activeMode === 'output'" />
-      </div>
-      <input type="file" class="animation-file-input" style="display:none" accept="image/gif" @change="loadAnimationFile" />
-    </template>
+      <Panel :title="`Frames (${store.processedFrames.length})`">
+        <div v-if="store.processedFrames.length" class="frame-strip">
+          <button
+            v-for="(frame, index) in visibleFrames"
+            :key="index"
+            class="frame-thumb"
+            :class="{ active: index === store.selectedIndex }"
+            @click="stop(); store.selectedIndex = index"
+          >
+            <BitmapCanvas :bitmap="frame.bitmap" :width="store.targetWidth" :height="store.targetHeight" :scale="1" />
+            <small>#{{ frame.sourceIndex }} · {{ frame.delay }}ms</small>
+          </button>
+          <span v-if="hiddenCount" class="strip-more">+{{ hiddenCount }} more</span>
+        </div>
+        <div v-else class="empty-state" style="min-height:90px">
+          <span>Load a GIF to extract frames</span>
+        </div>
+      </Panel>
+    </div>
 
-    <template #bottom-extra>
-      <span class="export-info">{{ store.processedFrames.length }} frames · {{ store.targetWidth }}×{{ store.targetHeight }}</span>
-    </template>
-  </ToolLayout>
+    <aside class="tool-side">
+      <Panel title="Frame Range">
+        <div class="field-stack">
+          <div class="field-row">
+            <label class="field"><span>Start Frame</span><input v-model.number="store.startFrame" type="number" min="1" :max="store.decodedFrames.length || 1" /></label>
+            <label class="field"><span>End Frame</span><input v-model.number="store.endFrame" type="number" min="1" :max="store.decodedFrames.length || 1" /></label>
+          </div>
+          <label class="field">
+            <span>Sample Step</span>
+            <select v-model.number="store.sampleStep">
+              <option :value="1">Every frame</option>
+              <option :value="2">Every 2nd frame</option>
+              <option :value="3">Every 3rd frame</option>
+              <option :value="5">Every 5th frame</option>
+              <option :value="10">Every 10th frame</option>
+            </select>
+          </label>
+        </div>
+      </Panel>
+
+      <Panel title="Frame Processing">
+        <div class="field-stack">
+          <div class="field-row">
+            <label class="field"><span>Width</span><input v-model.number="store.targetWidth" type="number" min="8" max="512" /></label>
+            <label class="field"><span>Height</span><input v-model.number="store.targetHeight" type="number" min="8" max="512" /></label>
+          </div>
+          <div class="slider-field">
+            <header><span>Threshold</span><b>{{ store.threshold }}</b></header>
+            <input v-model.number="store.threshold" type="range" min="0" max="255" />
+          </div>
+          <label class="field">
+            <span>Dithering</span>
+            <select v-model="store.dithering">
+              <option value="none">None</option>
+              <option value="floyd-steinberg">Floyd-Steinberg</option>
+            </select>
+          </label>
+        </div>
+      </Panel>
+
+      <Panel title="Encoding">
+        <EncodingFields :store="store" />
+      </Panel>
+
+      <Panel title="Stats">
+        <div class="stat-list">
+          <div class="stat-row"><span>Decoded frames</span><b>{{ store.decodedFrames.length }}</b></div>
+          <div class="stat-row"><span>Output frames</span><b>{{ store.processedFrames.length }}</b></div>
+          <div class="stat-row"><span>Bytes / frame</span><b>{{ store.bytesPerFrame }}</b></div>
+          <div class="stat-row"><span>Total duration</span><b>{{ (store.totalDuration / 1000).toFixed(2) }} s</b></div>
+        </div>
+      </Panel>
+    </aside>
+
+    <div class="tool-output">
+      <CodeOutput
+        :source="store.processedFrames.length ? store.generatedSource : ''"
+        :name="store.outputName"
+        :width="store.targetWidth"
+        :height="store.targetHeight"
+        :frames="store.processedFrames.map((f) => Array.from(f.bytes))"
+        :extra="{ delays: store.delayTable }"
+      />
+    </div>
+
+    <input ref="fileInput" type="file" class="hidden-input" accept="image/gif" @change="onFileChange" />
+  </div>
 </template>
-
-<style scoped>
-.center-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-height: 0;
-  flex: 1;
-}
-
-.center-stack > :deep(*) {
-  flex: 1;
-  min-height: 0;
-}
-
-.center-stack > .load-error {
-  flex: 0 0 auto;
-}
-
-.load-error {
-  padding: 10px 16px;
-  border: 1px solid #fca5a5;
-  border-radius: 7px;
-  background: #fef2f2;
-  color: #b91c1c;
-  font-size: 13px;
-  font-weight: 600;
-}
-</style>

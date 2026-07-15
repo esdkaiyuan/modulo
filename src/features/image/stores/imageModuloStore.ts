@@ -42,7 +42,7 @@ export const useImageModuloStore = defineStore('imageModulo', () => {
   const brightness = ref(0);
   const contrast = ref(1);
   const threshold = ref(128);
-  const scalingAlgorithm = ref('nearest');
+  const scalingAlgorithm = ref<'nearest' | 'bilinear'>('nearest');
   const dithering = ref<DitherMode>('floyd-steinberg');
   const scanDirection = ref<ScanDirection>('horizontal-ltr');
   const bitOrder = ref<BitOrder>('msb');
@@ -155,7 +155,8 @@ export const useImageModuloStore = defineStore('imageModulo', () => {
       brightness: brightness.value,
       contrast: contrast.value,
       threshold: threshold.value,
-      dither: dithering.value
+      dither: dithering.value,
+      scalingAlgorithm: scalingAlgorithm.value
     });
 
     bytes.value = encodeBitmap(bitmap.value, tw, th, {
@@ -214,7 +215,8 @@ export const useImageModuloStore = defineStore('imageModulo', () => {
       brightness: brightness.value,
       contrast: contrast.value,
       threshold: threshold.value,
-      dither: dithering.value
+      dither: dithering.value,
+      scalingAlgorithm: scalingAlgorithm.value
     });
 
     bytes.value = encodeBitmap(bitmap.value, targetWidth.value, targetHeight.value, {

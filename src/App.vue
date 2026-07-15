@@ -1,64 +1,75 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import HomePage from './pages/HomePage.vue';
-import HandDrawPage from './pages/HandDrawPage.vue';
-import BatchExtractorPage from './pages/BatchExtractorPage.vue';
-import FontExtractorPage from './pages/FontExtractorPage.vue';
-import AnimationFramePage from './pages/AnimationFramePage.vue';
 import ImageConverterPage from './pages/ImageConverterPage.vue';
 import VideoExtractorPage from './pages/VideoExtractorPage.vue';
+import AnimationFramePage from './pages/AnimationFramePage.vue';
+import FontExtractorPage from './pages/FontExtractorPage.vue';
+import BatchExtractorPage from './pages/BatchExtractorPage.vue';
+import HandDrawPage from './pages/HandDrawPage.vue';
 
-type PageId = 'home' | 'handdraw' | 'batch' | 'font' | 'animation' | 'image' | 'video';
+const NAV = [
+  { route: 'image', label: 'Image', icon: '▣' },
+  { route: 'video', label: 'Video', icon: '▶' },
+  { route: 'animation', label: 'Animation', icon: '◧' },
+  { route: 'font', label: 'Font', icon: '字' },
+  { route: 'batch', label: 'Batch', icon: '≣' },
+  { route: 'handdraw', label: 'Draw', icon: '✎' }
+] as const;
 
-const activePage = ref<PageId>('home');
+const pages: Record<string, unknown> = {
+  '': HomePage,
+  home: HomePage,
+  image: ImageConverterPage,
+  video: VideoExtractorPage,
+  animation: AnimationFramePage,
+  font: FontExtractorPage,
+  batch: BatchExtractorPage,
+  handdraw: HandDrawPage
+};
 
-function readRoute(): PageId {
-  const route = window.location.hash.replace(/^#\/?/, '').toLowerCase();
-  if (route === '' || route === '/') {
-    return 'home';
-  }
-  if (['handdraw', 'batch', 'font', 'animation', 'image', 'video'].includes(route)) {
-    return route as PageId;
-  }
-  return 'home';
+function parseRoute(): string {
+  return window.location.hash.replace(/^#\/?/, '').split('?')[0];
 }
 
-function syncRoute() {
-  activePage.value = readRoute();
+const route = ref(parseRoute());
+const currentPage = computed(() => pages[route.value] ?? HomePage);
+
+function onHashChange() {
+  route.value = parseRoute();
 }
 
-const pageComponent = computed(() => {
-  const pages = {
-    home: HomePage,
-    handdraw: HandDrawPage,
-    batch: BatchExtractorPage,
-    font: FontExtractorPage,
-    animation: AnimationFramePage,
-    image: ImageConverterPage,
-    video: VideoExtractorPage
-  };
+function navigate(target: string) {
+  window.location.hash = target ? `#/${target}` : '#/';
+}
 
-  return pages[activePage.value];
-});
-
-onMounted(() => {
-  syncRoute();
-  window.addEventListener('hashchange', syncRoute);
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener('hashchange', syncRoute);
-  document.body.classList.remove('route-home', 'route-handdraw', 'route-batch', 'route-font', 'route-animation', 'route-image', 'route-video');
-});
-
-watch(activePage, (page, previousPage) => {
-  if (previousPage) {
-    document.body.classList.remove(`route-${previousPage}`);
-  }
-  document.body.classList.add(`route-${page}`);
-}, { immediate: true });
+onMounted(() => window.addEventListener('hashchange', onHashChange));
+onBeforeUnmount(() => window.removeEventListener('hashchange', onHashChange));
 </script>
 
 <template>
-  <component :is="pageComponent" />
+  <div class="app">
+    <header class="app-header">
+      <div class="brand" @click="navigate('')">
+        <span class="brand-logo">▣</span>
+        <span class="brand-name">Dot Matrix Studio</span>
+        <span class="brand-version">v2.0</span>
+      </div>
+      <nav class="app-nav">
+        <button
+          v-for="item in NAV"
+          :key="item.route"
+          class="nav-link"
+          :class="{ active: route === item.route }"
+          :data-test="`nav-${item.route}`"
+          @click="navigate(item.route)"
+        >
+          <span>{{ item.icon }}</span>{{ item.label }}
+        </button>
+      </nav>
+    </header>
+    <main class="app-main">
+      <component :is="currentPage" />
+    </main>
+  </div>
 </template>

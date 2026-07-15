@@ -1,160 +1,241 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import ToolLayout from '../components/common/ToolLayout.vue';
-import BatchFilesTable from '../features/batch/components/BatchFilesTable.vue';
-import BatchConfigPanel from '../features/batch/components/BatchConfigPanel.vue';
-import BatchResultsPanel from '../features/batch/components/BatchResultsPanel.vue';
-import BatchLogPanel from '../features/batch/components/BatchLogPanel.vue';
+import { computed, ref } from 'vue';
+import Panel from '../components/Panel.vue';
+import BitmapCanvas from '../components/BitmapCanvas.vue';
+import CodeOutput from '../components/CodeOutput.vue';
+import EncodingFields from '../components/EncodingFields.vue';
 import { useBatchModuloStore } from '../features/batch/stores/batchModuloStore';
-import { buildExport, downloadExport } from '../features/shared/exportVariants';
 
 const store = useBatchModuloStore();
-const activeMode = ref('queue');
+const fileInput = ref<HTMLInputElement | null>(null);
+const dragOver = ref(false);
 
-const modes = [
-  { key: 'queue', label: 'Queue', icon: '◐' },
-  { key: 'log', label: 'Log', icon: '≡' },
-  { key: 'results', label: 'Results', icon: '▥' },
-];
+const doneFrames = computed(() =>
+  store.items.filter((item) => item.status === 'done').map((item) => Array.from(item.bytes))
+);
 
-function onImport() {
-  document.querySelector<HTMLInputElement>('.batch-file-input')?.click();
+function pickFiles() {
+  fileInput.value?.click();
 }
 
-async function loadBatchFiles(e: Event) {
-  const input = e.target as HTMLInputElement;
-  const files = Array.from(input.files || []);
-  input.value = ''; // allow re-selecting the same files
-  for (const file of files) {
-    const url = URL.createObjectURL(file);
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function decodeImage(dataUrl: string): Promise<ImageData> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext('2d');
+      if (!context) {
+        reject(new Error('Canvas 2D is unavailable'));
+        return;
+      }
+      context.drawImage(image, 0, 0);
+      resolve(context.getImageData(0, 0, canvas.width, canvas.height));
+    };
+    image.onerror = () => reject(new Error('Unable to decode image'));
+    image.src = dataUrl;
+  });
+}
+
+async function addFiles(files: FileList | File[] | null) {
+  if (!files) return;
+  for (const file of Array.from(files)) {
     try {
-      const img = new Image();
-      img.src = url;
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = () => reject(new Error(`Cannot decode ${file.name}`));
-      });
-      const ctx = document.createElement('canvas').getContext('2d')!;
-      ctx.canvas.width = img.naturalWidth;
-      ctx.canvas.height = img.naturalHeight;
-      ctx.drawImage(img, 0, 0);
+      const dataUrl = await readAsDataUrl(file);
+      const imageData = await decodeImage(dataUrl);
       store.addImageData({
-        fileName: file.name, size: file.size, type: file.type,
-        imageData: ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight), dataUrl: url
+        fileName: file.name,
+        size: file.size,
+        type: file.type || 'image/*',
+        imageData,
+        dataUrl
       });
     } catch {
       // Skip unreadable files instead of aborting the whole batch.
-      URL.revokeObjectURL(url);
     }
   }
 }
 
-function onExport(format: string) {
-  if (format === 'clipboard') {
-    navigator.clipboard?.writeText(store.mergedSource);
-    return;
-  }
-  const doneItems = store.items.filter((item) => item.status === 'done');
-  const result = buildExport(format, {
-    name: 'batch_results',
-    source: store.mergedSource,
-    frames: doneItems.map((item) => Array.from(item.bytes)),
-    width: store.targetWidth,
-    height: store.targetHeight,
-    extra: { files: doneItems.length }
-  });
-  downloadExport('batch_results', result);
+function onFileChange(e: Event) {
+  const input = e.target as HTMLInputElement;
+  addFiles(input.files);
+  input.value = '';
 }
 
-function onSettingChange(key: string, value: unknown) {
-  if (key === 'width') store.targetWidth = value as number;
-  if (key === 'height') store.targetHeight = value as number;
+function onDrop(e: DragEvent) {
+  dragOver.value = false;
+  addFiles(e.dataTransfer?.files ?? null);
+}
+
+function formatSize(bytes: number) {
+  return `${(bytes / 1024).toFixed(1)} KB`;
 }
 </script>
 
 <template>
-  <ToolLayout
-    tool="batch"
-    title="Batch Processor"
-    subtitle="Process multiple files with batch operations"
-    :width="store.targetWidth"
-    :height="store.targetHeight"
-    :code-panel-source="store.mergedSource"
-    @import="onImport"
-    @export="onExport"
-    @setting-change="onSettingChange"
-    @mode-change="(m) => { activeMode = m; }"
-  >
-    <template #left-rail>
-      <button
-        v-for="m in modes"
-        :key="m.key"
-        class="rail-btn"
-        :class="{ active: activeMode === m.key }"
-        @click="activeMode = m.key"
-      >
-        <span class="rail-icon">{{ m.icon }}</span>
-        <span class="rail-label">{{ m.label }}</span>
-      </button>
-    </template>
+  <div class="tool-page">
+    <div class="tool-toolbar">
+      <span class="tool-title">≣ Batch Processor</span>
+      <button class="btn primary" data-test="add-images" @click="pickFiles">＋ Add Images</button>
+      <button class="btn" data-test="start-batch" :disabled="!store.items.length" @click="store.processAll()">▶ Process All</button>
+      <button class="btn danger" :disabled="!store.items.length" @click="store.clearAll()">✕ Clear All</button>
+      <span class="toolbar-spacer"></span>
+      <span class="toolbar-info">
+        {{ store.summary.completed }}/{{ store.summary.total }} done
+        <template v-if="store.summary.failed"> · {{ store.summary.failed }} failed</template>
+        · {{ store.overallProgress }}%
+      </span>
+    </div>
 
-    <template #right-rail>
-      <BatchConfigPanel />
-    </template>
+    <div class="tool-main">
+      <Panel :title="`Input Files (${store.items.length})`">
+        <div
+          v-if="!store.items.length"
+          class="drop-zone"
+          :class="{ over: dragOver }"
+          @click="pickFiles"
+          @dragover.prevent="dragOver = true"
+          @dragleave="dragOver = false"
+          @drop.prevent="onDrop"
+        >
+          <span class="big">🗂</span>
+          <b>Drop images here, or click to browse</b>
+          <span>Multiple PNG / JPG / BMP / WebP files</span>
+        </div>
+        <table v-else class="data-table">
+          <colgroup>
+            <col />
+            <col style="width: 92px" />
+            <col style="width: 130px" />
+            <col style="width: 80px" />
+            <col style="width: 120px" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>File</th>
+              <th>Status</th>
+              <th>Progress</th>
+              <th>Size</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="item in store.items"
+              :key="item.id"
+              :class="{ selected: store.selectedId === item.id }"
+              @click="store.selectedId = item.id"
+            >
+              <td>
+                <img v-if="item.dataUrl" class="mini-thumb" :src="item.dataUrl" alt="" />
+                {{ item.fileName }}
+              </td>
+              <td>
+                <span class="pill" :class="item.status">{{ item.status }}</span>
+              </td>
+              <td>
+                <span class="progress-track"><i :style="{ width: `${item.progress}%` }"></i></span>{{ item.progress }}%
+              </td>
+              <td>{{ formatSize(item.size) }}</td>
+              <td>
+                <button v-if="item.status === 'error'" class="btn sm" :title="item.error" @click.stop="store.retryItem(item.id)">Retry</button>
+                <button class="btn sm danger" @click.stop="store.removeItem(item.id)">✕</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </Panel>
 
-    <template #top-actions>
-      <label class="toolbar-field toolbar-select-field">
-        <span>Scan</span>
-        <select v-model="store.scanDirection">
-          <option value="horizontal-ltr">L→R</option>
-          <option value="horizontal-rtl">R→L</option>
-          <option value="vertical-ttb">T→B</option>
-          <option value="vertical-btt">B→T</option>
-        </select>
-      </label>
-      <label class="toolbar-field toolbar-select-field">
-        <span>Dither</span>
-        <select v-model="store.dithering">
-          <option value="none">None</option>
-          <option value="floyd-steinberg">Floyd</option>
-        </select>
-      </label>
-      <button class="toolbar-import-btn" style="margin-left:8px" @click="store.processAll">⇊ Process All</button>
-    </template>
+      <Panel :title="store.selectedItem ? `Preview — ${store.selectedItem.fileName}` : 'Preview'">
+        <div class="canvas-frame">
+          <BitmapCanvas
+            v-if="store.selectedItem && store.selectedItem.status === 'done'"
+            :bitmap="store.selectedItem.bitmap"
+            :width="store.targetWidth"
+            :height="store.targetHeight"
+            :scale="Math.max(store.targetWidth, store.targetHeight) <= 64 ? 4 : 2"
+          />
+          <div v-else class="empty-state">
+            <span class="big">▦</span>
+            <span>{{ store.items.length ? 'Process the queue to preview results' : 'Add images to start batch extraction' }}</span>
+          </div>
+        </div>
+      </Panel>
 
-    <template #default>
-      <div v-if="activeMode === 'queue'" class="center-stack">
-        <BatchFilesTable />
-        <BatchResultsPanel />
-      </div>
-      <div v-else-if="activeMode === 'log'" class="center-stack">
-        <BatchFilesTable />
-        <BatchLogPanel />
-      </div>
-      <div v-else class="center-stack">
-        <BatchResultsPanel />
-      </div>
-      <input type="file" class="batch-file-input" style="display:none" accept="image/*" multiple
-        @change="loadBatchFiles" />
-    </template>
+      <Panel v-if="store.logs.length" title="Process Log">
+        <ul class="log-list">
+          <li v-for="(line, index) in store.logs" :key="index">{{ line }}</li>
+        </ul>
+      </Panel>
+    </div>
 
-    <template #bottom-extra>
-      <span class="export-info">{{ store.summary.completed }}/{{ store.summary.total }} done · {{ store.summary.failed }} failed</span>
-    </template>
-  </ToolLayout>
+    <aside class="tool-side">
+      <Panel title="Shared Parameters">
+        <div class="field-stack">
+          <div class="field-row">
+            <label class="field"><span>Width</span><input v-model.number="store.targetWidth" type="number" min="8" max="512" /></label>
+            <label class="field"><span>Height</span><input v-model.number="store.targetHeight" type="number" min="8" max="512" /></label>
+          </div>
+          <div class="slider-field">
+            <header><span>Threshold</span><b>{{ store.threshold }}</b></header>
+            <input v-model.number="store.threshold" type="range" min="0" max="255" />
+          </div>
+          <div class="slider-field">
+            <header><span>Brightness</span><b>{{ store.brightness }}</b></header>
+            <input v-model.number="store.brightness" type="range" min="-100" max="100" />
+          </div>
+          <label class="field">
+            <span>Dithering</span>
+            <select v-model="store.dithering">
+              <option value="floyd-steinberg">Floyd-Steinberg</option>
+              <option value="none">None</option>
+            </select>
+          </label>
+        </div>
+      </Panel>
+
+      <Panel title="Encoding">
+        <EncodingFields :store="store" />
+      </Panel>
+
+      <Panel title="Summary Statistics">
+        <div class="stat-list">
+          <div class="stat-row"><span>Total files</span><b>{{ store.summary.total }}</b></div>
+          <div class="stat-row"><span>Completed</span><b>{{ store.summary.completed }}</b></div>
+          <div class="stat-row"><span>Failed</span><b>{{ store.summary.failed }}</b></div>
+          <div class="stat-row"><span>Pending</span><b>{{ store.summary.pending }}</b></div>
+        </div>
+      </Panel>
+
+      <Panel title="Re-run">
+        <button class="btn primary" style="width:100%" :disabled="!store.items.length" @click="store.reprocessAll()">
+          ⇊ Apply Settings to All
+        </button>
+      </Panel>
+    </aside>
+
+    <div class="tool-output">
+      <CodeOutput
+        :source="store.mergedSource"
+        name="batch_results"
+        :width="store.targetWidth"
+        :height="store.targetHeight"
+        :frames="doneFrames"
+        :extra="{ files: doneFrames.length }"
+        title="Merged Output"
+      />
+    </div>
+
+    <input ref="fileInput" type="file" class="hidden-input" accept="image/png,image/jpeg,image/webp,image/bmp" multiple @change="onFileChange" />
+  </div>
 </template>
-
-<style scoped>
-.center-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-height: 0;
-  flex: 1;
-}
-
-.center-stack > :deep(*) {
-  flex: 1;
-  min-height: 0;
-}
-</style>
