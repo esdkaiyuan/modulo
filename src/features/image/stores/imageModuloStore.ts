@@ -1,10 +1,12 @@
 import { defineStore } from 'pinia';
 import { computed, ref, watch } from 'vue';
 import { encodeBitmap, type BitOrder, type Polarity, type ScanDirection } from '../../../engines/bitmapEncoder';
-import { imageDataToGray, processGrayToBitmap, type DitherMode, quantizeToRgb565, quantizeToPalette16, PALETTE_16_COLORS } from '../../../engines/imageProcessor';
-import { formatCArray, formatRgb565Array, formatPalette16Array, makeHeaderFilename, makeTextBlob, sanitizeIdentifier } from '../../../engines/outputFormatter';
+import { imageDataToGray, processGrayToBitmap, type DitherMode } from '../../../engines/imageProcessor';
+import { processImageDataToColor, type ColorByteOrder, type ColorMode } from '../../../engines/colorProcessor';
+import { formatCArray, formatColorArray, makeHeaderFilename, makeTextBlob, sanitizeIdentifier } from '../../../engines/outputFormatter';
+import { useSizeMode } from '../../shared/useSizeMode';
 
-export type ColorMode = 'mono' | 'rgb565' | 'palette16';
+export type { ColorMode } from '../../../engines/colorProcessor';
 
 export interface LoadedImagePayload {
   fileName: string;
@@ -22,15 +24,15 @@ export const useImageModuloStore = defineStore('imageModulo', () => {
   const sourceHeight = ref(0);
   const fileSize = ref(0);
   const fileType = ref('');
-  const colorMode = ref<'mono' | 'rgb565' | 'palette16'>('mono');
+  const colorMode = ref<ColorMode>('mono');
+  const colorByteOrder = ref<ColorByteOrder>('big');
   const previewUrl = ref('');
   const sourceImageData = ref<ImageData | null>(null);
   const sourceGray = ref<Uint8ClampedArray>(new Uint8ClampedArray());
   const bitmap = ref<Uint8Array>(new Uint8Array());
   const bytes = ref<Uint8Array>(new Uint8Array());
-  const colorData = ref<Uint8Array>(new Uint8Array());
-  const paletteBytes = ref<Uint8Array>(new Uint8Array());
-  const paletteIndex = ref<Uint8Array>(new Uint8Array());
+  /** Color modes: quantized RGBA at target size for the preview canvas. */
+  const colorPreview = ref<Uint8ClampedArray>(new Uint8ClampedArray());
 
   const targetWidth = ref(128);
   const targetHeight = ref(64);
@@ -51,21 +53,28 @@ export const useImageModuloStore = defineStore('imageModulo', () => {
   const previewScale = ref(2);
   const showGrid = ref(true);
 
+  // Size mode: 'custom' (free W×H) or 'aspect' (locked to source ratio).
+  const { sizeMode, aspectLongEdge, applyAspect, isAspectMatched } = useSizeMode({
+    sourceWidth,
+    sourceHeight,
+    targetWidth,
+    targetHeight,
+    onResize: () => {
+      if (!sourceImageData.value) return;
+      syncCropToTarget();
+      fixedMode.value ? quickProcess() : process();
+    }
+  });
+
   const totalBits = computed(() => targetWidth.value * targetHeight.value);
   const generatedName = computed(() => sanitizeIdentifier(fileName.value || `image_${targetWidth.value}x${targetHeight.value}`));
   const generatedSource = computed(() => {
-    if (colorMode.value === 'rgb565') {
-      return formatRgb565Array(bytes.value, {
+    if (colorMode.value !== 'mono') {
+      return formatColorArray(bytes.value, colorMode.value, {
         name: generatedName.value,
         width: targetWidth.value,
-        height: targetHeight.value
-      });
-    }
-    if (colorMode.value === 'palette16') {
-      return formatPalette16Array(paletteBytes.value, paletteIndex.value, {
-        name: generatedName.value,
-        width: targetWidth.value,
-        height: targetHeight.value
+        height: targetHeight.value,
+        byteOrder: colorByteOrder.value
       });
     }
     return formatCArray(bytes.value, {
@@ -85,6 +94,9 @@ export const useImageModuloStore = defineStore('imageModulo', () => {
     previewUrl.value = payload.dataUrl ?? '';
     sourceImageData.value = payload.imageData;
     sourceGray.value = imageDataToGray(payload.imageData);
+
+    // In aspect mode a freshly loaded image re-fits to its own ratio first.
+    if (sizeMode.value === 'aspect') applyAspect();
 
     if (fixedMode.value) {
       quickProcess();
@@ -134,65 +146,64 @@ export const useImageModuloStore = defineStore('imageModulo', () => {
     return hasColor ? 'RGB Color' : 'Grayscale';
   }
 
-  function quickProcess() {
-    if (!sourceImageData.value || sourceGray.value.length === 0) {
-      bitmap.value = new Uint8Array();
-      bytes.value = new Uint8Array();
-      colorData.value = new Uint8Array();
-      paletteBytes.value = new Uint8Array();
-      paletteIndex.value = new Uint8Array();
-      return;
-    }
+  function clearOutputs() {
+    bitmap.value = new Uint8Array();
+    bytes.value = new Uint8Array();
+    colorPreview.value = new Uint8ClampedArray();
+  }
 
-    const tw = targetWidth.value;
-    const th = targetHeight.value;
+  /** Run the color pipeline on the given source region (full pipeline: resize+adjust+quantize). */
+  function processColor(source: ImageData) {
+    const { bytes: colorBytes, preview } = processImageDataToColor(source, {
+      targetWidth: targetWidth.value,
+      targetHeight: targetHeight.value,
+      brightness: brightness.value,
+      contrast: contrast.value,
+      scalingAlgorithm: scalingAlgorithm.value,
+      format: colorMode.value as Exclude<ColorMode, 'mono'>,
+      byteOrder: colorByteOrder.value,
+      dither: dithering.value !== 'none'
+    });
+    bitmap.value = new Uint8Array();
+    bytes.value = colorBytes;
+    colorPreview.value = preview;
+  }
 
-    bitmap.value = processGrayToBitmap(sourceGray.value, {
-      sourceWidth: sourceWidth.value,
-      sourceHeight: sourceHeight.value,
-      targetWidth: tw,
-      targetHeight: th,
+  function processMono(gray: Uint8ClampedArray, srcW: number, srcH: number) {
+    bitmap.value = processGrayToBitmap(gray, {
+      sourceWidth: srcW,
+      sourceHeight: srcH,
+      targetWidth: targetWidth.value,
+      targetHeight: targetHeight.value,
       brightness: brightness.value,
       contrast: contrast.value,
       threshold: threshold.value,
       dither: dithering.value,
       scalingAlgorithm: scalingAlgorithm.value
     });
-
-    bytes.value = encodeBitmap(bitmap.value, tw, th, {
+    bytes.value = encodeBitmap(bitmap.value, targetWidth.value, targetHeight.value, {
       scan: scanDirection.value,
       bitOrder: bitOrder.value,
       polarity: polarity.value
     });
+    colorPreview.value = new Uint8ClampedArray();
+  }
 
-    if (colorMode.value === 'rgb565') {
-      const rgb565 = quantizeToRgb565(sourceImageData.value);
-      colorData.value = new Uint8Array(rgb565.buffer);
-      paletteBytes.value = new Uint8Array();
-      paletteIndex.value = new Uint8Array();
-    } else if (colorMode.value === 'palette16') {
-      paletteIndex.value = quantizeToPalette16(sourceImageData.value);
-      paletteBytes.value = new Uint8Array(PALETTE_16_COLORS.length * 2);
-      for (let i = 0; i < PALETTE_16_COLORS.length; i++) {
-        const rgb565 = rgbToRgb565(PALETTE_16_COLORS[i][0], PALETTE_16_COLORS[i][1], PALETTE_16_COLORS[i][2]);
-        paletteBytes.value[i * 2] = (rgb565 >> 8) & 0xFF;
-        paletteBytes.value[i * 2 + 1] = rgb565 & 0xFF;
-      }
-      colorData.value = new Uint8Array();
-    } else {
-      colorData.value = new Uint8Array();
-      paletteBytes.value = new Uint8Array();
-      paletteIndex.value = new Uint8Array();
+  function quickProcess() {
+    if (!sourceImageData.value || sourceGray.value.length === 0) {
+      clearOutputs();
+      return;
     }
+    if (colorMode.value !== 'mono') {
+      processColor(sourceImageData.value);
+      return;
+    }
+    processMono(sourceGray.value, sourceWidth.value, sourceHeight.value);
   }
 
   function process() {
     if (!sourceImageData.value || sourceGray.value.length === 0) {
-      bitmap.value = new Uint8Array();
-      bytes.value = new Uint8Array();
-      colorData.value = new Uint8Array();
-      paletteBytes.value = new Uint8Array();
-      paletteIndex.value = new Uint8Array();
+      clearOutputs();
       return;
     }
 
@@ -205,46 +216,14 @@ export const useImageModuloStore = defineStore('imageModulo', () => {
     const effectiveSourceX = cropX.value;
     const effectiveSourceY = cropY.value;
 
-    const croppedGray = extractCrop(sourceGray.value, effectiveSourceX, effectiveSourceY, effectiveSourceWidth, effectiveSourceHeight, sourceWidth.value);
-
-    bitmap.value = processGrayToBitmap(croppedGray, {
-      sourceWidth: effectiveSourceWidth,
-      sourceHeight: effectiveSourceHeight,
-      targetWidth: targetWidth.value,
-      targetHeight: targetHeight.value,
-      brightness: brightness.value,
-      contrast: contrast.value,
-      threshold: threshold.value,
-      dither: dithering.value,
-      scalingAlgorithm: scalingAlgorithm.value
-    });
-
-    bytes.value = encodeBitmap(bitmap.value, targetWidth.value, targetHeight.value, {
-      scan: scanDirection.value,
-      bitOrder: bitOrder.value,
-      polarity: polarity.value
-    });
-
-    if (colorMode.value === 'rgb565') {
-      const rgb565 = quantizeToRgb565(sourceImageData.value);
-      colorData.value = new Uint8Array(rgb565.buffer);
-      paletteBytes.value = new Uint8Array();
-      paletteIndex.value = new Uint8Array();
-    } else if (colorMode.value === 'palette16') {
-      const fullPaletteIndex = quantizeToPalette16(sourceImageData.value);
-      paletteIndex.value = fullPaletteIndex;
-      paletteBytes.value = new Uint8Array(PALETTE_16_COLORS.length * 2);
-      for (let i = 0; i < PALETTE_16_COLORS.length; i++) {
-        const rgb565 = rgbToRgb565(PALETTE_16_COLORS[i][0], PALETTE_16_COLORS[i][1], PALETTE_16_COLORS[i][2]);
-        paletteBytes.value[i * 2] = (rgb565 >> 8) & 0xFF;
-        paletteBytes.value[i * 2 + 1] = rgb565 & 0xFF;
-      }
-      colorData.value = new Uint8Array();
-    } else {
-      colorData.value = new Uint8Array();
-      paletteBytes.value = new Uint8Array();
-      paletteIndex.value = new Uint8Array();
+    if (colorMode.value !== 'mono') {
+      const cropped = extractImageDataCrop(sourceImageData.value, effectiveSourceX, effectiveSourceY, effectiveSourceWidth, effectiveSourceHeight);
+      processColor(cropped);
+      return;
     }
+
+    const croppedGray = extractCrop(sourceGray.value, effectiveSourceX, effectiveSourceY, effectiveSourceWidth, effectiveSourceHeight, sourceWidth.value);
+    processMono(croppedGray, effectiveSourceWidth, effectiveSourceHeight);
   }
 
   function extractCrop(gray: Uint8ClampedArray, x: number, y: number, w: number, h: number, stride: number): Uint8ClampedArray {
@@ -264,20 +243,9 @@ export const useImageModuloStore = defineStore('imageModulo', () => {
     for (let row = 0; row < h; row++) {
       const srcOffset = ((y + row) * srcStride + x) * 4;
       const dstOffset = row * w * 4;
-      for (let col = 0; col < w; col++) {
-        const si = srcOffset + col * 4;
-        const di = dstOffset + col * 4;
-        result.data[di] = srcData[si];
-        result.data[di + 1] = srcData[si + 1];
-        result.data[di + 2] = srcData[si + 2];
-        result.data[di + 3] = srcData[si + 3];
-      }
+      result.data.set(srcData.subarray(srcOffset, srcOffset + w * 4), dstOffset);
     }
     return result;
-  }
-
-  function rgbToRgb565(r: number, g: number, b: number): number {
-    return ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
   }
 
   function reset() {
@@ -290,11 +258,7 @@ export const useImageModuloStore = defineStore('imageModulo', () => {
     previewUrl.value = '';
     sourceImageData.value = null;
     sourceGray.value = new Uint8ClampedArray();
-    bitmap.value = new Uint8Array();
-    bytes.value = new Uint8Array();
-    colorData.value = new Uint8Array();
-    paletteBytes.value = new Uint8Array();
-    paletteIndex.value = new Uint8Array();
+    clearOutputs();
     cropX.value = 0;
     cropY.value = 0;
     cropW.value = 0;
@@ -324,15 +288,14 @@ export const useImageModuloStore = defineStore('imageModulo', () => {
     fileSize,
     fileType,
     colorMode,
+    colorByteOrder,
     detectedColorMode,
     previewUrl,
     sourceImageData,
     sourceGray,
     bitmap,
     bytes,
-    colorData,
-    paletteBytes,
-    paletteIndex,
+    colorPreview,
     targetWidth,
     targetHeight,
     cropX,
@@ -349,6 +312,10 @@ export const useImageModuloStore = defineStore('imageModulo', () => {
     polarity,
     fixedMode,
     totalBits,
+    sizeMode,
+    aspectLongEdge,
+    applyAspect,
+    isAspectMatched,
     generatedName,
     generatedSource,
     outputFileName,

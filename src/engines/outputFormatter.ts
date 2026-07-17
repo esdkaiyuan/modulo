@@ -1,3 +1,5 @@
+import { COLOR_FORMAT_INFO, palette16Bytes, type ColorByteOrder, type ColorFormat } from './colorProcessor';
+
 export interface CArrayFormatOptions {
   name: string;
   width: number;
@@ -86,6 +88,64 @@ export function formatPalette16Array(palette: Uint8Array, indices: Uint8Array, o
     lines.push(`  ${chunk}${index + 16 < indices.length ? ',' : ''}`);
   }
 
+  lines.push('};');
+  return lines.join('\n');
+}
+
+// ── Generic color formatting ─────────────────────────────
+
+export interface ColorArrayFormatOptions extends CArrayFormatOptions {
+  byteOrder?: ColorByteOrder;
+}
+
+/** Hex lines for one frame of color data — uint16 words for rgb565, bytes otherwise. */
+export function colorValueChunks(bytes: Uint8Array, format: ColorFormat, byteOrder: ColorByteOrder = 'big', perLine = 16): string[] {
+  const lines: string[] = [];
+  if (format === 'rgb565') {
+    const words: string[] = [];
+    for (let i = 0; i + 1 < bytes.length; i += 2) {
+      const value = byteOrder === 'big' ? (bytes[i] << 8) | bytes[i + 1] : (bytes[i + 1] << 8) | bytes[i];
+      words.push(`0x${value.toString(16).padStart(4, '0').toUpperCase()}`);
+    }
+    for (let i = 0; i < words.length; i += perLine) {
+      lines.push(words.slice(i, i + perLine).join(', '));
+    }
+    return lines;
+  }
+  for (let i = 0; i < bytes.length; i += perLine) {
+    lines.push(Array.from(bytes.slice(i, i + perLine))
+      .map((b) => `0x${b.toString(16).padStart(2, '0').toUpperCase()}`)
+      .join(', '));
+  }
+  return lines;
+}
+
+const COLOR_COMMENTS: Record<ColorFormat, string> = {
+  rgb565: 'RGB565 (16-bit color)',
+  rgb888: 'RGB888 (24-bit color, R G B byte order)',
+  rgb332: 'RGB332 (8-bit color)',
+  palette16: '16-color palette (RGB565 palette + 8-bit indices)'
+};
+
+/** Single-frame color C array in any supported format. */
+export function formatColorArray(bytes: Uint8Array, format: ColorFormat, options: ColorArrayFormatOptions): string {
+  const name = sanitizeIdentifier(options.name);
+  const byteOrder = options.byteOrder ?? 'big';
+  const elementType = format === 'rgb565' ? 'uint16_t' : 'uint8_t';
+  const lines = [
+    `// Resolution: ${options.width}x${options.height}, ${COLOR_COMMENTS[format]}`,
+    `// ${COLOR_FORMAT_INFO[format].bytesPerPixel} byte(s)/pixel, byte order: ${format === 'rgb565' || format === 'palette16' ? byteOrder + '-endian' : 'n/a'}`
+  ];
+
+  if (format === 'palette16') {
+    lines.push(`const uint16_t ${name}_palette[] PROGMEM = {`);
+    lines.push(`  ${colorValueChunks(palette16Bytes(byteOrder), 'rgb565', byteOrder).join(', ')}`);
+    lines.push('};', '');
+  }
+
+  lines.push(`const ${elementType} ${name}[] PROGMEM = {`);
+  const chunks = colorValueChunks(bytes, format, byteOrder);
+  chunks.forEach((chunk, i) => lines.push(`  ${chunk}${i < chunks.length - 1 ? ',' : ''}`));
   lines.push('};');
   return lines.join('\n');
 }

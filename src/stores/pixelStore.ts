@@ -3,7 +3,8 @@ import { computed, ref } from 'vue';
 import { encodeBitmap, type BitOrder, type Polarity, type ScanDirection } from '../engines/bitmapEncoder';
 import { floodFill } from '../engines/fill';
 import { type PixelValue } from '../engines/modulo';
-import { formatCArray, makeTextBlob } from '../engines/outputFormatter';
+import { findClosestPaletteColor, PALETTE_16_COLORS, rgbToRgb332, rgbToRgb565, type ColorByteOrder, type ColorMode } from '../engines/colorProcessor';
+import { formatCArray, formatColorArray, makeTextBlob } from '../engines/outputFormatter';
 
 export type Tool = 'pencil' | 'eraser' | 'fill' | 'eyedropper';
 export type HanddrawOutputFormat = 'c-array' | 'hex' | 'bin';
@@ -113,19 +114,67 @@ export const usePixelStore = defineStore('pixel', () => {
   const bitOrder = ref<BitOrder>('msb');
   const polarity = ref<Polarity>('positive');
   const outputFormat = ref<HanddrawOutputFormat>('c-array');
+  const colorMode = ref<ColorMode>('mono');
+  const colorByteOrder = ref<ColorByteOrder>('big');
+
+  function hexToRgb(hex: string): [number, number, number] {
+    const value = parseInt(hex.slice(1), 16);
+    return [(value >> 16) & 0xff, (value >> 8) & 0xff, value & 0xff];
+  }
 
   const bitmapOutput = computed(() => Uint8Array.from(pixels.value, (pixel) => (pixel ? 1 : 0)));
-  const byteOutput = computed(() => encodeBitmap(bitmapOutput.value, width.value, height.value, {
-    scan: scanDirection.value,
-    bitOrder: bitOrder.value,
-    polarity: polarity.value
-  }));
+
+  /** Color modes: quantize drawn pixel colors directly (empty cells → black). */
+  const colorBytesOutput = computed(() => {
+    const mode = colorMode.value;
+    if (mode === 'mono') return new Uint8Array();
+    const count = pixels.value.length;
+    const bpp = mode === 'rgb565' ? 2 : mode === 'rgb888' ? 3 : 1;
+    const bytes = new Uint8Array(count * bpp);
+    pixels.value.forEach((pixel, i) => {
+      const [r, g, b] = pixel ? hexToRgb(pixel) : [0, 0, 0];
+      if (mode === 'rgb565') {
+        const value = rgbToRgb565(r, g, b);
+        if (colorByteOrder.value === 'big') {
+          bytes[i * 2] = (value >> 8) & 0xff;
+          bytes[i * 2 + 1] = value & 0xff;
+        } else {
+          bytes[i * 2] = value & 0xff;
+          bytes[i * 2 + 1] = (value >> 8) & 0xff;
+        }
+      } else if (mode === 'rgb888') {
+        bytes[i * 3] = r;
+        bytes[i * 3 + 1] = g;
+        bytes[i * 3 + 2] = b;
+      } else if (mode === 'rgb332') {
+        bytes[i] = rgbToRgb332(r, g, b);
+      } else {
+        bytes[i] = findClosestPaletteColor(r, g, b, PALETTE_16_COLORS);
+      }
+    });
+    return bytes;
+  });
+
+  const byteOutput = computed(() => colorMode.value !== 'mono'
+    ? colorBytesOutput.value
+    : encodeBitmap(bitmapOutput.value, width.value, height.value, {
+        scan: scanDirection.value,
+        bitOrder: bitOrder.value,
+        polarity: polarity.value
+      }));
   const outputBaseName = computed(() => `image_${width.value}x${height.value}`);
-  const cArrayOutput = computed(() => formatCArray(byteOutput.value, {
-    name: outputBaseName.value,
-    width: width.value,
-    height: height.value
-  }));
+  const cArrayOutput = computed(() => colorMode.value !== 'mono'
+    ? formatColorArray(byteOutput.value, colorMode.value, {
+        name: outputBaseName.value,
+        width: width.value,
+        height: height.value,
+        byteOrder: colorByteOrder.value
+      })
+    : formatCArray(byteOutput.value, {
+        name: outputBaseName.value,
+        width: width.value,
+        height: height.value
+      }));
   const hexOutput = computed(() => Array.from(byteOutput.value)
     .map((byte) => `0x${byte.toString(16).padStart(2, '0').toUpperCase()}`)
     .join(', '));
@@ -294,6 +343,8 @@ export const usePixelStore = defineStore('pixel', () => {
     bitOrder,
     polarity,
     outputFormat,
+    colorMode,
+    colorByteOrder,
     bitmapOutput,
     byteOutput,
     cArrayOutput,

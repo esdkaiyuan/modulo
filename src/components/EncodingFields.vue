@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BitOrder, Polarity, ScanDirection } from '../engines/bitmapEncoder';
+import { t } from '../i18n';
 
 // Accepts any Pinia store (or reactive object) exposing the three encoding fields.
 const props = defineProps<{
@@ -16,27 +17,27 @@ const settings = props.store;
 <template>
   <div class="field-stack">
     <label class="field">
-      <span>Scan Direction</span>
+      <span>{{ t('enc.scanDirection') }}</span>
       <select v-model="settings.scanDirection" data-test="scan-direction">
-        <option value="horizontal-ltr">Left → Right, Top → Bottom</option>
-        <option value="horizontal-rtl">Right → Left, Top → Bottom</option>
-        <option value="vertical-ttb">Top → Bottom, Left → Right</option>
-        <option value="vertical-btt">Bottom → Top, Left → Right</option>
+        <option value="horizontal-ltr">{{ t('enc.scanLtr') }}</option>
+        <option value="horizontal-rtl">{{ t('enc.scanRtl') }}</option>
+        <option value="vertical-ttb">{{ t('enc.scanTtb') }}</option>
+        <option value="vertical-btt">{{ t('enc.scanBtt') }}</option>
       </select>
     </label>
     <div class="field-row">
       <label class="field">
-        <span>Bit Order</span>
+        <span>{{ t('enc.bitOrder') }}</span>
         <select v-model="settings.bitOrder">
-          <option value="msb">MSB First</option>
-          <option value="lsb">LSB First</option>
+          <option value="msb">{{ t('enc.msbFirst') }}</option>
+          <option value="lsb">{{ t('enc.lsbFirst') }}</option>
         </select>
       </label>
       <label class="field">
-        <span>Polarity</span>
+        <span>{{ t('enc.polarity') }}</span>
         <select v-model="settings.polarity">
-          <option value="positive">Positive</option>
-          <option value="negative">Negative</option>
+          <option value="positive">{{ t('enc.positive') }}</option>
+          <option value="negative">{{ t('enc.negative') }}</option>
         </select>
       </label>
     </div>

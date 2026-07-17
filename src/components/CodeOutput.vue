@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { buildExport, downloadExport } from '../features/shared/exportVariants';
+import { t } from '../i18n';
 
 const props = withDefaults(defineProps<{
   /** Canonical C source shown in the panel */
@@ -18,10 +19,12 @@ const props = withDefaults(defineProps<{
   /** Override the shown byte count (defaults to bytes/frames size) */
   byteCount?: number;
 }>(), {
-  title: 'Generated Code'
+  title: ''
 });
 
 const copied = ref(false);
+
+const shownTitle = computed(() => props.title || t('code.title'));
 
 const shownBytes = computed(() => {
   if (props.byteCount !== undefined) return props.byteCount;
@@ -29,7 +32,7 @@ const shownBytes = computed(() => {
   return props.bytes?.length ?? 0;
 });
 
-const displaySource = computed(() => props.source || '// No output generated yet');
+const displaySource = computed(() => props.source || t('code.empty'));
 
 async function copy() {
   try {
@@ -56,17 +59,17 @@ function exportAs(format: string) {
 <template>
   <section class="code-panel" data-test="code-output">
     <header class="code-head">
-      <span class="code-title">{{ title }}</span>
-      <span class="code-meta">{{ shownBytes }} bytes · {{ width }}×{{ height }}</span>
+      <span class="code-title">{{ shownTitle }}</span>
+      <span class="code-meta">{{ shownBytes }} {{ t('common.bytes') }} · {{ width }}×{{ height }}</span>
       <div class="panel-actions">
         <slot name="actions" />
-        <button class="code-btn" @click="copy">{{ copied ? '✓ Copied' : '⧉ Copy' }}</button>
-        <button class="code-btn accent" @click="exportAs('h')">⇩ Download .h</button>
+        <button class="code-btn" @click="copy">{{ copied ? t('code.copied') : t('code.copy') }}</button>
+        <button class="code-btn accent" @click="exportAs('h')">{{ t('code.download') }}</button>
       </div>
     </header>
     <pre class="code-body"><code>{{ displaySource }}</code></pre>
     <footer class="code-foot">
-      <span class="foot-label">Export as</span>
+      <span class="foot-label">{{ t('code.exportAs') }}</span>
       <button class="code-btn" @click="exportAs('h')">.h</button>
       <button class="code-btn" @click="exportAs('txt')">.txt</button>
       <button class="code-btn" @click="exportAs('md')">.md</button>

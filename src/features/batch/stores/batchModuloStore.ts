@@ -1,8 +1,11 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
-import { encodeBitmap, type BitOrder, type Polarity, type ScanDirection } from '../../../engines/bitmapEncoder';
-import { imageDataToGray, processGrayToBitmap, type DitherMode } from '../../../engines/imageProcessor';
-import { formatCArray, makeTextBlob, sanitizeIdentifier } from '../../../engines/outputFormatter';
+import type { BitOrder, Polarity, ScanDirection } from '../../../engines/bitmapEncoder';
+import type { DitherMode } from '../../../engines/imageProcessor';
+import type { ColorByteOrder, ColorMode } from '../../../engines/colorProcessor';
+import { formatCArray, formatColorArray, makeTextBlob, sanitizeIdentifier } from '../../../engines/outputFormatter';
+import { fitToAspect, type SizeMode } from '../../shared/sizeMode';
+import { getFrameProcessorPool } from '../../../workers/frameProcessorPool';
 
 export type BatchStatus = 'pending' | 'processing' | 'done' | 'error';
 
@@ -27,6 +30,10 @@ export interface BatchItem {
   progress: number;
   bitmap: Uint8Array;
   bytes: Uint8Array;
+  /** Color modes: quantized RGBA at output size for previews. */
+  preview?: Uint8ClampedArray;
+  outputWidth: number;
+  outputHeight: number;
   source: string;
   error: string;
 }
@@ -45,10 +52,16 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
 
   const targetWidth = ref(128);
   const targetHeight = ref(64);
+  // Size mode applies per-item: 'custom' packs every image into the same
+  // targetW×H; 'aspect' fits each image to its own ratio within `aspectLongEdge`.
+  const sizeMode = ref<SizeMode>('custom');
+  const aspectLongEdge = ref(64);
   const brightness = ref(0);
   const contrast = ref(1);
   const threshold = ref(128);
   const dithering = ref<DitherMode>('floyd-steinberg');
+  const colorMode = ref<ColorMode>('mono');
+  const colorByteOrder = ref<ColorByteOrder>('big');
   const scanDirection = ref<ScanDirection>('horizontal-ltr');
   const bitOrder = ref<BitOrder>('msb');
   const polarity = ref<Polarity>('positive');
@@ -89,6 +102,8 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
       progress: 0,
       bitmap: new Uint8Array(),
       bytes: new Uint8Array(),
+      outputWidth: targetWidth.value,
+      outputHeight: targetHeight.value,
       source: '',
       error: ''
     };
@@ -98,34 +113,47 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
     return item;
   }
 
-  function processItem(item: BatchItem) {
+  async function processItem(item: BatchItem) {
     item.status = 'processing';
     item.progress = 35;
     item.error = '';
-
     try {
-      const gray = imageDataToGray(item.imageData);
+      const dims = sizeMode.value === 'aspect'
+        ? fitToAspect(item.width, item.height, aspectLongEdge.value)
+        : { width: targetWidth.value, height: targetHeight.value };
       item.progress = 65;
-      item.bitmap = processGrayToBitmap(gray, {
-        sourceWidth: item.width,
-        sourceHeight: item.height,
-        targetWidth: targetWidth.value,
-        targetHeight: targetHeight.value,
+      const result = await getFrameProcessorPool().process({
+        imageData: item.imageData,
+        targetWidth: dims.width,
+        targetHeight: dims.height,
         brightness: brightness.value,
         contrast: contrast.value,
         threshold: threshold.value,
-        dither: dithering.value
-      });
-      item.bytes = encodeBitmap(item.bitmap, targetWidth.value, targetHeight.value, {
+        dither: dithering.value,
+        scalingAlgorithm: 'nearest',
         scan: scanDirection.value,
         bitOrder: bitOrder.value,
-        polarity: polarity.value
+        polarity: polarity.value,
+        colorMode: colorMode.value,
+        colorByteOrder: colorByteOrder.value,
       });
-      item.source = formatCArray(item.bytes, {
-        name: sanitizeIdentifier(item.fileName),
-        width: targetWidth.value,
-        height: targetHeight.value
-      });
+      item.bitmap = result.bitmap;
+      item.bytes = result.bytes;
+      item.preview = result.preview;
+      item.outputWidth = dims.width;
+      item.outputHeight = dims.height;
+      item.source = colorMode.value !== 'mono'
+        ? formatColorArray(item.bytes, colorMode.value, {
+            name: sanitizeIdentifier(item.fileName),
+            width: dims.width,
+            height: dims.height,
+            byteOrder: colorByteOrder.value
+          })
+        : formatCArray(item.bytes, {
+            name: sanitizeIdentifier(item.fileName),
+            width: dims.width,
+            height: dims.height
+          });
       item.status = 'done';
       item.progress = 100;
       log(`Done ${item.fileName} (${item.bytes.length} bytes)`);
@@ -138,16 +166,12 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
   }
 
   async function processAll() {
-    for (const item of items.value) {
-      if (item.status === 'pending' || item.status === 'error') {
-        processItem(item);
-        // Yield a macrotask so per-item status/progress actually renders.
-        await new Promise((resolve) => setTimeout(resolve, 0));
-      }
-    }
+    const pool = getFrameProcessorPool();
+    const pending = items.value.filter((item) => item.status === 'pending' || item.status === 'error');
+    await Promise.all(pending.map((item) => processItem(item)));
+    void pool; // keep reference
   }
 
-  /** Re-run every item (including done ones) with the current settings. */
   async function reprocessAll() {
     for (const item of items.value) {
       item.status = 'pending';
@@ -194,10 +218,14 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
     logs,
     targetWidth,
     targetHeight,
+    sizeMode,
+    aspectLongEdge,
     brightness,
     contrast,
     threshold,
     dithering,
+    colorMode,
+    colorByteOrder,
     scanDirection,
     bitOrder,
     polarity,

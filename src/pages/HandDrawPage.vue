@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import Panel from '../components/Panel.vue';
+import ColorModeFields from '../components/ColorModeFields.vue';
 import { usePixelStore, type Tool } from '../stores/pixelStore';
 import { buildExport, downloadExport } from '../features/shared/exportVariants';
+import { t } from '../i18n';
+import type { MessageKey } from '../i18n/messages';
 
 const store = usePixelStore();
 const canvas = ref<HTMLCanvasElement | null>(null);
@@ -11,11 +14,11 @@ const colorInput = ref<HTMLInputElement | null>(null);
 const isDrawing = ref(false);
 const copied = ref(false);
 
-const TOOLS: Array<{ key: Tool; label: string; icon: string; shortcut: string }> = [
-  { key: 'pencil', label: 'Pencil', icon: '✎', shortcut: 'B' },
-  { key: 'eraser', label: 'Eraser', icon: '⌫', shortcut: 'E' },
-  { key: 'fill', label: 'Fill', icon: '◉', shortcut: 'G' },
-  { key: 'eyedropper', label: 'Picker', icon: '⌖', shortcut: 'I' }
+const TOOLS: Array<{ key: Tool; labelKey: MessageKey; icon: string; shortcut: string }> = [
+  { key: 'pencil', labelKey: 'draw.pencil', icon: '✎', shortcut: 'B' },
+  { key: 'eraser', labelKey: 'draw.eraser', icon: '⌫', shortcut: 'E' },
+  { key: 'fill', labelKey: 'draw.fill', icon: '◉', shortcut: 'G' },
+  { key: 'eyedropper', labelKey: 'draw.picker', icon: '⌖', shortcut: 'I' }
 ];
 
 const cellSize = computed(() => Math.max(8, Math.round(store.zoom / 50)));
@@ -182,27 +185,27 @@ watch(
 <template>
   <div class="tool-page">
     <div class="tool-toolbar">
-      <span class="tool-title">✎ Pixel Editor</span>
+      <span class="tool-title">{{ t('draw.title') }}</span>
       <div class="btn-group">
         <button
           v-for="tool in TOOLS"
           :key="tool.key"
           class="btn sm icon"
           :class="{ toggled: store.activeTool === tool.key }"
-          :title="`${tool.label} (${tool.shortcut})`"
+          :title="`${t(tool.labelKey)} (${tool.shortcut})`"
           :data-test="`tool-${tool.key}`"
           @click="store.setTool(tool.key)"
         >{{ tool.icon }}</button>
       </div>
       <span class="divider-v"></span>
       <div class="btn-group">
-        <button class="btn sm" :disabled="!store.canUndo" title="Undo (Ctrl+Z)" @click="store.undo()">↶ Undo</button>
-        <button class="btn sm" :disabled="!store.canRedo" title="Redo (Ctrl+Y)" @click="store.redo()">↷ Redo</button>
-        <button class="btn sm danger" @click="store.clearCanvas()">✕ Clear</button>
+        <button class="btn sm" :disabled="!store.canUndo" title="Undo (Ctrl+Z)" @click="store.undo()">{{ t('draw.undo') }}</button>
+        <button class="btn sm" :disabled="!store.canRedo" title="Redo (Ctrl+Y)" @click="store.redo()">{{ t('draw.redo') }}</button>
+        <button class="btn sm danger" @click="store.clearCanvas()">{{ t('draw.clear') }}</button>
       </div>
       <span class="divider-v"></span>
       <label class="inline-field">
-        Canvas
+        {{ t('draw.canvas') }}
         <select :value="store.width" @change="store.setCanvasSize(Number(($event.target as HTMLSelectElement).value))">
           <option :value="16">16×16</option>
           <option :value="32">32×32</option>
@@ -210,16 +213,16 @@ watch(
         </select>
       </label>
       <label class="inline-field">
-        Zoom
+        {{ t('draw.zoom') }}
         <input v-model.number="store.zoom" type="number" min="200" max="1600" step="100" />
       </label>
-      <label class="check"><input v-model="store.showGrid" type="checkbox" /> Grid</label>
+      <label class="check"><input v-model="store.showGrid" type="checkbox" /> {{ t('draw.grid') }}</label>
       <span class="toolbar-spacer"></span>
       <span class="cursor-status">X: {{ store.cursorX }} · Y: {{ store.cursorY }} · {{ store.width }}×{{ store.height }}</span>
     </div>
 
     <div class="tool-main">
-      <Panel title="Canvas">
+      <Panel :title="t('draw.canvas')">
         <div class="pixel-stage">
           <canvas
             ref="canvas"
@@ -235,7 +238,7 @@ watch(
     </div>
 
     <aside class="tool-side">
-      <Panel title="Color">
+      <Panel :title="t('draw.color')">
         <div class="field-stack">
           <div class="color-current">
             <input v-model="store.activeColor" type="color" />
@@ -251,16 +254,16 @@ watch(
               :title="color"
               @click="store.activeColor = color"
             />
-            <button class="swatch add" title="Add color" @click="colorInput?.click()">＋</button>
+            <button class="swatch add" :title="t('draw.addColor')" @click="colorInput?.click()">＋</button>
             <input ref="colorInput" type="color" class="hidden-input" @change="addPaletteColor" />
           </div>
         </div>
       </Panel>
 
-      <Panel title="Brush">
+      <Panel :title="t('draw.brush')">
         <div class="field-stack">
           <label class="field">
-            <span>Brush Size</span>
+            <span>{{ t('draw.brushSize') }}</span>
             <select v-model.number="store.brushSize">
               <option :value="1">1 px</option>
               <option :value="2">2 px</option>
@@ -268,43 +271,46 @@ watch(
               <option :value="4">4 px</option>
             </select>
           </label>
-          <label class="check"><input v-model="store.symmetry" type="checkbox" /> Mirror symmetry</label>
+          <label class="check"><input v-model="store.symmetry" type="checkbox" /> {{ t('draw.symmetry') }}</label>
         </div>
       </Panel>
 
-      <Panel title="Preview">
+      <Panel :title="t('common.preview')">
         <div class="canvas-frame light" style="min-height:120px">
           <canvas ref="previewCanvas"></canvas>
         </div>
       </Panel>
 
-      <Panel title="Encoding">
+      <Panel :title="t('common.encoding')">
         <div class="field-stack">
-          <label class="field">
-            <span>Scan Direction</span>
-            <select v-model="store.scanDirection" data-test="handdraw-scan">
-              <option value="horizontal-ltr">Left → Right, Top → Bottom</option>
-              <option value="horizontal-rtl">Right → Left, Top → Bottom</option>
-              <option value="vertical-ttb">Top → Bottom, Left → Right</option>
-              <option value="vertical-btt">Bottom → Top, Left → Right</option>
-            </select>
-          </label>
-          <div class="field-row">
+          <ColorModeFields :store="store" />
+          <template v-if="store.colorMode === 'mono'">
             <label class="field">
-              <span>Bit Order</span>
-              <select v-model="store.bitOrder">
-                <option value="msb">MSB First</option>
-                <option value="lsb">LSB First</option>
+              <span>{{ t('enc.scanDirection') }}</span>
+              <select v-model="store.scanDirection" data-test="handdraw-scan">
+                <option value="horizontal-ltr">{{ t('enc.scanLtr') }}</option>
+                <option value="horizontal-rtl">{{ t('enc.scanRtl') }}</option>
+                <option value="vertical-ttb">{{ t('enc.scanTtb') }}</option>
+                <option value="vertical-btt">{{ t('enc.scanBtt') }}</option>
               </select>
             </label>
-            <label class="field">
-              <span>Polarity</span>
-              <select v-model="store.polarity">
-                <option value="positive">Positive</option>
-                <option value="negative">Negative</option>
-              </select>
-            </label>
-          </div>
+            <div class="field-row">
+              <label class="field">
+                <span>{{ t('enc.bitOrder') }}</span>
+                <select v-model="store.bitOrder">
+                  <option value="msb">{{ t('enc.msbFirst') }}</option>
+                  <option value="lsb">{{ t('enc.lsbFirst') }}</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>{{ t('enc.polarity') }}</span>
+                <select v-model="store.polarity">
+                  <option value="positive">{{ t('enc.positive') }}</option>
+                  <option value="negative">{{ t('enc.negative') }}</option>
+                </select>
+              </label>
+            </div>
+          </template>
         </div>
       </Panel>
     </aside>
@@ -312,8 +318,8 @@ watch(
     <div class="tool-output">
       <section class="code-panel" data-test="code-output">
         <header class="code-head">
-          <span class="code-title">Output</span>
-          <span class="code-meta">{{ store.byteOutput.length }} bytes · {{ store.width }}×{{ store.height }}</span>
+          <span class="code-title">{{ t('draw.output') }}</span>
+          <span class="code-meta">{{ store.byteOutput.length }} {{ t('common.bytes') }} · {{ store.width }}×{{ store.height }}</span>
           <div class="panel-actions">
             <select
               v-model="store.outputFormat"
@@ -324,13 +330,13 @@ watch(
               <option value="hex">HEX Bytes</option>
               <option value="bin">Binary (.bin)</option>
             </select>
-            <button class="code-btn" @click="copyOutput">{{ copied ? '✓ Copied' : '⧉ Copy' }}</button>
+            <button class="code-btn" @click="copyOutput">{{ copied ? t('code.copied') : t('code.copy') }}</button>
             <button class="code-btn accent" @click="downloadCurrent">⇩ {{ store.outputFileName }}</button>
           </div>
         </header>
         <pre class="code-body"><code>{{ store.currentOutput }}</code></pre>
         <footer class="code-foot">
-          <span class="foot-label">Export as</span>
+          <span class="foot-label">{{ t('code.exportAs') }}</span>
           <button class="code-btn" @click="exportAs('h')">.h</button>
           <button class="code-btn" @click="exportAs('txt')">.txt</button>
           <button class="code-btn" @click="exportAs('md')">.md</button>

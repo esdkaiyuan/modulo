@@ -4,7 +4,10 @@ import Panel from '../components/Panel.vue';
 import BitmapCanvas from '../components/BitmapCanvas.vue';
 import CodeOutput from '../components/CodeOutput.vue';
 import EncodingFields from '../components/EncodingFields.vue';
+import SizeModeFields from '../components/SizeModeFields.vue';
+import ColorModeFields from '../components/ColorModeFields.vue';
 import { useFontModuloStore } from '../features/font/stores/fontModuloStore';
+import { t } from '../i18n';
 
 const store = useFontModuloStore();
 const fontInput = ref<HTMLInputElement | null>(null);
@@ -61,26 +64,26 @@ onMounted(() => {
 <template>
   <div class="tool-page">
     <div class="tool-toolbar">
-      <span class="tool-title">字 Font Extractor</span>
+      <span class="tool-title">{{ t('font.title') }}</span>
       <label class="inline-field">
-        Text
+        {{ t('font.text') }}
         <input
           v-model="store.text"
           type="text"
           aria-label="Font text"
-          placeholder="输入文字…"
+          :placeholder="t('font.textPlaceholder')"
           style="width: 200px"
         />
       </label>
       <label class="inline-field">
-        Font
+        {{ t('font.font') }}
         <select v-model="store.fontFamily" style="max-width: 190px">
           <option v-for="font in BUILTIN_FONTS" :key="font.value" :value="font.value">{{ font.label }}</option>
           <option v-for="family in customFonts" :key="family" :value="`${family}, sans-serif`">{{ family }}</option>
         </select>
       </label>
       <label class="inline-field">
-        Size
+        {{ t('font.size') }}
         <select v-model.number="store.fontSize">
           <option :value="16">16 px</option>
           <option :value="24">24 px</option>
@@ -94,27 +97,28 @@ onMounted(() => {
         <button class="btn sm icon" :class="{ toggled: store.bold }" title="Bold" @click="store.bold = !store.bold"><b>B</b></button>
         <button class="btn sm icon" :class="{ toggled: store.italic }" title="Italic" @click="store.italic = !store.italic"><i>I</i></button>
       </div>
-      <button class="btn" @click="pickFont">↥ Upload TTF/OTF</button>
+      <button class="btn" @click="pickFont">{{ t('font.upload') }}</button>
       <span class="toolbar-spacer"></span>
-      <button class="btn primary" @click="store.generate()">⟳ Regenerate</button>
+      <button class="btn primary" @click="store.generate()">{{ t('font.regenerate') }}</button>
     </div>
 
     <div class="tool-main">
       <div v-if="fontError" class="alert-error">{{ fontError }}</div>
 
-      <Panel :title="`Glyph Preview (${store.targetWidth}×${store.targetHeight})`">
+      <Panel :title="t('font.glyphPreview', { w: store.targetWidth, h: store.targetHeight })">
         <div class="canvas-frame">
           <BitmapCanvas
             v-if="store.selectedGlyph"
             :bitmap="store.selectedGlyph.bitmap"
+            :rgba="store.selectedGlyph.preview ?? null"
             :width="store.targetWidth"
             :height="store.targetHeight"
             :scale="previewScale"
-            grid
+            :grid="store.colorMode === 'mono'"
           />
           <div v-else class="empty-state">
             <span class="big">字</span>
-            <span>Type some text to render glyphs</span>
+            <span>{{ t('font.empty') }}</span>
           </div>
         </div>
         <div v-if="store.glyphs.length > 1" class="glyph-strip">
@@ -130,32 +134,36 @@ onMounted(() => {
     </div>
 
     <aside class="tool-side">
-      <Panel title="Glyph Size">
-        <div class="field-row">
-          <label class="field"><span>Width</span><input v-model.number="store.targetWidth" type="number" min="8" max="128" /></label>
-          <label class="field"><span>Height</span><input v-model.number="store.targetHeight" type="number" min="8" max="128" /></label>
-        </div>
+      <Panel :title="t('font.glyphSize')">
+        <SizeModeFields :store="store" variant="square" />
       </Panel>
 
-      <Panel title="Rendering">
+      <Panel :title="t('font.rendering')">
         <div class="field-stack">
-          <div class="slider-field">
-            <header><span>Threshold</span><b>{{ store.threshold }}</b></header>
-            <input v-model.number="store.threshold" type="range" min="0" max="255" />
+          <ColorModeFields :store="store" />
+          <template v-if="store.colorMode === 'mono'">
+            <div class="slider-field">
+              <header><span>{{ t('common.threshold') }}</span><b>{{ store.threshold }}</b></header>
+              <input v-model.number="store.threshold" type="range" min="0" max="255" />
+            </div>
+            <label class="check"><input v-model="store.invert" type="checkbox" /> {{ t('font.invert') }}</label>
+          </template>
+          <div v-else class="field-row">
+            <label class="field"><span>{{ t('font.textColor') }}</span><input v-model="store.textColor" type="color" /></label>
+            <label class="field"><span>{{ t('font.bgColor') }}</span><input v-model="store.bgColor" type="color" /></label>
           </div>
-          <label class="check"><input v-model="store.invert" type="checkbox" /> Invert (0 = pixel on)</label>
         </div>
       </Panel>
 
-      <Panel title="Encoding">
+      <Panel v-if="store.colorMode === 'mono'" :title="t('common.encoding')">
         <EncodingFields :store="store" />
       </Panel>
 
-      <Panel title="Stats">
+      <Panel :title="t('common.stats')">
         <div class="stat-list">
-          <div class="stat-row"><span>Characters</span><b>{{ store.glyphs.length }}</b></div>
-          <div class="stat-row"><span>Bits / glyph</span><b>{{ store.targetWidth * store.targetHeight }}</b></div>
-          <div class="stat-row"><span>Identifier</span><b class="mono">{{ store.outputName }}</b></div>
+          <div class="stat-row"><span>{{ t('font.characters') }}</span><b>{{ store.glyphs.length }}</b></div>
+          <div class="stat-row"><span>{{ t('font.bitsPerGlyph') }}</span><b>{{ store.targetWidth * store.targetHeight }}</b></div>
+          <div class="stat-row"><span>{{ t('common.identifier') }}</span><b class="mono">{{ store.outputName }}</b></div>
         </div>
       </Panel>
     </aside>

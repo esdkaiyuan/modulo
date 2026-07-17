@@ -27,7 +27,7 @@ describe('videoModuloStore', () => {
     setActivePinia(createPinia());
   });
 
-  it('processes extracted video frames into encoded animation output', () => {
+  it('processes extracted video frames into encoded animation output', async () => {
     const store = useVideoModuloStore();
 
     store.loadExtractedFrames({
@@ -46,7 +46,7 @@ describe('videoModuloStore', () => {
     store.dithering = 'none';
     store.outputFps = 10;
 
-    store.processFrames();
+    await store.processFrames();
 
     expect(store.processedFrames).toHaveLength(2);
     expect(Array.from(store.processedFrames[0].bytes)).toEqual([0x90]);

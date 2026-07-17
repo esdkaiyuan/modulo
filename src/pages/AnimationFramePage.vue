@@ -4,8 +4,11 @@ import Panel from '../components/Panel.vue';
 import BitmapCanvas from '../components/BitmapCanvas.vue';
 import CodeOutput from '../components/CodeOutput.vue';
 import EncodingFields from '../components/EncodingFields.vue';
+import SizeModeFields from '../components/SizeModeFields.vue';
+import ColorModeFields from '../components/ColorModeFields.vue';
 import { useAnimationModuloStore } from '../features/animation/stores/animationModuloStore';
-import { decodeGif } from '../features/animation/utils/gifDecoder';
+import { ANIMATION_ACCEPT, decodeAnimationFile } from '../features/animation/utils/animationDecoder';
+import { t } from '../i18n';
 
 const store = useAnimationModuloStore();
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -33,11 +36,11 @@ async function onFileChange(e: Event) {
   loadError.value = '';
   stop();
   try {
-    const decoded = decodeGif(await file.arrayBuffer());
-    if (!decoded.frames.length) throw new Error('No frames found in this GIF');
+    const decoded = await decodeAnimationFile(file);
+    if (!decoded.frames.length) throw new Error('No frames found in this file');
     store.loadDecodedFrames({ fileName: file.name, width: decoded.width, height: decoded.height, frames: decoded.frames });
   } catch (error) {
-    loadError.value = error instanceof Error ? error.message : 'GIF decode failed';
+    loadError.value = error instanceof Error ? error.message : 'Image decode failed';
   }
 }
 
@@ -84,30 +87,31 @@ onBeforeUnmount(stop);
 <template>
   <div class="tool-page">
     <div class="tool-toolbar">
-      <span class="tool-title">◧ Animation Frames</span>
-      <button class="btn primary" data-test="open-gif" @click="pickFile">Open GIF</button>
+      <span class="tool-title">{{ t('anim.title') }}</span>
+      <button class="btn primary" data-test="open-gif" @click="pickFile">{{ t('anim.open') }}</button>
       <span class="toolbar-spacer"></span>
       <span v-if="store.fileName" class="toolbar-info">
         {{ store.fileName }} · {{ store.sourceWidth }}×{{ store.sourceHeight }} ·
-        {{ store.decodedFrames.length }} frames · {{ (store.totalDuration / 1000).toFixed(2) }}s
+        {{ store.decodedFrames.length }} {{ t('common.frames') }} · {{ (store.totalDuration / 1000).toFixed(2) }}s
       </span>
     </div>
 
     <div class="tool-main">
       <div v-if="loadError" class="alert-error">{{ loadError }}</div>
 
-      <Panel :title="`Animation Preview (${store.targetWidth}×${store.targetHeight})`">
+      <Panel :title="t('anim.preview', { w: store.targetWidth, h: store.targetHeight })">
         <div class="canvas-frame">
           <BitmapCanvas
             v-if="store.selectedFrame"
             :bitmap="store.selectedFrame.bitmap"
+            :rgba="store.selectedFrame.preview ?? null"
             :width="store.targetWidth"
             :height="store.targetHeight"
             :scale="previewScale"
           />
           <div v-else class="empty-state">
             <span class="big">◧</span>
-            <span>Load a GIF to extract and preview frames</span>
+            <span>{{ t('anim.emptyPreview') }}</span>
           </div>
         </div>
         <div v-if="store.processedFrames.length" class="media-controls">
@@ -128,7 +132,7 @@ onBeforeUnmount(stop);
         </div>
       </Panel>
 
-      <Panel :title="`Frames (${store.processedFrames.length})`">
+      <Panel :title="t('anim.frames', { n: store.processedFrames.length })">
         <div v-if="store.processedFrames.length" class="frame-strip">
           <button
             v-for="(frame, index) in visibleFrames"
@@ -137,67 +141,70 @@ onBeforeUnmount(stop);
             :class="{ active: index === store.selectedIndex }"
             @click="stop(); store.selectedIndex = index"
           >
-            <BitmapCanvas :bitmap="frame.bitmap" :width="store.targetWidth" :height="store.targetHeight" :scale="1" />
+            <BitmapCanvas :bitmap="frame.bitmap" :rgba="frame.preview ?? null" :width="store.targetWidth" :height="store.targetHeight" :scale="1" />
             <small>#{{ frame.sourceIndex }} · {{ frame.delay }}ms</small>
           </button>
-          <span v-if="hiddenCount" class="strip-more">+{{ hiddenCount }} more</span>
+          <span v-if="hiddenCount" class="strip-more">{{ t('common.more', { n: hiddenCount }) }}</span>
         </div>
         <div v-else class="empty-state" style="min-height:90px">
-          <span>Load a GIF to extract frames</span>
+          <span>{{ t('anim.emptyFrames') }}</span>
         </div>
       </Panel>
     </div>
 
     <aside class="tool-side">
-      <Panel title="Frame Range">
+      <Panel :title="t('anim.frameRange')">
         <div class="field-stack">
           <div class="field-row">
-            <label class="field"><span>Start Frame</span><input v-model.number="store.startFrame" type="number" min="1" :max="store.decodedFrames.length || 1" /></label>
-            <label class="field"><span>End Frame</span><input v-model.number="store.endFrame" type="number" min="1" :max="store.decodedFrames.length || 1" /></label>
+            <label class="field"><span>{{ t('anim.startFrame') }}</span><input v-model.number="store.startFrame" type="number" min="1" :max="store.decodedFrames.length || 1" /></label>
+            <label class="field"><span>{{ t('anim.endFrame') }}</span><input v-model.number="store.endFrame" type="number" min="1" :max="store.decodedFrames.length || 1" /></label>
           </div>
           <label class="field">
-            <span>Sample Step</span>
-            <select v-model.number="store.sampleStep">
-              <option :value="1">Every frame</option>
-              <option :value="2">Every 2nd frame</option>
-              <option :value="3">Every 3rd frame</option>
-              <option :value="5">Every 5th frame</option>
-              <option :value="10">Every 10th frame</option>
+            <span>{{ t('anim.sampling') }}</span>
+            <select v-model="store.samplingMode">
+              <option value="step">{{ t('anim.byStep') }}</option>
+              <option value="count">{{ t('anim.byCount') }}</option>
             </select>
+          </label>
+          <label v-if="store.samplingMode === 'step'" class="field">
+            <span>{{ t('anim.sampleStep') }}</span>
+            <input v-model.number="store.sampleStep" type="number" min="1" :max="store.decodedFrames.length || 1" />
+          </label>
+          <label v-else class="field">
+            <span>{{ t('anim.outputFrames') }}</span>
+            <input v-model.number="store.targetFrameCount" type="number" min="1" :max="store.decodedFrames.length || 1" />
           </label>
         </div>
       </Panel>
 
-      <Panel title="Frame Processing">
+      <Panel :title="t('video.frameProcessing')">
         <div class="field-stack">
-          <div class="field-row">
-            <label class="field"><span>Width</span><input v-model.number="store.targetWidth" type="number" min="8" max="512" /></label>
-            <label class="field"><span>Height</span><input v-model.number="store.targetHeight" type="number" min="8" max="512" /></label>
-          </div>
-          <div class="slider-field">
-            <header><span>Threshold</span><b>{{ store.threshold }}</b></header>
+          <SizeModeFields :store="store" />
+          <ColorModeFields :store="store" />
+          <div v-if="store.colorMode === 'mono'" class="slider-field">
+            <header><span>{{ t('common.threshold') }}</span><b>{{ store.threshold }}</b></header>
             <input v-model.number="store.threshold" type="range" min="0" max="255" />
           </div>
           <label class="field">
-            <span>Dithering</span>
+            <span>{{ t('common.dithering') }}</span>
             <select v-model="store.dithering">
-              <option value="none">None</option>
+              <option value="none">{{ t('common.none') }}</option>
               <option value="floyd-steinberg">Floyd-Steinberg</option>
             </select>
           </label>
         </div>
       </Panel>
 
-      <Panel title="Encoding">
+      <Panel v-if="store.colorMode === 'mono'" :title="t('common.encoding')">
         <EncodingFields :store="store" />
       </Panel>
 
-      <Panel title="Stats">
+      <Panel :title="t('common.stats')">
         <div class="stat-list">
-          <div class="stat-row"><span>Decoded frames</span><b>{{ store.decodedFrames.length }}</b></div>
-          <div class="stat-row"><span>Output frames</span><b>{{ store.processedFrames.length }}</b></div>
-          <div class="stat-row"><span>Bytes / frame</span><b>{{ store.bytesPerFrame }}</b></div>
-          <div class="stat-row"><span>Total duration</span><b>{{ (store.totalDuration / 1000).toFixed(2) }} s</b></div>
+          <div class="stat-row"><span>{{ t('anim.decodedFrames') }}</span><b>{{ store.decodedFrames.length }}</b></div>
+          <div class="stat-row"><span>{{ t('anim.outputFrames') }}</span><b>{{ store.processedFrames.length }}</b></div>
+          <div class="stat-row"><span>{{ t('video.bytesPerFrame') }}</span><b>{{ store.bytesPerFrame }}</b></div>
+          <div class="stat-row"><span>{{ t('anim.totalDuration') }}</span><b>{{ (store.totalDuration / 1000).toFixed(2) }} s</b></div>
         </div>
       </Panel>
     </aside>
@@ -213,6 +220,6 @@ onBeforeUnmount(stop);
       />
     </div>
 
-    <input ref="fileInput" type="file" class="hidden-input" accept="image/gif" @change="onFileChange" />
+    <input ref="fileInput" type="file" class="hidden-input" :accept="ANIMATION_ACCEPT" @change="onFileChange" />
   </div>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import HomePage from './pages/HomePage.vue';
 import ImageConverterPage from './pages/ImageConverterPage.vue';
 import VideoExtractorPage from './pages/VideoExtractorPage.vue';
@@ -7,14 +7,28 @@ import AnimationFramePage from './pages/AnimationFramePage.vue';
 import FontExtractorPage from './pages/FontExtractorPage.vue';
 import BatchExtractorPage from './pages/BatchExtractorPage.vue';
 import HandDrawPage from './pages/HandDrawPage.vue';
+import AudioExtractorPage from './pages/AudioExtractorPage.vue';
+import AiAgentPage from './pages/AiAgentPage.vue';
+import UserAuthPage from './pages/UserAuthPage.vue';
+import UserProfilePage from './pages/UserProfilePage.vue';
+import WatermarkLayer from './components/WatermarkLayer.vue';
+import GridBackdrop from './components/GridBackdrop.vue';
+import { avatarCharFor, avatarHueFor, useAuthStore } from './user/authStore';
+import { TOOL_META, useActivityStore } from './user/activityStore';
+import { locale, t, toggleLocale } from './i18n';
+
+const auth = useAuthStore();
+const activity = useActivityStore();
 
 const NAV = [
-  { route: 'image', label: 'Image', icon: '▣' },
-  { route: 'video', label: 'Video', icon: '▶' },
-  { route: 'animation', label: 'Animation', icon: '◧' },
-  { route: 'font', label: 'Font', icon: '字' },
-  { route: 'batch', label: 'Batch', icon: '≣' },
-  { route: 'handdraw', label: 'Draw', icon: '✎' }
+  { route: 'image', labelKey: 'nav.image', icon: '▣' },
+  { route: 'video', labelKey: 'nav.video', icon: '▶' },
+  { route: 'animation', labelKey: 'nav.animation', icon: '◧' },
+  { route: 'font', labelKey: 'nav.font', icon: '字' },
+  { route: 'batch', labelKey: 'nav.batch', icon: '≣' },
+  { route: 'handdraw', labelKey: 'nav.handdraw', icon: '✎' },
+  { route: 'audio', labelKey: 'nav.audio', icon: '♪' },
+  { route: 'ai', labelKey: 'nav.ai', icon: '✦' }
 ] as const;
 
 const pages: Record<string, unknown> = {
@@ -25,7 +39,11 @@ const pages: Record<string, unknown> = {
   animation: AnimationFramePage,
   font: FontExtractorPage,
   batch: BatchExtractorPage,
-  handdraw: HandDrawPage
+  handdraw: HandDrawPage,
+  audio: AudioExtractorPage,
+  ai: AiAgentPage,
+  user: UserAuthPage,
+  profile: UserProfilePage
 };
 
 function parseRoute(): string {
@@ -33,7 +51,41 @@ function parseRoute(): string {
 }
 
 const route = ref(parseRoute());
-const currentPage = computed(() => pages[route.value] ?? HomePage);
+
+// All tool pages and the profile require a logged-in user. The home page,
+// login page, and unknown routes (which fall back to home) stay public.
+const PROTECTED = new Set([
+  'image', 'video', 'animation', 'font', 'batch', 'handdraw', 'audio', 'ai', 'profile'
+]);
+
+const needsLogin = computed(() => PROTECTED.has(route.value) && !auth.currentUser);
+
+// Render the login page immediately (no flash of the protected page), then
+// normalize the hash so the address bar matches what is shown.
+const currentPage = computed(() => {
+  if (needsLogin.value) return UserAuthPage;
+  return pages[route.value] ?? HomePage;
+});
+
+watch(
+  needsLogin,
+  (blocked) => {
+    if (blocked) {
+      auth.requireLogin(route.value);
+      window.location.hash = '#/user';
+    }
+  },
+  { immediate: true }
+);
+
+// Usage history: log tool visits by the logged-in user.
+watch(
+  route,
+  (r) => {
+    if (auth.currentUser && r in TOOL_META) activity.record(r);
+  },
+  { immediate: true }
+);
 
 function onHashChange() {
   route.value = parseRoute();
@@ -49,6 +101,8 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', onHashChange));
 
 <template>
   <div class="app">
+    <GridBackdrop />
+    <WatermarkLayer />
     <header class="app-header">
       <div class="brand" @click="navigate('')">
         <span class="brand-logo">▣</span>
@@ -64,9 +118,31 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', onHashChange));
           :data-test="`nav-${item.route}`"
           @click="navigate(item.route)"
         >
-          <span>{{ item.icon }}</span>{{ item.label }}
+          <span>{{ item.icon }}</span>{{ t(item.labelKey) }}
         </button>
       </nav>
+      <button
+        v-if="auth.currentUser"
+        class="avatar-btn"
+        data-test="nav-user"
+        :class="{ active: route === 'profile' }"
+        :style="{ background: `hsl(${avatarHueFor(auth.currentUser.username)} 55% 42%)` }"
+        :title="auth.currentUser.username"
+        @click="navigate('profile')"
+      >
+        {{ avatarCharFor(auth.currentUser.username) }}
+      </button>
+      <button v-else class="btn sm login-btn" data-test="nav-user" @click="navigate('user')">
+        {{ t('auth.login') }}
+      </button>
+      <button
+        class="lang-toggle"
+        data-test="lang-toggle"
+        :title="locale === 'zh' ? 'Switch to English' : '切换为中文'"
+        @click="toggleLocale()"
+      >
+        <span class="lang-icon">文A</span>{{ locale === 'zh' ? 'EN' : '中文' }}
+      </button>
     </header>
     <main class="app-main">
       <component :is="currentPage" />

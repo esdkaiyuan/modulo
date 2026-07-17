@@ -1,10 +1,13 @@
 import { defineStore } from 'pinia';
 import { computed, ref, shallowRef, watch } from 'vue';
-import { encodeBitmap, type BitOrder, type Polarity, type ScanDirection } from '../../../engines/bitmapEncoder';
-import { imageDataToGray, processGrayToBitmap, type DitherMode } from '../../../engines/imageProcessor';
-import { makeTextBlob, sanitizeIdentifier } from '../../../engines/outputFormatter';
+import type { BitOrder, Polarity, ScanDirection } from '../../../engines/bitmapEncoder';
+import type { DitherMode } from '../../../engines/imageProcessor';
+import { COLOR_FORMAT_INFO, palette16Bytes, type ColorByteOrder, type ColorMode } from '../../../engines/colorProcessor';
+import { colorValueChunks, makeTextBlob, sanitizeIdentifier } from '../../../engines/outputFormatter';
 import { extractVideoFrames } from '../utils/videoFrameExtractor';
 import { MAX_FILE_SIZE } from '../constants';
+import { useSizeMode } from '../../shared/useSizeMode';
+import { getFrameProcessorPool } from '../../../workers/frameProcessorPool';
 
 export interface ExtractedVideoFrame {
   imageData: ImageData;
@@ -15,6 +18,8 @@ export interface ProcessedVideoFrame {
   time: number;
   bitmap: Uint8Array;
   bytes: Uint8Array;
+  /** Color modes: quantized RGBA at target size for previews. */
+  preview?: Uint8ClampedArray;
 }
 
 export const useVideoModuloStore = defineStore('videoModulo', () => {
@@ -32,6 +37,7 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
   const sourceFile = shallowRef<File | null>(null);
   const isExtracting = ref(false);
   const extractError = ref('');
+  const extractProgress = ref(0); // 0..1 during extraction
 
   // ── Processed frames (bitmap + encoded bytes) ─────────
   const processedFrames = ref<ProcessedVideoFrame[]>([]);
@@ -42,6 +48,8 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
   const startTime = ref(0);
   const endTime = ref(0);
   const sampleFps = ref(10);
+  // Time base for sampleFps: 'second' → N fps, 'minute' → N frames per minute
+  const sampleUnit = ref<'second' | 'minute'>('second');
   const sampleEveryNFrames = ref(1);
   const outputFps = ref(10);
 
@@ -53,6 +61,8 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
   const threshold = ref(128);
   const dithering = ref<DitherMode>('none');
   const scalingAlgorithm = ref<'nearest' | 'bilinear'>('nearest');
+  const colorMode = ref<ColorMode>('mono');
+  const colorByteOrder = ref<ColorByteOrder>('big');
   const scanDirection = ref<ScanDirection>('horizontal-ltr');
   const bitOrder = ref<BitOrder>('msb');
   const polarity = ref<Polarity>('positive');
@@ -62,7 +72,10 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
   const selectedFrame = computed(() =>
     processedFrames.value[selectedIndex.value] ?? processedFrames.value[0] ?? null
   );
-  const bytesPerFrame = computed(() => Math.ceil(targetWidth.value * targetHeight.value / 8));
+  const bytesPerFrame = computed(() => colorMode.value === 'mono'
+    ? Math.ceil(targetWidth.value * targetHeight.value / 8)
+    : targetWidth.value * targetHeight.value * COLOR_FORMAT_INFO[colorMode.value].bytesPerPixel
+  );
   const estimatedBytes = computed(() =>
     processedFrames.value.reduce((sum, f) => sum + f.bytes.length, 0)
   );
@@ -72,15 +85,27 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
 
   const generatedSource = computed(() => {
     const frameCount = processedFrames.value.length;
+    const mode = colorMode.value;
+    const isColor = mode !== 'mono';
+    const elementType = mode === 'rgb565' ? 'uint16_t' : 'uint8_t';
+    const perFrame = mode === 'rgb565' ? bytesPerFrame.value / 2 : bytesPerFrame.value;
+    const formatComment = isColor ? COLOR_FORMAT_INFO[mode].label : '1bpp mono';
     const lines = [
       `// Video: ${fileName.value || 'untitled'}`,
-      `// Resolution: ${targetWidth.value}x${targetHeight.value}, FPS: ${outputFps.value}, Frames: ${frameCount}`,
-      `const uint8_t ${outputName.value}_frames[${frameCount}][${bytesPerFrame.value}] PROGMEM = {`
+      `// Resolution: ${targetWidth.value}x${targetHeight.value}, ${formatComment}, FPS: ${outputFps.value}, Frames: ${frameCount}`
     ];
+    if (mode === 'palette16') {
+      lines.push(`const uint16_t ${outputName.value}_palette[] PROGMEM = {`);
+      lines.push(`  ${colorValueChunks(palette16Bytes(colorByteOrder.value), 'rgb565', colorByteOrder.value).join(', ')}`);
+      lines.push('};', '');
+    }
+    lines.push(`const ${elementType} ${outputName.value}_frames[${frameCount}][${perFrame}] PROGMEM = {`);
     processedFrames.value.forEach((frame, index) => {
-      const values = Array.from(frame.bytes)
-        .map((b) => `0x${b.toString(16).padStart(2, '0').toUpperCase()}`)
-        .join(', ');
+      const values = isColor
+        ? colorValueChunks(frame.bytes, mode, colorByteOrder.value, frame.bytes.length).join(', ')
+        : Array.from(frame.bytes)
+            .map((b) => `0x${b.toString(16).padStart(2, '0').toUpperCase()}`)
+            .join(', ');
       lines.push(`  // Frame ${index} - Time: ${frame.time.toFixed(3)}s`);
       lines.push(`  { ${values} }${index < frameCount - 1 ? ',' : ''}`);
     });
@@ -94,14 +119,15 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
 
   // ── Processing ──────────────────────────────────────
   let processTimer: ReturnType<typeof setTimeout> | null = null;
+  const isProcessing = ref(false);
 
-  function processAll() {
+  async function processAll() {
     if (!extractedFrames.value.length) return;
-    processedFrames.value = extractedFrames.value.map((frame) => {
-      const gray = imageDataToGray(frame.imageData);
-      const bitmap = processGrayToBitmap(gray, {
-        sourceWidth: frame.imageData.width,
-        sourceHeight: frame.imageData.height,
+    isProcessing.value = true;
+    const pool = getFrameProcessorPool();
+    const jobs = extractedFrames.value.map((frame) =>
+      pool.process({
+        imageData: frame.imageData,
         targetWidth: targetWidth.value,
         targetHeight: targetHeight.value,
         brightness: brightness.value,
@@ -109,15 +135,25 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
         threshold: threshold.value,
         dither: dithering.value,
         scalingAlgorithm: scalingAlgorithm.value,
-      });
-      const bytes = encodeBitmap(bitmap, targetWidth.value, targetHeight.value, {
         scan: scanDirection.value,
         bitOrder: bitOrder.value,
         polarity: polarity.value,
-      });
-      return { time: frame.time, bitmap, bytes };
-    });
-    selectedIndex.value = Math.min(selectedIndex.value, Math.max(0, processedFrames.value.length - 1));
+        colorMode: colorMode.value,
+        colorByteOrder: colorByteOrder.value,
+      })
+    );
+    try {
+      const results = await Promise.all(jobs);
+      processedFrames.value = results.map((r, i) => ({
+        time: extractedFrames.value[i].time,
+        bitmap: r.bitmap,
+        bytes: r.bytes,
+        preview: r.preview,
+      }));
+      selectedIndex.value = Math.min(selectedIndex.value, Math.max(0, processedFrames.value.length - 1));
+    } finally {
+      isProcessing.value = false;
+    }
   }
 
   function outputBlob() {
@@ -131,6 +167,13 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
       processAll();
     }, 80);
   }
+  const { sizeMode, aspectLongEdge, applyAspect, isAspectMatched } = useSizeMode({
+    sourceWidth,
+    sourceHeight,
+    targetWidth,
+    targetHeight,
+    onResize: () => { if (!isPlaying.value) scheduleProcess(); }
+  });
 
   // ── Load video ──────────────────────────────────────
   function loadVideo(payload: {
@@ -155,6 +198,7 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
     endTime.value = payload.duration || payload.frames[payload.frames.length - 1]?.time || 0;
     selectedIndex.value = 0;
     isPlaying.value = false;
+    if (sizeMode.value === 'aspect') applyAspect();
     processAll();
   }
 
@@ -166,6 +210,7 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
     }
     extractError.value = '';
     isExtracting.value = true;
+    extractProgress.value = 0;
     pause();
     try {
       const result = await extractVideoFrames({
@@ -173,7 +218,9 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
         startTime: 0,
         endTime: 0, // 0 → full duration
         sampleFps: sampleFps.value,
-        everyNFrames: sampleEveryNFrames.value
+        sampleUnit: sampleUnit.value,
+        everyNFrames: sampleEveryNFrames.value,
+        onProgress: (captured, total) => { extractProgress.value = Math.min(1, captured / total); }
       });
       sourceFile.value = file;
       loadVideo(result);
@@ -183,6 +230,7 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
       return false;
     } finally {
       isExtracting.value = false;
+      extractProgress.value = 0;
     }
   }
 
@@ -196,6 +244,7 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
     }
     extractError.value = '';
     isExtracting.value = true;
+    extractProgress.value = 0;
     pause();
     try {
       const result = await extractVideoFrames({
@@ -203,7 +252,9 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
         startTime: startTime.value,
         endTime: endTime.value,
         sampleFps: sampleFps.value,
-        everyNFrames: sampleEveryNFrames.value
+        sampleUnit: sampleUnit.value,
+        everyNFrames: sampleEveryNFrames.value,
+        onProgress: (captured, total) => { extractProgress.value = Math.min(1, captured / total); }
       });
       const keepStart = startTime.value;
       const keepEnd = endTime.value;
@@ -216,6 +267,7 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
       return false;
     } finally {
       isExtracting.value = false;
+      extractProgress.value = 0;
     }
   }
 
@@ -259,6 +311,7 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
     () => [
       targetWidth.value, targetHeight.value, brightness.value, contrast.value,
       threshold.value, dithering.value, scalingAlgorithm.value,
+      colorMode.value, colorByteOrder.value,
       scanDirection.value, bitOrder.value, polarity.value, outputFps.value,
     ],
     () => {
@@ -285,15 +338,19 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
   return {
     // source
     fileName, sourceWidth, sourceHeight, duration, objectUrl,
-    sourceFile, isExtracting, extractError,
+    sourceFile, isExtracting, extractError, extractProgress,
+    isProcessing,
     // raw
     extractedFrames,
     // processed
     processedFrames, selectedIndex, isPlaying, selectedFrame,
     // settings
-    startTime, endTime, sampleFps, sampleEveryNFrames, outputFps,
+    startTime, endTime, sampleFps, sampleUnit, sampleEveryNFrames, outputFps,
     targetWidth, targetHeight, brightness, contrast, threshold,
-    dithering, scalingAlgorithm, scanDirection, bitOrder, polarity, previewScale,
+    dithering, scalingAlgorithm, colorMode, colorByteOrder,
+    scanDirection, bitOrder, polarity, previewScale,
+    // size mode
+    sizeMode, aspectLongEdge, applyAspect, isAspectMatched,
     // computed
     bytesPerFrame, estimatedBytes, outputName, totalFrames, hasFrames, generatedSource,
     outputFileName,

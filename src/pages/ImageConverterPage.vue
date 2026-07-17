@@ -1,15 +1,16 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import Panel from '../components/Panel.vue';
 import BitmapCanvas from '../components/BitmapCanvas.vue';
 import CodeOutput from '../components/CodeOutput.vue';
 import EncodingFields from '../components/EncodingFields.vue';
+import SizeModeFields from '../components/SizeModeFields.vue';
+import ColorModeFields from '../components/ColorModeFields.vue';
 import { useImageModuloStore } from '../features/image/stores/imageModuloStore';
-import { PALETTE_16_COLORS } from '../engines/imageProcessor';
+import { t } from '../i18n';
 
 const store = useImageModuloStore();
 const fileInput = ref<HTMLInputElement | null>(null);
-const colorCanvas = ref<HTMLCanvasElement | null>(null);
 const dragOver = ref(false);
 const loadError = ref('');
 
@@ -76,7 +77,7 @@ watch(
   () => [
     store.targetWidth, store.targetHeight, store.brightness, store.contrast,
     store.threshold, store.dithering, store.scalingAlgorithm, store.colorMode,
-    store.scanDirection, store.bitOrder, store.polarity
+    store.colorByteOrder, store.scanDirection, store.bitOrder, store.polarity
   ],
   () => {
     if (!store.sourceImageData) return;
@@ -84,45 +85,9 @@ watch(
     timer = setTimeout(() => {
       timer = null;
       store.quickProcess();
-      nextTick(renderColorPreview);
     }, 120);
   }
 );
-
-// ── Color preview (rgb565 / palette16) ───────────────
-function renderColorPreview() {
-  if (store.colorMode === 'mono') return;
-  const el = colorCanvas.value;
-  const src = store.sourceImageData;
-  if (!el || !src) return;
-  el.width = src.width;
-  el.height = src.height;
-  const ctx = el.getContext('2d');
-  if (!ctx) return;
-  const out = ctx.createImageData(src.width, src.height);
-
-  if (store.colorMode === 'rgb565' && store.colorData.length) {
-    const view = new Uint16Array(store.colorData.buffer, store.colorData.byteOffset, store.colorData.length / 2);
-    for (let i = 0; i < view.length; i += 1) {
-      const v = view[i];
-      out.data[i * 4] = ((v >> 11) & 0x1f) << 3;
-      out.data[i * 4 + 1] = ((v >> 5) & 0x3f) << 2;
-      out.data[i * 4 + 2] = (v & 0x1f) << 3;
-      out.data[i * 4 + 3] = 255;
-    }
-  } else if (store.colorMode === 'palette16' && store.paletteIndex.length) {
-    for (let i = 0; i < store.paletteIndex.length; i += 1) {
-      const [r, g, b] = PALETTE_16_COLORS[store.paletteIndex[i]] ?? [0, 0, 0];
-      out.data[i * 4] = r;
-      out.data[i * 4 + 1] = g;
-      out.data[i * 4 + 2] = b;
-      out.data[i * 4 + 3] = 255;
-    }
-  }
-  ctx.putImageData(out, 0, 0);
-}
-
-watch(() => [store.colorMode, store.colorData, store.paletteIndex], () => nextTick(renderColorPreview));
 
 onMounted(() => {
   // Plain resize pipeline (no crop) — predictable default for the rebuilt UI.
@@ -138,20 +103,21 @@ function reset() {
 <template>
   <div class="tool-page">
     <div class="tool-toolbar">
-      <span class="tool-title">▣ Image Converter</span>
-      <button class="btn primary" data-test="open-image" @click="pickFile">Open Image</button>
-      <button class="btn" :disabled="!hasImage" @click="reset">Reset</button>
+      <span class="tool-title">{{ t('image.title') }}</span>
+      <button class="btn primary" data-test="open-image" @click="pickFile">{{ t('image.open') }}</button>
+      <button class="btn" :disabled="!hasImage" @click="reset">{{ t('common.reset') }}</button>
       <span class="toolbar-spacer"></span>
       <span v-if="hasImage" class="toolbar-info">
         {{ store.fileName }} · {{ store.sourceWidth }}×{{ store.sourceHeight }} px ·
-        {{ (store.fileSize / 1024).toFixed(1) }} KB · {{ store.detectedColorMode }}
+        {{ (store.fileSize / 1024).toFixed(1) }} KB ·
+        {{ store.detectedColorMode === 'RGB Color' ? t('image.rgbColor') : t('image.grayscale') }}
       </span>
     </div>
 
     <div class="tool-main">
       <div v-if="loadError" class="alert-error">{{ loadError }}</div>
 
-      <Panel title="Source Image">
+      <Panel :title="t('image.source')">
         <div
           v-if="!hasImage"
           class="drop-zone"
@@ -162,96 +128,85 @@ function reset() {
           @drop.prevent="onDrop"
         >
           <span class="big">🖼</span>
-          <b>Drop an image here, or click to browse</b>
-          <span>PNG · JPG · BMP · WebP</span>
+          <b>{{ t('image.drop') }}</b>
+          <span>{{ t('image.dropTypes') }}</span>
         </div>
         <div v-else class="canvas-frame light">
           <img :src="store.previewUrl" alt="" style="max-width:100%;max-height:320px;image-rendering:auto" />
         </div>
       </Panel>
 
-      <Panel :title="`Dot Matrix Preview (${store.targetWidth}×${store.targetHeight})`">
+      <Panel :title="t('image.preview', { w: store.targetWidth, h: store.targetHeight })">
         <div class="canvas-frame">
           <template v-if="hasImage">
             <BitmapCanvas
-              v-if="store.colorMode === 'mono'"
               :bitmap="store.bitmap"
+              :rgba="store.colorMode !== 'mono' ? store.colorPreview : null"
               :width="store.targetWidth"
               :height="store.targetHeight"
               :scale="previewScale"
-              :grid="store.showGrid"
+              :grid="store.colorMode === 'mono' && store.showGrid"
             />
-            <canvas v-else ref="colorCanvas" style="max-width:100%;max-height:340px"></canvas>
           </template>
           <div v-else class="empty-state">
             <span class="big">▦</span>
-            <span>Load an image to generate the dot matrix preview</span>
+            <span>{{ t('image.emptyPreview') }}</span>
           </div>
         </div>
         <div class="media-controls" v-if="hasImage && store.colorMode === 'mono'">
-          <label class="check"><input v-model="store.showGrid" type="checkbox" /> Pixel grid</label>
+          <label class="check"><input v-model="store.showGrid" type="checkbox" /> {{ t('image.pixelGrid') }}</label>
         </div>
       </Panel>
     </div>
 
     <aside class="tool-side">
-      <Panel title="Output Size">
-        <div class="field-row">
-          <label class="field"><span>Width</span><input v-model.number="store.targetWidth" type="number" min="8" max="512" /></label>
-          <label class="field"><span>Height</span><input v-model.number="store.targetHeight" type="number" min="8" max="512" /></label>
-        </div>
+      <Panel :title="t('image.outputSize')">
+        <SizeModeFields :store="store" />
       </Panel>
 
-      <Panel title="Processing">
+      <Panel :title="t('image.processing')">
         <div class="field-stack">
-          <label class="field">
-            <span>Color Mode</span>
-            <select v-model="store.colorMode">
-              <option value="mono">Monochrome (1bpp)</option>
-              <option value="rgb565">RGB565 (16-bit)</option>
-              <option value="palette16">16-Color Palette (4bpp)</option>
-            </select>
-          </label>
+          <ColorModeFields :store="store" />
           <div class="slider-field">
-            <header><span>Brightness</span><b>{{ store.brightness }}</b></header>
+            <header><span>{{ t('common.brightness') }}</span><b>{{ store.brightness }}</b></header>
             <input v-model.number="store.brightness" type="range" min="-100" max="100" />
           </div>
           <div class="slider-field">
-            <header><span>Contrast</span><b>{{ store.contrast.toFixed(2) }}</b></header>
+            <header><span>{{ t('common.contrast') }}</span><b>{{ store.contrast.toFixed(2) }}</b></header>
             <input v-model.number="store.contrast" type="range" min="0.2" max="3" step="0.05" />
           </div>
-          <div class="slider-field">
-            <header><span>Threshold</span><b>{{ store.threshold }}</b></header>
+          <div v-if="store.colorMode === 'mono'" class="slider-field">
+            <header><span>{{ t('common.threshold') }}</span><b>{{ store.threshold }}</b></header>
             <input v-model.number="store.threshold" type="range" min="0" max="255" />
           </div>
           <div class="field-row">
             <label class="field">
-              <span>Scaling</span>
+              <span>{{ t('common.scaling') }}</span>
               <select v-model="store.scalingAlgorithm">
-                <option value="nearest">Nearest</option>
-                <option value="bilinear">Bilinear</option>
+                <option value="nearest">{{ t('common.nearest') }}</option>
+                <option value="bilinear">{{ t('common.bilinear') }}</option>
               </select>
             </label>
             <label class="field">
-              <span>Dithering</span>
+              <span>{{ t('common.dithering') }}</span>
               <select v-model="store.dithering">
                 <option value="floyd-steinberg">Floyd-Steinberg</option>
-                <option value="none">None</option>
+                <option value="none">{{ t('common.none') }}</option>
               </select>
             </label>
           </div>
         </div>
       </Panel>
 
-      <Panel title="Encoding">
+      <Panel v-if="store.colorMode === 'mono'" :title="t('common.encoding')">
         <EncodingFields :store="store" />
       </Panel>
 
-      <Panel title="Stats">
+      <Panel :title="t('common.stats')">
         <div class="stat-list">
-          <div class="stat-row"><span>Total bits</span><b>{{ store.totalBits }}</b></div>
-          <div class="stat-row"><span>Bytes</span><b>{{ store.bytes.length }}</b></div>
-          <div class="stat-row"><span>Identifier</span><b class="mono">{{ store.generatedName }}</b></div>
+          <div class="stat-row"><span>{{ t('image.totalBits') }}</span><b>{{ store.totalBits }}</b></div>
+          <div class="stat-row"><span>{{ t('image.byteCount') }}</span><b>{{ store.bytes.length }}</b></div>
+          <div class="stat-row"><span>{{ t('common.identifier') }}</span><b class="mono">{{ store.generatedName }}</b></div>
         </div>
       </Panel>
     </aside>

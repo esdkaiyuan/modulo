@@ -8,6 +8,10 @@ export interface FontRenderOptions {
   italic: boolean;
   width: number;
   height: number;
+  /** Text color (default black) — used by color modes. */
+  textColor?: string;
+  /** Background color (default white) — used by color modes. */
+  bgColor?: string;
 }
 
 export function fontImageDataToBitmap(imageData: ImageData, threshold: number, invert: boolean): Uint8Array {
@@ -45,9 +49,9 @@ export function renderTextToImageData(options: FontRenderOptions): ImageData {
   if (!context) throw new Error('Canvas 2D is unavailable');
 
   context.clearRect(0, 0, options.width, options.height);
-  context.fillStyle = '#ffffff';
+  context.fillStyle = options.bgColor ?? '#ffffff';
   context.fillRect(0, 0, options.width, options.height);
-  context.fillStyle = '#000000';
+  context.fillStyle = options.textColor ?? '#000000';
   context.textAlign = 'center';
   context.textBaseline = 'middle';
   const fittedFontSize = fitFontSizeToBitmap(options.fontSize, options.width, options.height);

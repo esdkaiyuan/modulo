@@ -4,7 +4,11 @@ import Panel from '../components/Panel.vue';
 import BitmapCanvas from '../components/BitmapCanvas.vue';
 import CodeOutput from '../components/CodeOutput.vue';
 import EncodingFields from '../components/EncodingFields.vue';
+import SizeModeFields from '../components/SizeModeFields.vue';
+import ColorModeFields from '../components/ColorModeFields.vue';
 import { useBatchModuloStore } from '../features/batch/stores/batchModuloStore';
+import { t } from '../i18n';
+import type { MessageKey } from '../i18n/messages';
 
 const store = useBatchModuloStore();
 const fileInput = ref<HTMLInputElement | null>(null);
@@ -85,20 +89,20 @@ function formatSize(bytes: number) {
 <template>
   <div class="tool-page">
     <div class="tool-toolbar">
-      <span class="tool-title">≣ Batch Processor</span>
-      <button class="btn primary" data-test="add-images" @click="pickFiles">＋ Add Images</button>
-      <button class="btn" data-test="start-batch" :disabled="!store.items.length" @click="store.processAll()">▶ Process All</button>
-      <button class="btn danger" :disabled="!store.items.length" @click="store.clearAll()">✕ Clear All</button>
+      <span class="tool-title">{{ t('batch.title') }}</span>
+      <button class="btn primary" data-test="add-images" @click="pickFiles">{{ t('batch.add') }}</button>
+      <button class="btn" data-test="start-batch" :disabled="!store.items.length" @click="store.processAll()">{{ t('batch.processAll') }}</button>
+      <button class="btn danger" :disabled="!store.items.length" @click="store.clearAll()">{{ t('batch.clearAll') }}</button>
       <span class="toolbar-spacer"></span>
       <span class="toolbar-info">
-        {{ store.summary.completed }}/{{ store.summary.total }} done
-        <template v-if="store.summary.failed"> · {{ store.summary.failed }} failed</template>
+        {{ store.summary.completed }}/{{ store.summary.total }} {{ t('batch.done') }}
+        <template v-if="store.summary.failed"> · {{ store.summary.failed }} {{ t('batch.failed') }}</template>
         · {{ store.overallProgress }}%
       </span>
     </div>
 
     <div class="tool-main">
-      <Panel :title="`Input Files (${store.items.length})`">
+      <Panel :title="t('batch.inputFiles', { n: store.items.length })">
         <div
           v-if="!store.items.length"
           class="drop-zone"
@@ -109,8 +113,8 @@ function formatSize(bytes: number) {
           @drop.prevent="onDrop"
         >
           <span class="big">🗂</span>
-          <b>Drop images here, or click to browse</b>
-          <span>Multiple PNG / JPG / BMP / WebP files</span>
+          <b>{{ t('batch.drop') }}</b>
+          <span>{{ t('batch.dropTypes') }}</span>
         </div>
         <table v-else class="data-table">
           <colgroup>
@@ -122,11 +126,11 @@ function formatSize(bytes: number) {
           </colgroup>
           <thead>
             <tr>
-              <th>File</th>
-              <th>Status</th>
-              <th>Progress</th>
-              <th>Size</th>
-              <th>Actions</th>
+              <th>{{ t('batch.thFile') }}</th>
+              <th>{{ t('batch.thStatus') }}</th>
+              <th>{{ t('batch.thProgress') }}</th>
+              <th>{{ t('batch.thSize') }}</th>
+              <th>{{ t('batch.thActions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -141,14 +145,14 @@ function formatSize(bytes: number) {
                 {{ item.fileName }}
               </td>
               <td>
-                <span class="pill" :class="item.status">{{ item.status }}</span>
+                <span class="pill" :class="item.status">{{ t(`batch.status.${item.status}` as MessageKey) }}</span>
               </td>
               <td>
                 <span class="progress-track"><i :style="{ width: `${item.progress}%` }"></i></span>{{ item.progress }}%
               </td>
               <td>{{ formatSize(item.size) }}</td>
               <td>
-                <button v-if="item.status === 'error'" class="btn sm" :title="item.error" @click.stop="store.retryItem(item.id)">Retry</button>
+                <button v-if="item.status === 'error'" class="btn sm" :title="item.error" @click.stop="store.retryItem(item.id)">{{ t('batch.retry') }}</button>
                 <button class="btn sm danger" @click.stop="store.removeItem(item.id)">✕</button>
               </td>
             </tr>
@@ -156,23 +160,24 @@ function formatSize(bytes: number) {
         </table>
       </Panel>
 
-      <Panel :title="store.selectedItem ? `Preview — ${store.selectedItem.fileName}` : 'Preview'">
+      <Panel :title="store.selectedItem ? `${t('common.preview')} — ${store.selectedItem.fileName}` : t('common.preview')">
         <div class="canvas-frame">
           <BitmapCanvas
             v-if="store.selectedItem && store.selectedItem.status === 'done'"
             :bitmap="store.selectedItem.bitmap"
-            :width="store.targetWidth"
-            :height="store.targetHeight"
-            :scale="Math.max(store.targetWidth, store.targetHeight) <= 64 ? 4 : 2"
+            :rgba="store.selectedItem.preview ?? null"
+            :width="store.selectedItem.outputWidth"
+            :height="store.selectedItem.outputHeight"
+            :scale="Math.max(store.selectedItem.outputWidth, store.selectedItem.outputHeight) <= 64 ? 4 : 2"
           />
           <div v-else class="empty-state">
             <span class="big">▦</span>
-            <span>{{ store.items.length ? 'Process the queue to preview results' : 'Add images to start batch extraction' }}</span>
+            <span>{{ store.items.length ? t('batch.previewHint') : t('batch.emptyHint') }}</span>
           </div>
         </div>
       </Panel>
 
-      <Panel v-if="store.logs.length" title="Process Log">
+      <Panel v-if="store.logs.length" :title="t('batch.log')">
         <ul class="log-list">
           <li v-for="(line, index) in store.logs" :key="index">{{ line }}</li>
         </ul>
@@ -180,46 +185,44 @@ function formatSize(bytes: number) {
     </div>
 
     <aside class="tool-side">
-      <Panel title="Shared Parameters">
+      <Panel :title="t('batch.sharedParams')">
         <div class="field-stack">
-          <div class="field-row">
-            <label class="field"><span>Width</span><input v-model.number="store.targetWidth" type="number" min="8" max="512" /></label>
-            <label class="field"><span>Height</span><input v-model.number="store.targetHeight" type="number" min="8" max="512" /></label>
-          </div>
-          <div class="slider-field">
-            <header><span>Threshold</span><b>{{ store.threshold }}</b></header>
+          <SizeModeFields :store="store" variant="per-item" />
+          <ColorModeFields :store="store" />
+          <div v-if="store.colorMode === 'mono'" class="slider-field">
+            <header><span>{{ t('common.threshold') }}</span><b>{{ store.threshold }}</b></header>
             <input v-model.number="store.threshold" type="range" min="0" max="255" />
           </div>
           <div class="slider-field">
-            <header><span>Brightness</span><b>{{ store.brightness }}</b></header>
+            <header><span>{{ t('common.brightness') }}</span><b>{{ store.brightness }}</b></header>
             <input v-model.number="store.brightness" type="range" min="-100" max="100" />
           </div>
           <label class="field">
-            <span>Dithering</span>
+            <span>{{ t('common.dithering') }}</span>
             <select v-model="store.dithering">
               <option value="floyd-steinberg">Floyd-Steinberg</option>
-              <option value="none">None</option>
+              <option value="none">{{ t('common.none') }}</option>
             </select>
           </label>
         </div>
       </Panel>
 
-      <Panel title="Encoding">
+      <Panel v-if="store.colorMode === 'mono'" :title="t('common.encoding')">
         <EncodingFields :store="store" />
       </Panel>
 
-      <Panel title="Summary Statistics">
+      <Panel :title="t('batch.summary')">
         <div class="stat-list">
-          <div class="stat-row"><span>Total files</span><b>{{ store.summary.total }}</b></div>
-          <div class="stat-row"><span>Completed</span><b>{{ store.summary.completed }}</b></div>
-          <div class="stat-row"><span>Failed</span><b>{{ store.summary.failed }}</b></div>
-          <div class="stat-row"><span>Pending</span><b>{{ store.summary.pending }}</b></div>
+          <div class="stat-row"><span>{{ t('batch.totalFiles') }}</span><b>{{ store.summary.total }}</b></div>
+          <div class="stat-row"><span>{{ t('batch.completed') }}</span><b>{{ store.summary.completed }}</b></div>
+          <div class="stat-row"><span>{{ t('batch.failedCount') }}</span><b>{{ store.summary.failed }}</b></div>
+          <div class="stat-row"><span>{{ t('batch.pendingCount') }}</span><b>{{ store.summary.pending }}</b></div>
         </div>
       </Panel>
 
-      <Panel title="Re-run">
+      <Panel :title="t('batch.rerun')">
         <button class="btn primary" style="width:100%" :disabled="!store.items.length" @click="store.reprocessAll()">
-          ⇊ Apply Settings to All
+          {{ t('batch.applyAll') }}
         </button>
       </Panel>
     </aside>
@@ -232,7 +235,7 @@ function formatSize(bytes: number) {
         :height="store.targetHeight"
         :frames="doneFrames"
         :extra="{ files: doneFrames.length }"
-        title="Merged Output"
+        :title="t('batch.mergedOutput')"
       />
     </div>
 

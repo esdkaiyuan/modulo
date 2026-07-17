@@ -1,12 +1,26 @@
 <script setup lang="ts">
-const tools = [
-  { route: 'image', icon: '▣', title: 'Image Converter', desc: '将 PNG / JPG / BMP / WebP 图片转换为单色、RGB565 或 16 色调色板 C 数组,支持亮度、对比度、阈值与抖动调节。' },
-  { route: 'video', icon: '▶', title: 'Video Extractor', desc: '从视频按时间范围与采样帧率抽帧,批量转换为多帧 1bpp 点阵数据,可实时播放预览。' },
-  { route: 'animation', icon: '◧', title: 'Animation Frames', desc: '解码 GIF 动画,按帧范围与步长取模,输出帧数据与逐帧延时表。' },
-  { route: 'font', icon: '字', title: 'Font Extractor', desc: '汉字 / 字符点阵字模生成,支持多字符字模表、自定义 TTF 字体、加粗斜体与反相。' },
-  { route: 'batch', icon: '≣', title: 'Batch Processor', desc: '批量导入多张图片,统一参数一键取模,合并输出全部 C 数组。' },
-  { route: 'handdraw', icon: '✎', title: 'Pixel Editor', desc: '手绘像素画编辑器:画笔、橡皮、填充、取色、对称镜像与撤销重做,导出 C 数组 / HEX / BIN。' }
+import ToolDemo from '../components/ToolDemo.vue';
+import { t } from '../i18n';
+import type { MessageKey } from '../i18n/messages';
+
+type DemoType = 'image' | 'video' | 'animation' | 'font' | 'batch' | 'handdraw' | 'audio' | 'aiagent';
+type CardSize = 'md' | 'sm' | 'banner';
+
+// Bento rhythm: two 2-col cards, four 1-col cards, then two full-width
+// banners (audio demo-left, AI demo-right) closing the grid in a zig-zag.
+const tools: { route: string; demo: DemoType; icon: string; size: CardSize }[] = [
+  { route: 'image', demo: 'image', icon: '▣', size: 'md' },
+  { route: 'video', demo: 'video', icon: '▶', size: 'md' },
+  { route: 'animation', demo: 'animation', icon: '◧', size: 'sm' },
+  { route: 'font', demo: 'font', icon: '字', size: 'sm' },
+  { route: 'batch', demo: 'batch', icon: '≣', size: 'sm' },
+  { route: 'handdraw', demo: 'handdraw', icon: '✎', size: 'sm' },
+  { route: 'audio', demo: 'audio', icon: '♪', size: 'banner' },
+  { route: 'ai', demo: 'aiagent', icon: '✦', size: 'banner' }
 ];
+
+const key = (demo: DemoType, part: 'title' | 'desc' | 'tag1' | 'tag2' | 'tag3') =>
+  `home.${demo}.${part}` as MessageKey;
 
 function launch(route: string) {
   window.location.hash = `#/${route}`;
@@ -16,17 +30,48 @@ function launch(route: string) {
 <template>
   <div class="home">
     <div class="home-hero">
+      <div class="hero-overline"><span class="px"></span><span class="px"></span><span class="px"></span> PIXEL TOOLKIT</div>
       <h1>Dot Matrix Studio</h1>
-      <p>All-in-One Dot Matrix Solution — 六合一嵌入式取模工具箱</p>
+      <p>{{ t('home.subtitle') }}</p>
+      <div class="hero-stats">
+        <span>{{ t('home.statTools') }}</span>
+        <span class="hero-dot"></span>
+        <span>{{ t('home.statLocal') }}</span>
+        <span class="hero-dot"></span>
+        <span>{{ t('home.statOutput') }}</span>
+      </div>
     </div>
     <div class="home-grid">
-      <article v-for="tool in tools" :key="tool.route" class="tool-card">
-        <span class="card-icon">{{ tool.icon }}</span>
-        <h2>{{ tool.title }}</h2>
-        <p>{{ tool.desc }}</p>
-        <button class="launch-btn" :data-test="`launch-${tool.route}`" @click="launch(tool.route)">
-          Launch →
-        </button>
+      <article
+        v-for="(tool, i) in tools"
+        :key="tool.route"
+        class="tool-card"
+        :class="[`tool-card--${tool.size}`, { 'tool-card--reverse': tool.route === 'ai' }]"
+        :style="{ '--enter-delay': `${i * 60}ms` }"
+        :data-test="`card-${tool.route}`"
+        @click="launch(tool.route)"
+      >
+        <div class="card-demo">
+          <ToolDemo :type="tool.demo" />
+        </div>
+        <div class="card-body">
+          <header class="card-head">
+            <span class="card-icon">{{ tool.icon }}</span>
+            <h2>{{ t(key(tool.demo, 'title')) }}</h2>
+            <span class="card-index">{{ String(i + 1).padStart(2, '0') }}</span>
+          </header>
+          <p>{{ t(key(tool.demo, 'desc')) }}</p>
+          <div class="card-foot">
+            <div class="card-tags">
+              <span class="card-tag">{{ t(key(tool.demo, 'tag1')) }}</span>
+              <span class="card-tag">{{ t(key(tool.demo, 'tag2')) }}</span>
+              <span class="card-tag">{{ t(key(tool.demo, 'tag3')) }}</span>
+            </div>
+            <button class="launch-btn" :data-test="`launch-${tool.route}`" @click.stop="launch(tool.route)">
+              {{ t('home.launch') }}<span class="launch-arrow">→</span>
+            </button>
+          </div>
+        </div>
       </article>
     </div>
   </div>

@@ -156,32 +156,9 @@ export function imageDataToBitmap(imageData: ImageData, options: Omit<ProcessIma
   });
 }
 
-function rgbToRgb565(r: number, g: number, b: number): number {
-  return ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
-}
+// ── Color quantization (delegates to colorProcessor; kept for back-compat) ──
 
-function rgb565ToRgb(color: number): [number, number, number] {
-  const r = ((color >> 11) & 0x1F) << 3;
-  const g = ((color >> 5) & 0x3F) << 2;
-  const b = (color & 0x1F) << 3;
-  return [r, g, b];
-}
-
-function findClosestPaletteColor(r: number, g: number, b: number, palette: [number, number, number][]): number {
-  let minDist = Infinity;
-  let bestIdx = 0;
-  for (let i = 0; i < palette.length; i++) {
-    const dr = r - palette[i][0];
-    const dg = g - palette[i][1];
-    const db = b - palette[i][2];
-    const dist = dr * dr + dg * dg + db * db;
-    if (dist < minDist) {
-      minDist = dist;
-      bestIdx = i;
-    }
-  }
-  return bestIdx;
-}
+import { findClosestPaletteColor, PALETTE_16_COLORS as PALETTE, rgbToRgb565 } from './colorProcessor';
 
 export function quantizeToRgb565(imageData: ImageData): Uint16Array {
   const result = new Uint16Array(imageData.width * imageData.height);
@@ -194,25 +171,13 @@ export function quantizeToRgb565(imageData: ImageData): Uint16Array {
 }
 
 export function quantizeToPalette16(imageData: ImageData): Uint8Array {
-  const palette: [number, number, number][] = [
-    [0, 0, 0], [255, 255, 255], [255, 0, 0], [0, 255, 0],
-    [0, 0, 255], [255, 255, 0], [255, 0, 255], [0, 255, 255],
-    [128, 0, 0], [0, 128, 0], [0, 0, 128], [128, 128, 0],
-    [128, 0, 128], [0, 128, 128], [128, 128, 128], [64, 64, 64]
-  ];
-
   const result = new Uint8Array(imageData.width * imageData.height);
   const data = imageData.data;
   for (let i = 0; i < result.length; i++) {
     const offset = i * 4;
-    result[i] = findClosestPaletteColor(data[offset], data[offset + 1], data[offset + 2], palette);
+    result[i] = findClosestPaletteColor(data[offset], data[offset + 1], data[offset + 2], PALETTE);
   }
   return result;
 }
 
-export const PALETTE_16_COLORS: [number, number, number][] = [
-  [0, 0, 0], [255, 255, 255], [255, 0, 0], [0, 255, 0],
-  [0, 0, 255], [255, 255, 0], [255, 0, 255], [0, 255, 255],
-  [128, 0, 0], [0, 128, 0], [0, 0, 128], [128, 128, 0],
-  [128, 0, 128], [0, 128, 128], [128, 128, 128], [64, 64, 64]
-];
+export const PALETTE_16_COLORS = PALETTE;
