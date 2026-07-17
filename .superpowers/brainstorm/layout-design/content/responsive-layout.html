@@ -1,0 +1,49 @@
+<h2>六个取模页面的响应式布局</h2>
+<p class="subtitle">同一功能在三档窗口下重排，不缩小核心控件，也不产生横向挤压。</p>
+
+<div class="section">
+  <div class="label">桌面 · ≥ 1200px</div>
+  <div class="mockup">
+    <div class="mockup-header">高效率多栏工作台</div>
+    <div class="mockup-body" style="display:grid;grid-template-columns:210px minmax(320px,1fr) 270px;gap:10px;min-height:260px">
+      <div class="mock-sidebar" style="width:auto">导入与模式<br><br>常规 / 彩色<br><br>文件与帧列表</div>
+      <div class="mock-content" style="display:grid;grid-template-rows:1fr 72px;gap:8px">
+        <div class="placeholder">主预览 / 画布 / 时间轴</div>
+        <div class="placeholder">取模结果摘要与进度</div>
+      </div>
+      <div class="mock-sidebar" style="width:auto">尺寸与处理参数<br><br>像素格式 / 扫描规则<br><br><button class="mock-button">生成与导出</button></div>
+    </div>
+  </div>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">平板 · 768–1199px</div>
+    <div class="mockup-body" style="display:grid;grid-template-rows:auto 180px auto;gap:8px;min-height:320px">
+      <div class="mock-nav">页面标题　常规 / 彩色　参数抽屉</div>
+      <div class="placeholder">主预览占满可用宽度</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="placeholder">导入 / 帧列表</div>
+        <div class="placeholder">输出 / 导出</div>
+      </div>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">手机 · 375–767px</div>
+    <div class="mockup-body" style="max-width:300px;margin:auto;display:grid;gap:8px">
+      <div class="mock-nav">标题　任务状态　菜单</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-size:12px;text-align:center">
+        <div class="placeholder">1 导入</div><div class="placeholder">2 参数</div><div class="placeholder">3 预览</div><div class="placeholder">4 输出</div>
+      </div>
+      <div class="placeholder" style="min-height:145px">当前步骤内容<br>单列、可纵向滚动</div>
+      <div style="display:grid;grid-template-columns:44px 1fr 44px;gap:8px">
+        <button class="mock-button">‹</button><button class="mock-button">生成 / 下一步</button><button class="mock-button">›</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="pros-cons">
+  <div class="pros"><h4>统一规则</h4><ul><li>控件最小触控高度 44px</li><li>预览区域有稳定宽高比</li><li>长参数名换行，代码区内部滚动</li></ul></div>
+  <div class="pros"><h4>页面差异</h4><ul><li>视频/动图保留时间轴</li><li>批量页保留任务队列</li><li>手绘页保留底部工具栏</li></ul></div>
+</div>

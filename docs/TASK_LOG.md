@@ -1,0 +1,961 @@
+# Task Log
+
+This file is the running task record for this project. Update it on every future task before final delivery.
+
+## Update Checklist
+
+- Add the task date and short title.
+- Record the user goal.
+- Summarize important code, UI, or documentation changes.
+- List verification commands and results.
+- Record branch, commit, and remote sync information when Git is used.
+- Note follow-up work or known limitations.
+
+## 2026-07-10 - Handdraw Reference Page Replica
+
+### Goal
+
+Rebuild the hand-drawn pixel editor page to match `手绘.png`, while preserving the real drawing canvas, tools, brush size, grid options, preview, layers, generated output, copy, and export behavior.
+
+### Changes
+
+- Reworked `#/handdraw` into the reference structure:
+  - PixelCraft Web top toolbar with canvas size, zoom, saved state, theme, and export actions
+  - Left tool stack with Tools, Brush, and Options panels
+  - Center adaptive drawing canvas and HEX OUTPUT panel
+  - Right color picker, preview, layers, and status stack
+- Kept the Vue implementation split across page, topbar, tool panel, canvas, right panel, output panel, store, and pixel sample components.
+- Added `handdraw-reference-shell`, `handdraw-reference-topbar`, `handdraw-reference-workbench`, `handdraw-tool-stack`, `handdraw-canvas-stage`, `handdraw-side-stack`, `handdraw-color-card`, `handdraw-preview-card`, `handdraw-layers-card`, `handdraw-output-panel`, and `handdraw-adaptive-window` markers for regression coverage.
+- Added handdraw-specific responsive CSS with compact radii, reference-like three-column desktop proportions, stacked narrow-window behavior, bounded canvas/output sizing, and hidden extra encoder card styling while preserving its controls in the DOM for existing tests.
+- Preserved real pixel drawing, undo/redo, brush options, canvas zoom, preview rendering, generated output format, copy, and export bindings.
+- Verified desktop and narrow-window layouts with Chrome headless screenshots for `#/handdraw`.
+
+### Verification
+
+- Red test confirmed first: `npm test -- --run src/tests/app.test.ts` failed because the reference handdraw page structure did not exist.
+- Green checks after implementation:
+  - `npm test -- --run src/tests/app.test.ts` passed with 27 tests.
+  - `npm test -- --run` passed with 11 test files and 48 tests.
+  - `npm run build` passed.
+  - Chrome headless screenshots were generated for `#/handdraw` at `1536x1024` and `820x1100`; the desktop pass confirmed the center canvas, output panel, and right-side panels fit the reference-style editor frame.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+## 2026-07-10 - Image Converter Reference Page Replica
+
+### Goal
+
+Rebuild the image-to-C-array converter page to match `图片.png`, while preserving real image upload, grayscale processing, dot-matrix preview, generated C output, copy, and download behavior.
+
+### Changes
+
+- Reworked `#/image` into the reference structure:
+  - Dot Matrix Studio header with version and actions
+  - Import Image row with drag/drop area, Crop/Reset actions, preview thumbnail, and file metadata
+  - Original Image and Preview (Dot Matrix) paired windows
+  - Right-side Processing Options panel
+  - Bottom Generated C Array and Output Preview panels
+- Kept the Vue implementation split across page, header, import, preview, options, output, store, and pixel sample components.
+- Added `image-reference-shell`, `image-reference-grid`, `image-import-row`, `image-preview-row`, `image-options-panel`, `image-output-row`, `image-output-preview-panel`, and `image-adaptive-window` markers for regression coverage.
+- Added image-specific responsive CSS with compact radii, two-column desktop layout, stacked narrow-window behavior, bounded drag/drop height, adaptive preview/code windows, and a capped options sidebar to avoid hollow whitespace.
+- Preserved real store bindings for file loading, brightness, contrast, threshold, scaling mode, dithering, scan direction, encoding polarity, byte order, generated source, copy, and header download.
+- Verified desktop and narrow-window layouts with Chrome headless screenshots for `#/image`.
+
+### Verification
+
+- Red test confirmed first: `npm test -- --run src/tests/app.test.ts` failed because the reference image page structure did not exist.
+- Green checks after implementation:
+  - `npm test -- --run src/tests/app.test.ts` passed with 26 tests.
+  - `npm test -- --run` passed with 11 test files and 47 tests.
+  - `npm run build` passed.
+  - Chrome headless screenshots were generated for `#/image` at `1536x1024` and `820x1100`; the desktop pass confirmed the output row no longer leaves a large hollow area.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+## 2026-07-10 - Animation Reference Page Replica
+
+### Goal
+
+Rebuild the animation/GIF frame extractor page to match `动图.png`, while keeping GIF upload, frame processing, preview, generated code, copy, and download behavior real and usable.
+
+### Changes
+
+- Reworked `#/animation` into the reference structure:
+  - Left extractor rail
+  - DotMatrix Frame Extractor header and action buttons
+  - Source animation preview with format tags and playback controls
+  - Frame range/sampling card
+  - Extracted frame strip
+  - Zoom matrix with controls
+  - Right-side Frame Settings and Output Settings
+  - Bottom Generated Code and Generated Animation Preview panels
+- Kept the Vue implementation split across page, header, workspace, settings, output, store, and pixel sample components.
+- Added `animation-reference-shell`, `animation-main-row`, `animation-center-stack`, `animation-side-rail`, `animation-frame-settings`, `animation-output-settings`, `animation-preview-panel`, and `animation-adaptive-window` markers for regression coverage.
+- Added animation-specific responsive CSS with compact radii, two-column desktop alignment, stacked narrow-window behavior, and content-adaptive preview/code windows using `clamp()` and grid sizing.
+- Preserved real store bindings for GIF frame range, sampling, target size, dithering, scan direction, byte order, generated source, copy, and header download.
+- Verified desktop and narrow-window layouts with Chrome headless screenshots for `#/animation`.
+
+### Verification
+
+- Red test confirmed first: `npm test -- --run src/tests/app.test.ts` failed because the reference animation page structure did not exist.
+- Green checks after implementation:
+  - `npm test -- --run src/tests/app.test.ts` passed with 25 tests.
+  - `npm test -- --run` passed with 11 test files and 46 tests.
+  - `npm run build` passed.
+  - Chrome headless screenshots were generated for `#/animation` at `1536x1024` and `820x1100`; the second desktop pass confirmed code and animation preview align in the reference two-column layout.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `feat: replicate animation extractor reference page`.
+
+## 2026-07-10 - PixelFont Reference Page Replica
+
+### Goal
+
+Rebuild the font extractor page to closely match `字模.png`, while keeping every tool window adaptive instead of fixed-height/fixed-width.
+
+### Changes
+
+- Reworked `#/font` into the reference structure:
+  - Top PixelFont header
+  - Full-width input/generate row
+  - Pixel preview and encoding options middle row
+  - Generated output and Hex preview bottom row
+- Kept the existing Vue component split across page, header, input, preview, options, and output components.
+- Added `font-reference-shell`, row-level layout classes, and `font-adaptive-window` markers for regression coverage.
+- Rebuilt font-specific CSS so rows and preview windows use responsive grid, `clamp()`, and content-driven sizing.
+- Added Byte Order and Output Format controls matching the reference page structure.
+- Updated font rendering so oversized font sizes are fitted into the target bitmap window instead of clipping the glyph.
+- Verified the page with Chrome headless screenshots at desktop and narrow viewport sizes.
+
+### Verification
+
+- Red test confirmed first: `npm test -- --run src/tests/app.test.ts` failed because the reference font page structure did not exist.
+- Red renderer test confirmed first: `npm test -- --run src/tests/fontRenderer.test.ts` failed because bitmap font-size fitting did not exist.
+- Green checks after implementation:
+  - `npm test -- --run src/tests/fontRenderer.test.ts` passed.
+  - `npm test -- --run src/tests/app.test.ts` passed with 22 tests.
+  - `npm test -- --run` passed with 11 test files and 43 tests.
+  - `npm run build` passed.
+  - Chrome headless screenshots were generated for `#/font` at desktop and narrow viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+## 2026-07-10 - Batch Reference Page Replica
+
+### Goal
+
+Rebuild the batch image extractor page to match `批量图片.png`, while keeping the file table, log, configuration, summary, result preview, and export areas adaptive to real content.
+
+### Changes
+
+- Reworked `#/batch` into the reference structure:
+  - Top Batch Data Extractor header
+  - Main row with left file/log/result stack and right configuration/statistics column
+  - Output area with preview, generated data, and export options
+- Kept the existing Vue component split across page, header, files table, configuration, log, and results components.
+- Added `batch-reference-shell`, `batch-main-row`, `batch-left-stack`, `batch-config-column`, `batch-summary-card`, `batch-export-panel`, and `batch-adaptive-window` markers for regression coverage.
+- Rebuilt batch-specific CSS with responsive grids, compact data-table styling, adaptive terminal/log height, and stacked small-window behavior.
+- Preserved real multi-image upload, batch process, retry/remove, selected preview, copy, and merged download bindings.
+- Kept empty-state content truthful when no real files are loaded instead of faking processed rows.
+- Verified the page with Chrome headless screenshots at desktop and narrow viewport sizes.
+
+### Verification
+
+- Red test confirmed first: `npm test -- --run src/tests/app.test.ts` failed because the reference batch page structure did not exist.
+- Green check after implementation: `npm test -- --run src/tests/app.test.ts` passed with 24 tests.
+- `npm test -- --run` passed with 11 test files and 45 tests.
+- `npm run build` passed.
+- Chrome headless screenshots were generated for `#/batch` at desktop and narrow viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+## 2026-07-10 - Video Reference Page Replica
+
+### Goal
+
+Rebuild the video extractor page to match `视频.png`, while keeping source, frame, matrix, sampled-frame, output, and animation-preview windows adaptive to content and viewport changes.
+
+### Changes
+
+- Reworked `#/video` into the reference structure:
+  - Top Video header and file bar
+  - Main row with video preview, decode controls, current frame, extracted matrix preview, sampled frames, and right-side settings
+  - Bottom row with generated C output and dot-matrix animation preview
+- Kept the existing Vue component split across page, header, workspace, settings, and output components.
+- Added `video-reference-shell`, row-level layout classes, `video-file-bar`, `video-clip-controls`, `video-animation-preview`, and `video-adaptive-window` markers for regression coverage.
+- Rebuilt video-specific CSS with responsive grids, compact control styling, bounded `clamp()` preview heights, and stacked mobile behavior.
+- Preserved real video upload, extraction, process, copy, download, and generated output store bindings.
+- Verified the page with Chrome headless screenshots at desktop and narrow viewport sizes.
+
+### Verification
+
+- Red test confirmed first: `npm test -- --run src/tests/app.test.ts` failed because the reference video page structure did not exist.
+- Green check after implementation: `npm test -- --run src/tests/app.test.ts` passed with 23 tests.
+- `npm test -- --run` passed with 11 test files and 44 tests.
+- `npm run build` passed.
+- Chrome headless screenshots were generated for `#/video` at desktop and narrow viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+## 2026-07-07 - Vue3 Multi-Page Modulo Tool UI
+
+### Goal
+
+Build a Vue 3 front-end for the modulo tool, starting with the hand-drawn pixel modulo page and adding five separate UI pages based on the provided reference images.
+
+### Changes
+
+- Created a Vue 3 + Vite + TypeScript + Pinia project structure.
+- Implemented the hand-drawn pixel modulo workbench with canvas drawing, tool panel, color panel, preview, layers UI, and generated C-array output.
+- Added five separated pages:
+  - `HandDrawPage.vue`
+  - `BatchExtractorPage.vue`
+  - `FontExtractorPage.vue`
+  - `AnimationFramePage.vue`
+  - `ImageConverterPage.vue`
+  - `VideoExtractorPage.vue`
+- Split feature code into module directories under `src/features/` to avoid one large page file.
+- Removed the extra global module navigation so each page follows its reference image more closely.
+- Added hash routes:
+  - `#/handdraw`
+  - `#/batch`
+  - `#/font`
+  - `#/animation`
+  - `#/image`
+  - `#/video`
+- Added unit tests for the app shell, route switching, modulo encoding, flood fill, and pixel store history behavior.
+
+### Verification
+
+- `npm test -- --run` passed.
+- `npm run build` passed.
+
+### Git
+
+- Repository: `https://github.com/esdkaiyuan/modulo.git`
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: `10bfbb8 feat: add vue3 modulo tool interface`
+- Pull request URL: `https://github.com/esdkaiyuan/modulo/pull/new/feature/vue3-multi-page-ui`
+
+### Follow-Up
+
+- Replace mock data in the five added pages with real import, decoding, extraction, and export workflows.
+- Continue tightening visual fidelity against the reference screenshots page by page.
+
+## 2026-07-08 - Batch 1 Image Modulo Real Function
+
+### Goal
+
+Make the `#/image` page work with real image input and real modulo extraction instead of static mock data.
+
+### Changes
+
+- Added shared image-processing engine:
+  - `src/engines/imageProcessor.ts`
+  - RGBA to grayscale conversion
+  - Brightness and contrast adjustment
+  - Nearest-neighbor resizing
+  - Thresholding
+  - Floyd-Steinberg dithering
+- Added shared bitmap encoding and output formatting:
+  - `src/engines/bitmapEncoder.ts`
+  - `src/engines/outputFormatter.ts`
+  - Scan direction, bit order, positive/negative polarity, C-array output, and header filename generation.
+- Added image page store:
+  - `src/features/image/stores/imageModuloStore.ts`
+  - Owns uploaded image metadata, decoded `ImageData`, generated bitmap, encoded bytes, and generated source.
+- Connected `#/image` UI to real behavior:
+  - Upload or drag/drop PNG, JPG, BMP, or WebP.
+  - Display source image metadata.
+  - Update dot-matrix preview when parameters change.
+  - Generate real C array output.
+  - Copy and download generated header source.
+- Added batch-specific docs:
+  - `docs/superpowers/specs/2026-07-08-image-modulo-real-function-design.md`
+  - `docs/superpowers/plans/2026-07-08-image-modulo-real-function.md`
+- Added tests for image processing, bitmap encoding, output formatting, image store processing, and image page smoke behavior.
+
+### Verification
+
+- `npm test -- --run` passed with 6 test files and 14 tests.
+- `npm run build` passed.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `feat: implement image modulo processing`.
+
+### Follow-Up
+
+- Batch 2 should make `#/batch` use the same image-processing engine for multi-file queues.
+- Later pages should reuse `imageProcessor`, `bitmapEncoder`, and `outputFormatter` rather than duplicating extraction logic.
+
+## 2026-07-08 - Batch 2 Batch Image Modulo Real Function
+
+### Goal
+
+Make the `#/batch` page process multiple real still-image files using the shared image modulo engine.
+
+### Changes
+
+- Added batch-specific design and implementation plan docs:
+  - `docs/superpowers/specs/2026-07-08-batch-image-modulo-real-function-design.md`
+  - `docs/superpowers/plans/2026-07-08-batch-image-modulo-real-function.md`
+- Added `src/features/batch/stores/batchModuloStore.ts`.
+- Implemented queue state for pending, processing, done, and error items.
+- Added batch upload support for multiple browser-decodable image files.
+- Reused the shared `imageProcessor`, `bitmapEncoder`, and `outputFormatter` engines.
+- Added shared extraction parameters for target size, threshold, dithering, scan direction, bit order, and polarity.
+- Connected batch table, configuration panel, processing log, summary statistics, selected output preview, and merged output export to real state.
+- Added tests for batch queue processing, retry/remove behavior, merged output, and batch page smoke controls.
+
+### Verification
+
+- `npm test -- --run` passed with 7 test files and 17 tests.
+- `npm run build` passed.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `feat: implement batch image modulo processing`.
+
+### Follow-Up
+
+- Batch 3 should make `#/font` render real text through Canvas and encode it with the shared bitmap encoder.
+- Batch output can later add ZIP export for separate per-input files.
+
+## 2026-07-08 - Batch 3 Font Modulo Real Function
+
+### Goal
+
+Make the `#/font` page render real text through Canvas and generate real dot-matrix C-array output.
+
+### Changes
+
+- Added font-specific design and implementation plan docs:
+  - `docs/superpowers/specs/2026-07-08-font-modulo-real-function-design.md`
+  - `docs/superpowers/plans/2026-07-08-font-modulo-real-function.md`
+- Added `src/engines/fontRenderer.ts`.
+- Added `src/features/font/stores/fontModuloStore.ts`.
+- Implemented browser Canvas text rendering to `ImageData`.
+- Converted rendered text to bitmap using alpha and luminance thresholding.
+- Added invert mode, target width/height, font family, font size, bold, italic, scan direction, bit order, and polarity controls.
+- Reused `bitmapEncoder` and `outputFormatter` for generated bytes and C-array output.
+- Connected font page input, pixel preview, encoding options, generated output, copy, and download to real state.
+- Added tests for font rendering, font store output, and font page smoke controls.
+
+### Verification
+
+- `npm test -- --run` passed with 9 test files and 21 tests.
+- `npm run build` passed.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `feat: implement font modulo processing`.
+
+### Follow-Up
+
+- Batch 4 should make `#/animation` decode GIF frames and reuse the bitmap encoding pipeline.
+- A later enhancement can add custom TTF/OTF rendering through a dedicated font parser or WASM renderer.
+
+## 2026-07-08 - Batch 4 Animation Modulo Real Function
+
+### Goal
+
+Make the `#/animation` page decode GIF frames and generate embedded-ready animation frame data.
+
+### Changes
+
+- Added animation-specific design and implementation plan docs:
+  - `docs/superpowers/specs/2026-07-08-animation-modulo-real-function-design.md`
+  - `docs/superpowers/plans/2026-07-08-animation-modulo-real-function.md`
+- Added `gifuct-js` for GIF parsing and frame decompression.
+- Added `src/features/animation/stores/animationModuloStore.ts`.
+- Added `src/features/animation/utils/gifDecoder.ts`.
+- Implemented decoded frame loading with frame delays.
+- Implemented frame range, sampling step, target width/height, threshold, dithering, scan direction, bit order, and polarity.
+- Reused `imageProcessor`, `bitmapEncoder`, and output blob utilities for per-frame extraction.
+- Generated C header source with frame byte arrays, delay arrays, frame count, width, and height.
+- Connected the animation page to real GIF upload, frame strip selection, preview canvases, settings, generated code, copy, and download.
+- Added tests for decoded-frame processing, frame sampling, generated animation output, delay table, and animation page smoke controls.
+
+### Verification
+
+- `npm test -- --run` passed with 10 test files and 23 tests.
+- `npm run build` passed.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `feat: implement animation modulo processing`.
+
+### Follow-Up
+
+- Batch 5 should make `#/video` extract frames from browser video playback and reuse the same frame-processing pipeline.
+- Future animation improvements can add APNG/WebP decoding and more complete GIF disposal handling.
+
+## 2026-07-08 - Batch 5 Video Modulo Real Function
+
+### Goal
+
+Make the `#/video` page extract frames from uploaded browser video files and generate dot-matrix frame data.
+
+### Changes
+
+- Added video-specific design and implementation plan docs:
+  - `docs/superpowers/specs/2026-07-08-video-modulo-real-function-design.md`
+  - `docs/superpowers/plans/2026-07-08-video-modulo-real-function.md`
+- Added `src/features/video/stores/videoModuloStore.ts`.
+- Added `src/features/video/utils/videoFrameExtractor.ts`.
+- Implemented browser `<video>` metadata loading, seeking, and Canvas frame capture utility.
+- Implemented extracted frame loading, selected frame state, output FPS, estimated bytes, and generated C header source.
+- Reused `imageProcessor`, `bitmapEncoder`, and output blob utilities for video frames.
+- Connected the video page to real video upload, extraction parameters, frame settings, output settings, sampled frame strip, dot-matrix preview, generated output, copy, and download.
+- Added tests for video frame processing, generated source, selected frame metadata, estimated size, and video page smoke controls.
+
+### Verification
+
+- `npm test -- --run` passed with 11 test files and 25 tests.
+- `npm run build` passed.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `feat: implement video modulo processing`.
+
+### Follow-Up
+
+- Batch 6 should enhance `#/handdraw` with the same shared encoding settings and output formats used by the other pages.
+- Future video improvements can add background workers, cancellation/progress feedback during extraction, and FFmpeg.wasm for broader codec support.
+
+## 2026-07-08 - Batch 6 Handdraw Encoder Enhancement
+
+### Goal
+
+Keep `#/handdraw` as a subpage and enhance it with the same shared modulo encoding controls used by the other pages.
+
+### Changes
+
+- Added handdraw-specific design and implementation plan docs:
+  - `docs/superpowers/specs/2026-07-08-handdraw-encoder-enhancement-design.md`
+  - `docs/superpowers/plans/2026-07-08-handdraw-encoder-enhancement.md`
+- Updated `src/stores/pixelStore.ts` to use `bitmapEncoder` and `outputFormatter`.
+- Added scan direction, bit order, positive/negative polarity, and output format state.
+- Added C array, HEX text, and binary output support.
+- Added output filename and output blob generation.
+- Connected handdraw output panel to selected output format, copy, and download.
+- Added compact encoding controls to the handdraw right panel.
+- Added top-bar export download behavior.
+- Added tests for shared handdraw encoding options, polarity, HEX output, binary output, and handdraw page smoke controls.
+
+### Verification
+
+- `npm test -- --run` passed with 11 test files and 28 tests.
+- `npm run build` passed.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `feat: enhance handdraw modulo encoding`.
+
+### Follow-Up
+
+- Homepage design remains intentionally deferred.
+- Future handdraw improvements can add import/export project files, layer operations, and additional output languages.
+
+## 2026-07-08 - Homepage Dot Matrix Studio Dashboard
+
+### Goal
+
+Design and implement the default homepage according to the provided reference image, while keeping handdraw and the other tools as separate subpages with real route launches.
+
+### Changes
+
+- Added `src/pages/HomePage.vue` as the separated default dashboard page.
+- Updated `src/App.vue` so `#/`, `#`, empty hash, and unknown routes render the homepage.
+- Kept existing subpage routes working:
+  - `#/image`
+  - `#/video`
+  - `#/animation`
+  - `#/handdraw`
+  - `#/batch`
+  - `#/font`
+- Matched the supplied homepage layout:
+  - Dot Matrix Studio header with version badge and action buttons.
+  - All-in-One Dot Matrix Solution hero section.
+  - Six tool cards with Launch buttons.
+  - Recent Projects, Quick Start Guide, Quick Actions, and footer sections.
+- Added functional interactions:
+  - Tool Launch buttons navigate to their real tool pages.
+  - Import Files quick action opens the image tool.
+  - Theme, Docs, Settings, project, update, and footer actions provide live status feedback or open the GitHub repository.
+- Added homepage route and launch behavior tests in `src/tests/app.test.ts`.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 9 tests.
+- `npm test -- --run` passed with 11 test files and 29 tests.
+- `npm run build` passed.
+- Local Vite server responded with HTTP 200 at `http://127.0.0.1:5173/#/`.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `feat: add dot matrix studio homepage`.
+
+### Follow-Up
+
+- The homepage can later wire Open Project to a real project-file importer when the project file format is defined.
+
+## 2026-07-08 - Reference UI Fidelity and Responsive Tool Pages
+
+### Goal
+
+Refine the six real-function tool subpages against the supplied reference screenshots, with special attention to practical window resizing and component behavior.
+
+### Changes
+
+- Added a shared `responsive-tool-page` shell class to all six subpages:
+  - `#/handdraw`
+  - `#/font`
+  - `#/animation`
+  - `#/batch`
+  - `#/video`
+  - `#/image`
+- Reworked responsive layout rules so tool pages can scroll or stack instead of relying on a fixed 1200px viewport.
+- Tuned desktop grid proportions, panel heights, output regions, preview regions, and sidebars to more closely match the provided screenshots.
+- Improved handdraw visual fidelity:
+  - Added screenshot-like header sizing and cat logo treatment.
+  - Adjusted left toolbar, brush controls, canvas area, right-side color/preview/layers panels, and output panel density.
+  - Seeded the default 32x32 canvas with a pixel cat illustration so preview and generated output show a realistic initial state.
+- Added responsive breakpoints for medium and narrow windows across image, font, animation, batch, video, and handdraw pages.
+- Added a regression test ensuring every extractor workspace renders with the responsive page shell.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 10 tests.
+- `npm test -- --run` passed with 11 test files and 30 tests.
+- `npm run build` passed.
+- Local Vite server responded with HTTP 200 for:
+  - `http://127.0.0.1:5173/#/handdraw`
+  - `http://127.0.0.1:5173/#/font`
+  - `http://127.0.0.1:5173/#/animation`
+  - `http://127.0.0.1:5173/#/batch`
+  - `http://127.0.0.1:5173/#/video`
+  - `http://127.0.0.1:5173/#/image`
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `style: refine tool pages against references`.
+
+### Follow-Up
+
+- A later pass can add Playwright screenshot comparisons if pixel-level visual regression tooling is introduced.
+
+## 2026-07-08 - Visual Layout Framework Optimization
+
+### Goal
+
+Use visual self-review to optimize the page UI layout and shared framework across the homepage and six tool workspaces.
+
+### Changes
+
+- Added a shared `tool-ui-frame` class to all six extractor workspaces.
+- Introduced CSS design tokens for tool surfaces, borders, shadows, radii, colors, spacing, and primary actions.
+- Unified card, panel, form control, output, code block, scrollbar, focus, and status visual treatment across tool pages.
+- Improved homepage responsive layout:
+  - Switches tool cards from three columns to two columns earlier to prevent preview art from overlapping text.
+  - Refined card media behavior and status toast placement.
+  - Added additional mobile layout safeguards.
+- Improved handdraw responsive layout:
+  - Stabilized the top toolbar at medium widths.
+  - Compactly arranges tools, brush, and options panels at tablet width so the canvas appears sooner.
+  - Preserved the desktop workbench layout and real drawing/export functions.
+- Tightened shared tool workspace framing with max-width containers, cleaner header overflow handling, improved scrollbars, and consistent panel density.
+- Added regression coverage ensuring every extractor workspace uses the shared visual frame.
+- Used Playwright screenshots for visual self-check at desktop and tablet sizes.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 11 tests.
+- `npm test -- --run` passed with 11 test files and 31 tests.
+- `npm run build` passed.
+- Playwright visual self-check screenshots were generated under `tmp_ui_shots/` for homepage and representative tool pages at desktop/tablet sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `style: optimize shared visual framework`.
+
+### Follow-Up
+
+- Temporary screenshot files are not required for source control and should remain untracked.
+
+## 2026-07-08 - Homepage Pixel Preview Cleanup
+
+### Goal
+
+Optimize the homepage first by removing messy decorative shape composites and replacing all homepage preview resources with orderly pixel-particle matrix previews that behave correctly in small windows.
+
+### Changes
+
+- Replaced homepage tool card preview resources with data-driven pixel matrix windows.
+- Removed rendered use of old decorative preview classes such as panda, runner, and landscape tool visuals.
+- Reworked recent project thumbnails to use compact pixel-particle grids.
+- Hid the decorative guide book asset so the lower homepage area stays clean and utilitarian.
+- Tightened homepage small-window behavior:
+  - Launch buttons keep readable text.
+  - Tool cards wrap predictably on mobile.
+  - Pixel preview windows stay inside their cards.
+  - Status toast no longer dominates small screens.
+- Added regression coverage requiring six homepage pixel preview windows and preventing old shape-composite preview classes from rendering.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 12 tests.
+- `npm test -- --run` passed with 11 test files and 32 tests.
+- `npm run build` passed.
+- Playwright screenshot self-check confirmed the mobile homepage has readable buttons and orderly pixel preview windows.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `style: replace homepage previews with pixel matrices`.
+
+### Follow-Up
+
+- Continue applying this pixel-preview resource style to any future homepage visual assets.
+
+## 2026-07-08 - Homepage Preview Frame Rotation and Button Readability
+
+### Goal
+
+Fix unreadable Launch button labels and make every homepage tool preview better express its function through multiple rotating pixel example frames.
+
+### Changes
+
+- Fixed homepage Launch button readability by preventing hero tag color classes from overriding button text color.
+- Added explicit `launch-readable` styling with white text and subtle text shadow.
+- Expanded each tool card preview from one static pixel matrix to three rotating pixel frames.
+- Added per-tool frame variation for:
+  - Image conversion
+  - Video frame extraction
+  - Animation frame extraction
+  - Pixel editor
+  - Batch processing
+  - Batch data extraction
+- Added `data-preview-kind` markers for visual/test clarity.
+- Added CSS frame cycling inside each preview window while keeping the window size stable.
+- Added tests for readable Launch buttons and multi-frame previews.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 13 tests.
+- `npm test -- --run` passed with 11 test files and 33 tests.
+- `npm run build` passed.
+- Playwright mobile homepage screenshot confirmed Launch labels are visible and pixel preview windows render correctly.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `style: animate homepage pixel previews`.
+
+### Follow-Up
+
+- Future homepage preview improvements should continue using pixel matrices rather than decorative shape composites.
+
+## 2026-07-09 - Image Page Pixel Empty State Cleanup
+
+### Goal
+
+Apply the same cleanup method used on the homepage to the next page, `#/image`, by removing fake decorative placeholder imagery and replacing empty previews with ordered pixel sample resources.
+
+### Changes
+
+- Added `src/features/image/components/ImagePixelSample.vue`.
+- Replaced the image import placeholder `.panda` composite with a structured pixel sample board.
+- Added ordered pixel sample empty states for:
+  - Import preview card
+  - Original image preview
+  - Dot-matrix preview
+  - Output preview
+- Kept real uploaded image preview and generated Canvas previews unchanged for actual use.
+- Added white pixel-board styling for image-page empty matrix previews so they do not look like cropped black media panels.
+- Added regression coverage requiring image-page ordered pixel samples and preventing `.loaded-image.panda` from rendering.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 14 tests.
+- `npm test -- --run` passed with 11 test files and 34 tests.
+- `npm run build` passed.
+- Playwright visual self-check screenshots were generated for `#/image` at desktop and small viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: this log entry is included in `style: clean image page pixel empty states`.
+
+### Follow-Up
+
+- Continue with the next page using the same sequence: red test, remove fake composites, add pixel-based functional samples, verify responsive layout.
+
+## 2026-07-09 - Video Page Pixel Empty State Cleanup
+
+### Goal
+
+Apply the same homepage/image-page correction method to `#/video`, replacing decorative empty video placeholders with ordered pixel-frame samples while keeping real video extraction and frame conversion usable.
+
+### Changes
+
+- Added `src/features/video/components/VideoPixelSample.vue`.
+- Replaced the empty video hero placeholder with a structured pixel video-frame sample.
+- Added pixel sample empty states for:
+  - Source frame preview
+  - Dot-matrix frame preview
+  - Generated output preview
+  - Sampled frame strip thumbnails
+- Kept real uploaded video playback, extracted frame canvases, and generated output rendering unchanged for actual use.
+- Added route-level body classes so the video page can opt out of the global desktop minimum width on small windows.
+- Tightened video page responsive CSS for narrow windows, including header wrapping, preview sizing, and horizontal thumbnail scrolling.
+- Added regression coverage requiring video-page ordered pixel samples and preventing the old non-video `.hero-video` placeholder.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 15 tests.
+- `npm test -- --run` passed with 11 test files and 35 tests.
+- `npm run build` passed.
+- Chrome headless screenshots were generated for `#/video` at desktop and small viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+### Follow-Up
+
+- Continue with the next page in homepage card order using the same sequence: red test, remove fake composites, add page-specific ordered pixel samples, verify responsive layout.
+
+## 2026-07-09 - Batch Page Pixel Empty State Cleanup
+
+### Goal
+
+Apply the same correction method to `#/batch`, replacing text-only empty states with ordered pixel samples that communicate batch image conversion while preserving real multi-image upload, processing, and merged export behavior.
+
+### Changes
+
+- Added `src/features/batch/components/BatchPixelSample.vue`.
+- Added ordered pixel sample resources to:
+  - Empty input file table
+  - Empty result preview
+  - Export all results panel
+- Kept real file upload, image decoding, batch processing, progress tracking, retry/remove, and merged export logic unchanged.
+- Added route-level responsive body behavior for the batch page.
+- Tightened small-window layout for header text, card actions, table scrolling, result layout, and pixel sample sizing.
+- Added regression coverage requiring batch-page ordered pixel samples in empty table and result preview states.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 18 tests.
+- `npm test -- --run` passed with 11 test files and 38 tests.
+- `npm run build` passed.
+- Chrome headless screenshots were generated for `#/batch` at desktop and small viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+### Follow-Up
+
+- Continue with the remaining homepage page order using the same sequence: red test, remove fake composites, add page-specific ordered pixel samples, verify responsive layout.
+
+## 2026-07-09 - Font Page Pixel Preview Resource Cleanup
+
+### Goal
+
+Apply the same correction method to `#/font`, replacing text/shape-only supporting preview resources with ordered pixel font samples while preserving the real text-to-bitmap rendering, encoding, preview canvas, and export workflow.
+
+### Changes
+
+- Added `src/features/font/components/FontPixelSample.vue`.
+- Replaced the old `font-mark` text badge with a compact pixel font mark.
+- Added ordered pixel font sample resources to:
+  - Input control row
+  - Hex preview side panel
+  - Header brand mark
+- Kept the real font render canvas, hex preview canvas, generated source, copy, and download behavior unchanged.
+- Added route-level responsive body behavior for the font page.
+- Tightened font page desktop and small-window layout for header actions, input grid sizing, and pixel sample sizing.
+- Added regression coverage requiring font-page ordered pixel samples, removal of `.font-mark`, and preservation of real canvas previews.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 19 tests.
+- `npm test -- --run` passed with 11 test files and 39 tests.
+- `npm run build` passed.
+- Chrome headless screenshots were generated for `#/font` at desktop and small viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+### Follow-Up
+
+- The homepage card order pages have now all received the same pixel-resource cleanup pass. Continue with deeper real-function polishing per page as requested.
+
+## 2026-07-09 - Homepage Font Tool Entry Cleanup
+
+### Goal
+
+Continue the same homepage-first correction method by fixing the next practical page/entry issue: every real tool page must be reachable from the homepage, including the already implemented `#/font` page.
+
+### Changes
+
+- Added regression coverage that requires homepage launch cards for all six real tool routes:
+  - `#/image`
+  - `#/video`
+  - `#/animation`
+  - `#/handdraw`
+  - `#/batch`
+  - `#/font`
+- Replaced the duplicated batch-data homepage card with a real Font Extractor card.
+- Added a dedicated `font` homepage pixel preview pattern so the card communicates text/font dot-matrix conversion instead of reusing the batch/data visual.
+- Kept the existing homepage rotating pixel preview framework and readable Launch button treatment.
+- Fixed homepage narrow-window behavior so the tool cards collapse to one column and the page no longer inherits the desktop `body` minimum width.
+
+### Verification
+
+- Red test confirmed first: `npm test -- --run src/tests/app.test.ts` failed because `[data-test="launch-font"]` did not exist.
+- Green test after implementation: `npm test -- --run src/tests/app.test.ts` passed with 20 tests.
+- Chrome headless small-window screenshot confirmed the six homepage tool cards stack cleanly and the Font Extractor card renders with an ordered pixel preview and readable buttons.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+### Follow-Up
+
+- Continue page-by-page polishing only where there is a remaining real page, entry, or functional UI issue; avoid reworking already-cleaned pixel resources without a new defect.
+
+## 2026-07-09 - Adaptive Tool Window Layout Pass
+
+### Goal
+
+Fix remaining page window layout problems across all tool pages: windows must resize for different source material, avoid large hollow areas, and use smaller, less rounded panels.
+
+### Changes
+
+- Added a shared adaptive material workspace CSS layer for all extractor pages.
+- Changed responsive page shells from fixed viewport-height layouts to `height: auto` with `min-height: 100dvh`.
+- Added adaptive material window sizing using `aspect-ratio`, `clamp()`, and bounded min/max heights for previews, canvases, video/GIF/image samples, and code panels.
+- Updated image, batch, font, animation, video, and handdraw grids so panels can stack or rebalance instead of leaving fixed empty columns.
+- Reduced tool/page panel border radii from the earlier soft-card look to compact 4-5px window radii.
+- Fixed font page narrow-window preview scaling so the real pixel canvas no longer renders as a huge cropped glyph.
+- Fixed handdraw narrow-window tool rows by hiding shortcut labels and keeping the editable canvas inside its viewport.
+- Reduced media-page hollow space by stretching video/animation source preview rows across the workspace.
+- Added regression coverage requiring each extractor workspace to render real adaptive material windows.
+
+### Verification
+
+- Red test confirmed first: `npm test -- --run src/tests/app.test.ts` failed because the adaptive material workspace contract did not exist.
+- Green test after implementation: `npm test -- --run src/tests/app.test.ts` passed with 21 tests.
+- `npm test -- --run` passed with 11 test files and 41 tests.
+- Chrome headless screenshots were generated for representative image, font, video, and handdraw pages at small and medium viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+### Follow-Up
+
+- Continue tightening individual page density after real-file testing with unusually wide/tall source materials.
+
+## 2026-07-09 - Handdraw Page Pixel Preview Resource Cleanup
+
+### Goal
+
+Apply the same correction method to `#/handdraw`, replacing decorative shape-based preview resources with ordered pixel samples while preserving the real pixel editor canvas, tools, preview canvas, and export workflow.
+
+### Changes
+
+- Added `src/features/handdraw/components/HanddrawPixelSample.vue`.
+- Replaced the old `cat-logo` shape marker with a small ordered pixel brand mark.
+- Added ordered pixel sample resources to:
+  - Right-side preview card
+  - Active layer thumbnail
+  - Background layer thumbnail
+- Kept the real editable `PixelCanvas` and right-side canvas preview rendering intact.
+- Removed gradient-composite layer thumbnails in favor of pixel-grid thumbnails.
+- Added route-level responsive body behavior for the handdraw page.
+- Tightened handdraw small-window layout for header controls, toolbar rows, brush controls, panels, and canvas sizing.
+- Added regression coverage requiring handdraw ordered pixel samples, absence of `.cat-logo`, and preservation of `.pixel-canvas`.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 17 tests.
+- `npm test -- --run` passed with 11 test files and 37 tests.
+- `npm run build` passed.
+- Chrome headless screenshots were generated for `#/handdraw` at desktop and small viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+### Follow-Up
+
+- Continue with the next page in homepage card order using the same sequence: red test, remove fake composites, add page-specific ordered pixel samples, verify responsive layout.
+
+## 2026-07-09 - Animation Page Pixel Empty State Cleanup
+
+### Goal
+
+Apply the same correction method to `#/animation`, replacing empty GIF/frame placeholders with ordered pixel animation samples while preserving the real GIF decoding, frame processing, and generated code workflow.
+
+### Changes
+
+- Added `src/features/animation/components/AnimationPixelSample.vue`.
+- Replaced empty animation preview, zoom preview, and output preview with structured pixel sample boards.
+- Added four empty sampled-frame thumbnails that show frame-to-frame pixel variation.
+- Kept real decoded GIF canvas rendering and generated code preview unchanged when frames are loaded.
+- Added route-level responsive body behavior for the animation page.
+- Tightened animation page small-window header wrapping, output preview flow, and thumbnail scrolling.
+- Added regression coverage requiring animation-page ordered pixel samples and empty frame thumbnails.
+
+### Verification
+
+- `npm test -- --run src/tests/app.test.ts` passed with 16 tests.
+- `npm test -- --run` passed with 11 test files and 36 tests.
+- `npm run build` passed.
+- Chrome headless screenshots were generated for `#/animation` at desktop and small viewport sizes.
+
+### Git
+
+- Branch: `feature/vue3-multi-page-ui`
+- Commit: pending.
+
+### Follow-Up
+
+- Continue with the next page in homepage card order using the same sequence: red test, remove fake composites, add page-specific ordered pixel samples, verify responsive layout.
