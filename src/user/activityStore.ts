@@ -18,6 +18,7 @@ export const TOOL_META: Record<string, { icon: string; labelKey: MessageKey }> =
   batch: { icon: '≣', labelKey: 'nav.batch' },
   handdraw: { icon: '✎', labelKey: 'nav.handdraw' },
   audio: { icon: '♪', labelKey: 'nav.audio' },
+  bead: { icon: '◎', labelKey: 'nav.bead' },
   ai: { icon: '✦', labelKey: 'nav.ai' }
 };
 

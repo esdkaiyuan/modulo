@@ -8,6 +8,7 @@ import { extractVideoFrames } from '../utils/videoFrameExtractor';
 import { MAX_FILE_SIZE } from '../constants';
 import { useSizeMode } from '../../shared/useSizeMode';
 import { getFrameProcessorPool } from '../../../workers/frameProcessorPool';
+import { decodeAudioFile, resampleToMono, quantizeSamples, type AudioBitDepth, type AudioByteOrder } from '../../../engines/audioProcessor';
 
 export interface ExtractedVideoFrame {
   imageData: ImageData;
@@ -68,6 +69,18 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
   const polarity = ref<Polarity>('positive');
   const previewScale = ref(2);
 
+  // ── Audio extraction state ──────────────────────────────
+  const decodedAudioBuffer = shallowRef<AudioBuffer | null>(null);
+  const audioSampleRate = ref(16000);
+  const audioBitDepth = ref<AudioBitDepth>(8);
+  const audioByteOrder = ref<AudioByteOrder>('little');
+  const audioNormalize = ref(true);
+  const audioGain = ref(1);
+  const audioSamples = shallowRef<Float32Array>(new Float32Array());
+  const audioBytes = shallowRef<Uint8Array>(new Uint8Array());
+  const audioPeak = ref(0);
+  const isProcessingAudio = ref(false);
+
   // ── Computed ────────────────────────────────────────
   const selectedFrame = computed(() =>
     processedFrames.value[selectedIndex.value] ?? processedFrames.value[0] ?? null
@@ -82,6 +95,9 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
   const outputName = computed(() => `${sanitizeIdentifier(fileName.value || 'video')}_video`);
   const totalFrames = computed(() => processedFrames.value.length);
   const hasFrames = computed(() => processedFrames.value.length > 0);
+  const hasAudio = computed(() => !!decodedAudioBuffer.value);
+  const audioSampleCount = computed(() => audioSamples.value.length);
+  const audioDuration = computed(() => audioSampleCount.value / audioSampleRate.value);
 
   const generatedSource = computed(() => {
     const frameCount = processedFrames.value.length;
@@ -114,6 +130,36 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
     lines.push(`const uint16_t ${outputName.value}_width = ${targetWidth.value};`);
     lines.push(`const uint16_t ${outputName.value}_height = ${targetHeight.value};`);
     lines.push(`const uint16_t ${outputName.value}_fps = ${outputFps.value};`);
+
+    // ── Audio data (if present) ──
+    const audioData = audioBytes.value;
+    if (audioData.length > 0) {
+      const audioName = `${outputName.value}_audio`;
+      const sampleCount = audioSamples.value.length;
+      lines.push('');
+      lines.push(`// Audio: ${sampleCount} samples, ${audioSampleRate.value} Hz, mono, ${audioBitDepth.value}-bit`);
+      if (audioBitDepth.value === 8) {
+        lines.push(`const uint8_t ${audioName}[] PROGMEM = {`);
+        for (let i = 0; i < audioData.length; i += 16) {
+          const chunk = Array.from(audioData.slice(i, i + 16), (b) => `0x${b.toString(16).padStart(2, '0').toUpperCase()}`);
+          lines.push(`  ${chunk.join(', ')}${i + 16 < audioData.length ? ',' : ''}`);
+        }
+      } else {
+        lines.push(`const int16_t ${audioName}[] PROGMEM = {`);
+        const words: string[] = [];
+        for (let i = 0; i + 1 < audioData.length; i += 2) {
+          const raw = audioByteOrder.value === 'little' ? audioData[i] | (audioData[i + 1] << 8) : (audioData[i] << 8) | audioData[i + 1];
+          words.push(String(raw > 32767 ? raw - 65536 : raw));
+        }
+        for (let i = 0; i < words.length; i += 12) {
+          lines.push(`  ${words.slice(i, i + 12).join(', ')}${i + 12 < words.length ? ',' : ''}`);
+        }
+      }
+      lines.push('};');
+      lines.push(`const uint32_t ${audioName}_len = ${sampleCount};`);
+      lines.push(`const uint32_t ${audioName}_rate = ${audioSampleRate.value};`);
+    }
+
     return lines.join('\n');
   });
 
@@ -153,6 +199,27 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
       selectedIndex.value = Math.min(selectedIndex.value, Math.max(0, processedFrames.value.length - 1));
     } finally {
       isProcessing.value = false;
+    }
+  }
+
+  // ── Audio processing ──────────────────────────────────
+  async function processAudio() {
+    const buffer = decodedAudioBuffer.value;
+    if (!buffer) return;
+    isProcessingAudio.value = true;
+    try {
+      const mono = await resampleToMono(buffer, audioSampleRate.value, startTime.value, endTime.value);
+      const result = quantizeSamples(mono, {
+        bitDepth: audioBitDepth.value,
+        byteOrder: audioByteOrder.value,
+        gain: audioGain.value,
+        normalize: audioNormalize.value
+      });
+      audioSamples.value = mono;
+      audioBytes.value = result.bytes;
+      audioPeak.value = result.peak;
+    } finally {
+      isProcessingAudio.value = false;
     }
   }
 
@@ -202,7 +269,7 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
     processAll();
   }
 
-  /** Full pipeline: validate file → extract frames (start/end/sampleFps) → process. */
+  /** Full pipeline: validate file → extract frames (start/end/sampleFps) → decode audio → process. */
   async function loadVideoFile(file: File): Promise<boolean> {
     if (file.size > MAX_FILE_SIZE) {
       extractError.value = `File too large: ${(file.size / 1024 / 1024).toFixed(1)} MB. Maximum allowed size is ${MAX_FILE_SIZE / 1024 / 1024} MB.`;
@@ -224,6 +291,14 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
       });
       sourceFile.value = file;
       loadVideo(result);
+      // Decode audio from the video file
+      try {
+        decodedAudioBuffer.value = await decodeAudioFile(file);
+      } catch {
+        // Audio decode failure is non-fatal — video frames still work
+        decodedAudioBuffer.value = null;
+      }
+      await processAudio();
       return true;
     } catch (error) {
       extractError.value = error instanceof Error ? error.message : 'Video failed to load';
@@ -261,6 +336,8 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
       loadVideo(result);
       startTime.value = keepStart;
       endTime.value = keepEnd || result.duration;
+      // Re-process audio with updated time range
+      await processAudio();
       return true;
     } catch (error) {
       extractError.value = error instanceof Error ? error.message : 'Frame extraction failed';
@@ -319,6 +396,20 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
     }
   );
 
+  // Auto re-process audio on audio settings change (debounced)
+  let audioTimer: ReturnType<typeof setTimeout> | null = null;
+  watch(
+    () => [
+      audioSampleRate.value, audioBitDepth.value, audioByteOrder.value,
+      audioNormalize.value, audioGain.value, startTime.value, endTime.value
+    ],
+    () => {
+      if (!decodedAudioBuffer.value) return;
+      if (audioTimer) clearTimeout(audioTimer);
+      audioTimer = setTimeout(() => { audioTimer = null; void processAudio(); }, 150);
+    }
+  );
+
   const outputFileName = computed(() => `${outputName.value}.h`);
   function cleanup() {
     pause();
@@ -333,6 +424,10 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
     sourceWidth.value = 0;
     sourceHeight.value = 0;
     duration.value = 0;
+    decodedAudioBuffer.value = null;
+    audioSamples.value = new Float32Array();
+    audioBytes.value = new Uint8Array();
+    audioPeak.value = 0;
   }
 
   return {
@@ -349,6 +444,11 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
     targetWidth, targetHeight, brightness, contrast, threshold,
     dithering, scalingAlgorithm, colorMode, colorByteOrder,
     scanDirection, bitOrder, polarity, previewScale,
+    // audio
+    decodedAudioBuffer, audioSampleRate, audioBitDepth, audioByteOrder,
+    audioNormalize, audioGain, audioSamples, audioBytes, audioPeak,
+    isProcessingAudio, hasAudio, audioSampleCount, audioDuration,
+    processAudio,
     // size mode
     sizeMode, aspectLongEdge, applyAspect, isAspectMatched,
     // computed
