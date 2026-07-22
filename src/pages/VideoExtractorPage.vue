@@ -188,6 +188,50 @@ onBeforeUnmount(() => store.pause());
         <EncodingFields :store="store" />
       </Panel>
 
+      <Panel v-if="store.hasAudio" :title="t('video.audioSettings')">
+        <div class="field-stack">
+          <div class="field-row">
+            <label class="field">
+              <span>{{ t('video.audioSampleRate') }}</span>
+              <select v-model.number="store.audioSampleRate">
+                <option :value="8000">8000 Hz</option>
+                <option :value="11025">11025 Hz</option>
+                <option :value="16000">16000 Hz</option>
+                <option :value="22050">22050 Hz</option>
+                <option :value="32000">32000 Hz</option>
+                <option :value="44100">44100 Hz</option>
+              </select>
+            </label>
+            <label class="field">
+              <span>{{ t('video.audioBitDepth') }}</span>
+              <select v-model.number="store.audioBitDepth">
+                <option :value="8">8-bit</option>
+                <option :value="16">16-bit</option>
+              </select>
+            </label>
+          </div>
+          <div v-if="store.audioBitDepth === 16" class="field-row">
+            <label class="field">
+              <span>{{ t('video.audioByteOrder') }}</span>
+              <select v-model="store.audioByteOrder">
+                <option value="little">{{ t('video.littleEndian') }}</option>
+                <option value="big">{{ t('video.bigEndian') }}</option>
+              </select>
+            </label>
+          </div>
+          <div class="slider-field">
+            <header><span>{{ t('video.audioGain') }}</span><b>{{ store.audioGain.toFixed(1) }}</b></header>
+            <input v-model.number="store.audioGain" type="range" min="0" max="3" step="0.1" />
+          </div>
+          <label class="check"><input v-model="store.audioNormalize" type="checkbox" /> {{ t('video.audioNormalize') }}</label>
+          <div class="stat-list">
+            <div class="stat-row"><span>{{ t('video.audioSamples') }}</span><b>{{ store.audioSampleCount.toLocaleString() }}</b></div>
+            <div class="stat-row"><span>{{ t('video.audioDuration') }}</span><b>{{ store.audioDuration.toFixed(3) }} s</b></div>
+            <div class="stat-row"><span>{{ t('video.audioPeak') }}</span><b>{{ (store.audioPeak * 100).toFixed(1) }}%</b></div>
+          </div>
+        </div>
+      </Panel>
+
       <Panel :title="t('common.stats')">
         <div class="stat-list">
           <div class="stat-row"><span>{{ t('video.extractedFrames') }}</span><b>{{ store.extractedFrames.length }}</b></div>
