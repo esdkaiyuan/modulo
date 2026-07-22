@@ -3,7 +3,7 @@ import ToolDemo from '../components/ToolDemo.vue';
 import { t } from '../i18n';
 import type { MessageKey } from '../i18n/messages';
 
-type DemoType = 'image' | 'video' | 'animation' | 'font' | 'batch' | 'handdraw' | 'audio' | 'aiagent';
+type DemoType = 'image' | 'video' | 'animation' | 'font' | 'batch' | 'handdraw' | 'audio' | 'beadpattern' | 'aiagent';
 type CardSize = 'md' | 'sm' | 'banner';
 
 // Bento rhythm: two 2-col cards, four 1-col cards, then two full-width
@@ -15,7 +15,8 @@ const tools: { route: string; demo: DemoType; icon: string; size: CardSize }[] =
   { route: 'font', demo: 'font', icon: '字', size: 'sm' },
   { route: 'batch', demo: 'batch', icon: '≣', size: 'sm' },
   { route: 'handdraw', demo: 'handdraw', icon: '✎', size: 'sm' },
-  { route: 'audio', demo: 'audio', icon: '♪', size: 'banner' },
+  { route: 'audio', demo: 'audio', icon: '♪', size: 'sm' },
+  { route: 'bead', demo: 'beadpattern', icon: '◎', size: 'sm' },
   { route: 'ai', demo: 'aiagent', icon: '✦', size: 'banner' }
 ];
 

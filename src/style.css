@@ -2020,3 +2020,1329 @@ input, select, textarea { font-family: inherit; }
 
 .ai-models-ok { color: var(--ok); }
 .ai-models-err { color: var(--err); overflow-wrap: anywhere; }
+
+/* ════════════════════════════════════════════════════════
+   Bead Pattern — five-zone IDE layout
+   ════════════════════════════════════════════════════════ */
+
+.bead-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr 260px;
+  grid-template-rows: auto 1fr auto;
+  grid-template-areas:
+    "top   top    top"
+    "left  center right"
+    "bot   bot    bot";
+  height: calc(100vh - 56px);
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* Override .app-main constraints when bead page is active */
+.app-main:has(.bead-layout) {
+  max-width: none;
+  padding: 0;
+  margin: 0;
+}
+
+/* ── ① Top bar ──────────────────────────────────────── */
+
+.bead-topbar {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 6px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  z-index: 10;
+}
+
+.bead-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ── Segmented tab bar ────────────────────────────── */
+
+.bead-tab-bar {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.bead-tab-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.bead-tab-item:hover { background: var(--surface); color: var(--text); }
+.bead-tab-item.active { background: var(--surface); color: var(--primary); box-shadow: 0 1px 2px rgba(16,24,40,0.06); }
+.bead-tab-icon { font-size: 13px; line-height: 1; }
+.bead-tab-text { display: flex; flex-direction: column; line-height: 1.1; }
+.bead-tab-label { font-size: 11.5px; }
+.bead-tab-desc { font-size: 9px; font-weight: 400; color: var(--muted); opacity: 0.7; }
+.bead-tab-item.active .bead-tab-desc { color: var(--primary); opacity: 0.6; }
+
+/* ── ② Left sidebar ────────────────────────────────── */
+
+.bead-col-left {
+  grid-area: left;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: var(--surface);
+  overflow-y: auto;
+}
+
+.bead-left-sidebar {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.bead-sidebar-section {
+  border-bottom: 1px solid var(--border);
+}
+
+.bead-sidebar-grow { flex: 1; overflow-y: auto; border-bottom: 0; }
+
+.bead-sidebar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.bead-sidebar-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+
+.bead-sidebar-body { padding: 8px 12px; }
+
+.bead-sidebar-hint {
+  padding: 10px 12px;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* ── ③ Center workspace ─────────────────────────────── */
+
+.bead-col-center {
+  grid-area: center;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.bead-center-workspace {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  flex: 1;
+  min-height: 0;
+  background: var(--border);
+}
+
+.bead-center-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  min-height: 0;
+}
+
+.bead-center-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+  flex-shrink: 0;
+}
+
+.bead-center-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.bead-center-controls {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.bead-center-body {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background:
+    repeating-conic-gradient(#f0f2f5 0% 25%, #e8eaef 0% 50%) 0 0 / 10px 10px;
+  min-height: 0;
+}
+
+.bead-center-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.bead-center-empty span:first-child { font-size: 28px; }
+
+.bead-center-canvas {
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+.bead-pattern-canvas { image-rendering: pixelated; }
+
+/* ── ④ Right sidebar ───────────────────────────────── */
+
+.bead-col-right {
+  grid-area: right;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid var(--border);
+  background: var(--surface);
+  overflow-y: auto;
+  gap: 0;
+}
+
+.bead-col-right .panel {
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+  border-top: 0;
+  box-shadow: none;
+}
+
+.bead-col-right .panel + .panel { border-top: 1px solid var(--border); }
+
+.bead-view-btns { display: flex; gap: 3px; }
+.bead-view-btns .btn { flex: 1; }
+
+/* ── ⑤ Bottom bar ──────────────────────────────────── */
+
+.bead-bottombar {
+  grid-area: bot;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.bead-bottombar-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bead-bottombar-hint {
+  font-size: 10px;
+  color: var(--muted);
+}
+
+/* ── Materials (shared) ────────────────────────────── */
+
+.bead-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+}
+
+.bead-stat-row + .bead-stat-row { border-top: 1px solid rgba(0,0,0,0.04); }
+.bead-stat-row span { color: var(--muted); font-weight: 500; font-size: 11px; }
+.bead-stat-row b { font-family: var(--font-mono); font-size: 12px; color: var(--primary); }
+
+.bead-material-list { max-height: none; overflow-y: auto; margin-top: 4px; }
+
+.bead-material-item {
+  display: grid;
+  grid-template-columns: 14px 16px 1fr auto;
+  gap: 4px;
+  align-items: center;
+  padding: 2px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.03);
+}
+
+.bead-swatch { width: 12px; height: 12px; border-radius: 2px; border: 1px solid rgba(0,0,0,0.1); }
+.bead-swatch.lg { width: 22px; height: 22px; border-radius: 4px; }
+.bead-mat-symbol { font-family: var(--font-mono); font-size: 10px; text-align: center; color: var(--muted); }
+.bead-mat-info { display: flex; flex-direction: column; min-width: 0; }
+.bead-mat-code { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--text); }
+.bead-mat-name { font-size: 9px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bead-mat-count { font-family: var(--font-mono); font-size: 10px; font-weight: 600; color: var(--text); text-align: right; }
+.bead-mat-bar { grid-column: 1 / -1; height: 2px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.bead-mat-bar-fill { height: 100%; background: var(--primary); border-radius: 999px; transition: width 0.3s ease; }
+
+/* ── Draw page: canvas-first layout ────────────────── */
+
+.draw-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg);
+}
+
+.draw-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.draw-tools { display: flex; gap: 2px; }
+
+.draw-tool-btn {
+  width: 30px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.draw-tool-btn:hover { background: var(--surface-2); color: var(--text); }
+.draw-tool-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+
+.draw-sep { width: 1px; height: 20px; background: var(--border); flex-shrink: 0; }
+
+.draw-color-strip {
+  display: flex;
+  gap: 2px;
+  overflow-x: auto;
+  flex: 1;
+  min-width: 0;
+}
+
+.draw-color-dot {
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.08s, border-color 0.08s;
+}
+
+.draw-color-dot:hover { transform: scale(1.2); }
+.draw-color-dot.active { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-soft); }
+
+.draw-actions { display: flex; gap: 2px; }
+
+.draw-act-btn {
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.draw-act-btn:hover { background: var(--surface-2); color: var(--text); }
+.draw-act-btn:disabled { opacity: 0.35; cursor: default; }
+.draw-act-btn.danger:hover { color: var(--err); border-color: var(--err); }
+
+.draw-check {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.draw-zoom { display: flex; align-items: center; gap: 3px; }
+.draw-zoom-val { font-family: var(--font-mono); font-size: 11px; color: var(--muted); min-width: 32px; text-align: center; }
+
+.draw-canvas-wrap {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background:
+    repeating-conic-gradient(#e8eaef 0% 25%, #dde0e6 0% 50%) 0 0 / 14px 14px;
+  min-height: 0;
+}
+
+.draw-canvas {
+  image-rendering: pixelated;
+  background: #f8f9fb;
+  cursor: crosshair;
+  touch-action: none;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  flex-shrink: 0;
+}
+
+.draw-canvas-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.draw-overlay-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  cursor: default;
+  z-index: 2;
+}
+
+.draw-preset-bar {
+  padding: 6px 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.draw-obj-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--primary-soft);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+}
+
+.draw-obj-label {
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.draw-obj-pos {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.draw-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.draw-status-bead {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.draw-status-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid rgba(0,0,0,0.1);
+}
+
+.draw-status-dim { font-family: var(--font-mono); }
+.draw-status-count, .draw-status-colors { font-family: var(--font-mono); }
+.draw-status-hint { opacity: 0.6; }
+
+/* ── Free canvas tab (center area) ─────────────────── */
+
+.bead-canvas-layout { display: contents; }
+
+.bead-canvas-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.bead-canvas-stage {
+  flex: 1;
+  overflow: auto;
+  padding: 12px;
+  background: repeating-conic-gradient(#f0f2f5 0% 25%, #e8eaef 0% 50%) 0 0 / 16px 16px;
+  min-height: 200px;
+  position: relative;
+}
+
+.bead-canvas-grid-bg {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.bead-canvas-obj { position: absolute; cursor: grab; user-select: none; transition: box-shadow 0.12s; }
+.bead-canvas-obj:active { cursor: grabbing; }
+.bead-canvas-obj.selected { box-shadow: 0 0 0 2px var(--primary); }
+
+.bead-canvas-preset {
+  width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 48px; line-height: 1; pointer-events: none;
+}
+
+.bead-obj-frame { position: absolute; inset: -3px; border: 2px dashed var(--primary); border-radius: 3px; pointer-events: none; }
+.bead-obj-corner { position: absolute; width: 7px; height: 7px; background: var(--primary); border-radius: 2px; }
+.bead-obj-corner.tl { top: -3px; left: -3px; }
+.bead-obj-corner.tr { top: -3px; right: -3px; }
+.bead-obj-corner.bl { bottom: -3px; left: -3px; }
+.bead-obj-corner.br { bottom: -3px; right: -3px; }
+
+.bead-obj-info {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 10px; border-top: 1px solid var(--border);
+  background: var(--surface-2); font-size: 10px; flex-wrap: wrap;
+}
+
+.bead-obj-info-item { display: inline-flex; gap: 3px; font-family: var(--font-mono); color: var(--muted); }
+.bead-obj-info-item b { color: var(--text); }
+
+.bead-obj-list-item {
+  display: flex; align-items: center; gap: 5px;
+  padding: 3px 5px; border: 1px solid transparent;
+  border-radius: var(--radius-sm); cursor: pointer; font-size: 11px;
+}
+
+.bead-obj-list-item:hover { border-color: var(--border); background: var(--surface-2); }
+.bead-obj-list-item.active { border-color: var(--primary); background: var(--primary-soft); }
+.bead-obj-list-icon { width: 18px; text-align: center; font-size: 11px; }
+.bead-obj-list-label { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bead-obj-list-pos { font-family: var(--font-mono); font-size: 9px; color: var(--muted); }
+
+.bead-shortcut-list { display: flex; flex-direction: column; gap: 2px; }
+.bead-shortcut { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--muted); }
+.bead-shortcut kbd {
+  display: inline-block; min-width: 40px; padding: 1px 4px;
+  border: 1px solid var(--border-strong); border-radius: 3px;
+  background: var(--surface-2); font-family: var(--font-mono); font-size: 9px; text-align: center;
+}
+
+/* ── Preset picker ─────────────────────────────────── */
+
+.bead-preset-picker {
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); overflow: hidden;
+}
+
+.bead-preset-tabs { display: flex; gap: 3px; padding: 5px 8px; border-bottom: 1px solid var(--border); }
+
+.bead-preset-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(44px, 1fr));
+  gap: 2px; padding: 6px; max-height: 180px; overflow-y: auto;
+}
+
+.bead-preset-item {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 4px 2px; border: 1px solid transparent; border-radius: var(--radius-sm);
+  background: none; cursor: pointer; transition: all 0.1s;
+}
+
+.bead-preset-item:hover { border-color: var(--primary); background: var(--primary-soft); }
+.bead-preset-char { font-size: 18px; line-height: 1; }
+.bead-preset-label { font-size: 7.5px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+
+/* ── Fullscreen overlay ────────────────────────────── */
+
+.bead-fs-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.88);
+  display: flex; flex-direction: column; cursor: zoom-out;
+}
+
+.bead-fs-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 16px; background: rgba(0,0,0,0.6);
+  color: #fff; font-size: 12px; font-weight: 600; flex-shrink: 0;
+}
+
+.bead-fs-bar .btn { border-color: rgba(255,255,255,0.2); color: #fff; }
+.bead-fs-bar .bead-zoom-val { color: #fff; }
+
+.bead-fs-body {
+  flex: 1; overflow: auto; display: flex; align-items: center; justify-content: center; padding: 20px;
+}
+
+.bead-fs-canvas { max-width: none; max-height: none; image-rendering: pixelated; }
+
+/* ── Slider field ──────────────────────────────────── */
+
+.slider-field header { display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px; }
+.slider-field header span { color: var(--muted); }
+.slider-field header b { font-family: var(--font-mono); color: var(--primary); }
+.slider-field input[type="range"] { width: 100%; }
+
+/* ── Responsive ────────────────────────────────────── */
+
+@media (max-width: 1100px) {
+  .bead-layout { grid-template-columns: 1fr; grid-template-rows: auto auto 1fr auto; grid-template-areas: "top" "center" "center" "bot"; }
+  .bead-col-left, .bead-col-right { display: none; }
+  .bead-center-workspace { grid-template-columns: 1fr; }
+}
+
+/* ════════════════════════════════════════════════════════
+   Bead Pattern — content-first layout
+   ════════════════════════════════════════════════════════ */
+
+/* Page shell: fills the viewport below the 56px header */
+.bead-page {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 56px - 32px);
+  margin: -16px -20px -32px;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+/* ── Top bar ──────────────────────────────────────── */
+
+.bead-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 20px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  z-index: 10;
+}
+
+.bead-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  min-width: 0;
+}
+
+.bead-topbar-title {
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.bead-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ── Segmented tab bar ────────────────────────────── */
+
+.bead-tab-bar {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.bead-tab-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.bead-tab-item:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.bead-tab-item.active {
+  background: var(--surface);
+  color: var(--primary);
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+}
+
+.bead-tab-icon { font-size: 15px; line-height: 1; }
+
+.bead-tab-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.bead-tab-label { font-size: 12.5px; }
+
+.bead-tab-desc {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+.bead-tab-item.active .bead-tab-desc {
+  color: var(--primary);
+  opacity: 0.6;
+}
+
+/* ── Workspace: content (dominant) + sidebar ──────── */
+
+.bead-workspace {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.bead-content {
+  display: grid;
+  grid-template-columns: 1fr 272px;
+  gap: 0;
+  height: 100%;
+  min-height: 0;
+}
+
+/* Each tab's root element uses `display: contents` so its
+   .tool-main and .tool-side slots participate directly
+   in the .bead-content grid. */
+.bead-tab-content {
+  display: contents;
+}
+
+.bead-tab-content .tool-main {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 14px;
+}
+
+.bead-tab-content .tool-side {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 12px 12px;
+  border-left: 1px solid var(--border);
+  background: var(--surface);
+}
+
+@media (max-width: 1100px) {
+  .bead-content { grid-template-columns: 1fr; }
+  .bead-tab-content .tool-side {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+    max-height: 240px;
+  }
+}
+
+/* ── Export strip (bottom) ────────────────────────── */
+
+.bead-export-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.bead-export-strip-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.bead-export-hint {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+/* ── Image tab: preview wrap ──────────────────────── */
+
+.bead-preview-wrap {
+  flex: 1;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    repeating-conic-gradient(#f0f2f5 0% 25%, #e8eaef 0% 50%) 0 0 / 12px 12px;
+  border-radius: var(--radius-sm);
+  overflow: auto;
+  padding: 8px;
+}
+
+.bead-canvas-container {
+  overflow: auto;
+  max-width: 100%;
+}
+
+.bead-canvas {
+  image-rendering: pixelated;
+  display: block;
+}
+
+.bead-zoom-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--border);
+}
+
+.bead-zoom-label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.bead-zoom-row input[type="range"] { flex: 1; }
+
+.bead-zoom-val {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--muted);
+  min-width: 36px;
+}
+
+.bead-view-btns { display: flex; gap: 4px; }
+.bead-view-btns .btn { flex: 1; }
+
+/* ── Materials panel ──────────────────────────────── */
+
+.bead-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+
+.bead-stat-row + .bead-stat-row { border-top: 1px solid var(--border); }
+
+.bead-stat-row span { color: var(--muted); font-weight: 500; font-size: 12px; }
+.bead-stat-row b { font-family: var(--font-mono); font-size: 13px; color: var(--primary); }
+
+.bead-material-list {
+  max-height: 260px;
+  overflow-y: auto;
+  margin-top: 6px;
+}
+
+.bead-material-item {
+  display: grid;
+  grid-template-columns: 16px 18px 1fr auto;
+  gap: 5px;
+  align-items: center;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.bead-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.bead-swatch.lg { width: 24px; height: 24px; }
+
+.bead-mat-symbol { font-family: var(--font-mono); font-size: 11px; text-align: center; color: var(--muted); }
+.bead-mat-info { display: flex; flex-direction: column; min-width: 0; }
+.bead-mat-code { font-family: var(--font-mono); font-size: 10.5px; font-weight: 600; color: var(--text); }
+.bead-mat-name { font-size: 10px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bead-mat-count { font-family: var(--font-mono); font-size: 11px; font-weight: 600; color: var(--text); text-align: right; }
+
+.bead-mat-bar { grid-column: 1 / -1; height: 3px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.bead-mat-bar-fill { height: 100%; background: var(--primary); border-radius: 999px; transition: width 0.3s ease; }
+
+/* ── Dual preview panels ─────────────────────────── */
+
+.bead-dual-preview {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.bead-dual-preview.collapsed { border-bottom: 0; }
+
+.bead-dual-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bead-dual-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.bead-dual-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  max-height: 260px;
+}
+
+.bead-preview-panel {
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  min-height: 0;
+}
+
+.bead-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+
+.bead-preview-label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.bead-preview-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bead-preview-body {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  min-height: 100px;
+  background:
+    repeating-conic-gradient(#f0f2f5 0% 25%, #e8eaef 0% 50%) 0 0 / 10px 10px;
+  position: relative;
+}
+
+.bead-preview-canvas {
+  image-rendering: pixelated;
+  max-width: 100%;
+  max-height: 200px;
+}
+
+.bead-pattern-canvas { image-rendering: pixelated; }
+
+/* Fullscreen overlay */
+.bead-fs-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  flex-direction: column;
+  cursor: zoom-out;
+}
+
+.bead-fs-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.bead-fs-bar .bead-preview-controls .btn {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+
+.bead-fs-bar .bead-zoom-val { color: #fff; }
+
+.bead-fs-overlay .bead-preview-body {
+  flex: 1;
+  background: transparent;
+  overflow: auto;
+  padding: 20px;
+}
+
+.bead-fs-overlay .bead-preview-canvas {
+  max-width: none;
+  max-height: none;
+}
+
+/* ── Image import bar (shared across tabs) ────────── */
+
+.bead-drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(37, 99, 235, 0.12);
+  backdrop-filter: blur(4px);
+  border: 3px dashed var(--primary);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--primary);
+  pointer-events: all;
+}
+
+.bead-drop-icon { font-size: 48px; }
+
+.bead-import-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.bead-import-or {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.bead-import-hint {
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.bead-import-loaded {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ok);
+}
+
+.drop-target {
+  outline: 2px dashed var(--primary);
+  outline-offset: -2px;
+  background: var(--primary-soft) !important;
+}
+
+/* ── Draw tab ─────────────────────────────────────── */
+
+.bead-draw-stage {
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 10px;
+  border-radius: var(--radius-sm);
+  background:
+    repeating-conic-gradient(#161a21 0% 25%, #1d222b 0% 50%) 0 0 / 16px 16px;
+  overflow: auto;
+  min-height: 300px;
+}
+
+.bead-draw-canvas {
+  image-rendering: pixelated;
+  background: #fff;
+  cursor: crosshair;
+  touch-action: none;
+  border-radius: 2px;
+}
+
+.bead-draw-actions { display: flex; gap: 4px; }
+
+.bead-active-color { display: flex; align-items: center; gap: 8px; padding: 4px 0; }
+
+.bead-palette-grid { display: flex; flex-wrap: wrap; gap: 3px; }
+
+.bead-palette-swatch {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s, border-color 0.1s;
+}
+
+.bead-palette-swatch:hover { transform: scale(1.15); }
+.bead-palette-swatch.active { border-color: var(--primary); box-shadow: 0 0 0 2px var(--primary-soft); }
+
+.bead-size-quick { display: flex; flex-wrap: wrap; gap: 3px; }
+
+/* ── Canvas tab: full center layout ──────────────────── */
+
+.canvas-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--bg);
+}
+
+.canvas-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.canvas-preset-bar {
+  padding: 6px 10px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+
+.canvas-stage {
+  flex: 1;
+  overflow: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background:
+    repeating-conic-gradient(#f0f2f5 0% 25%, #e8eaef 0% 50%) 0 0 / 16px 16px;
+  min-height: 0;
+}
+
+.canvas-grid-bg {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  flex-shrink: 0;
+}
+
+.canvas-obj {
+  position: absolute;
+  cursor: grab;
+  user-select: none;
+  transition: box-shadow 0.12s;
+}
+
+.canvas-obj:active { cursor: grabbing; }
+.canvas-obj.selected { box-shadow: 0 0 0 2px var(--primary); }
+
+.canvas-preset-char {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.canvas-obj-frame {
+  position: absolute;
+  inset: -3px;
+  border: 2px dashed var(--primary);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+.canvas-corner {
+  position: absolute;
+  width: 7px;
+  height: 7px;
+  background: var(--primary);
+  border-radius: 2px;
+}
+
+.canvas-corner.tl { top: -3px; left: -3px; }
+.canvas-corner.tr { top: -3px; right: -3px; }
+.canvas-corner.bl { bottom: -3px; left: -3px; }
+.canvas-corner.br { bottom: -3px; right: -3px; }
+
+.canvas-obj-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  background: var(--primary-soft);
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  flex-shrink: 0;
+}
+
+.canvas-obj-label { font-weight: 700; color: var(--primary); }
+.canvas-obj-pos { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
+
+.canvas-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  font-size: 11px;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+
+.canvas-hint { opacity: 0.6; }
+
+.canvas-grid-input {
+  width: 50px;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  text-align: center;
+}
+
+/* ── Preset picker ────────────────────────────────── */
+
+.bead-preset-picker {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  margin: 8px 14px;
+  overflow: hidden;
+}
+
+.bead-preset-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bead-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+  gap: 3px;
+  padding: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.bead-preset-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 5px 3px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: none;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.bead-preset-item:hover {
+  border-color: var(--primary);
+  background: var(--primary-soft);
+}
+
+.bead-preset-char { font-size: 20px; line-height: 1; }
+
+.bead-preset-label {
+  font-size: 8px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* ── Slider field (shared) ────────────────────────── */
+
+.slider-field header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.slider-field header span { color: var(--muted); }
+.slider-field header b { font-family: var(--font-mono); color: var(--primary); }
+.slider-field input[type="range"] { width: 100%; }

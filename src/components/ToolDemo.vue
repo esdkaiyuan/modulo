@@ -8,7 +8,7 @@ import { onBeforeUnmount, onMounted, ref } from 'vue';
  * honors prefers-reduced-motion by drawing one static frame instead of looping.
  */
 const props = defineProps<{
-  type: 'image' | 'video' | 'animation' | 'font' | 'batch' | 'handdraw' | 'audio' | 'aiagent';
+  type: 'image' | 'video' | 'animation' | 'font' | 'batch' | 'handdraw' | 'audio' | 'beadpattern' | 'aiagent';
 }>();
 
 const canvas = ref<HTMLCanvasElement | null>(null);
@@ -567,6 +567,96 @@ function demoAiAgent(ctx: CanvasRenderingContext2D, t: number) {
   ctx.globalAlpha = 1;
 }
 
+function demoBeadPattern(ctx: CanvasRenderingContext2D, t: number) {
+  // A small bead grid fills in color-by-color, simulating pattern generation.
+  // Each bead is a colored circle in a grid, with a materials legend on the right.
+  const BEAD_COLORS = ['#E53935', '#1E88E5', '#43A047', '#FFD600', '#7B1FA2', '#FF9100', '#FFFFFF', '#212121'];
+  const GRID_COLS = 12;
+  const GRID_ROWS = 10;
+  const cell = Math.min(CW, CH) * 1.6;
+  const startX = (W - GRID_COLS * cell) / 2 - 40;
+  const startY = (H - GRID_ROWS * cell) / 2;
+
+  // Generate a simple smiley face pattern
+  const smiley: (number | null)[][] = [];
+  for (let y = 0; y < GRID_ROWS; y++) {
+    smiley[y] = [];
+    for (let x = 0; x < GRID_COLS; x++) {
+      const dx = x - 5.5, dy = y - 4.5;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 5.2) smiley[y][x] = 3; // yellow face
+      else smiley[y][x] = null;
+    }
+  }
+  // Eyes
+  smiley[3][3] = 7; smiley[3][4] = 7;
+  smiley[3][7] = 7; smiley[3][8] = 7;
+  // Mouth
+  smiley[6][3] = 7; smiley[6][4] = 7;
+  smiley[6][7] = 7; smiley[6][8] = 7;
+  smiley[7][5] = 7; smiley[7][6] = 7;
+
+  const totalBeads = GRID_ROWS * GRID_COLS;
+  const T = 4.0;
+  const p = (t % T) / T;
+  const revealed = Math.floor(ease(p) * totalBeads);
+
+  // Draw grid
+  let count = 0;
+  for (let y = 0; y < GRID_ROWS; y++) {
+    for (let x = 0; x < GRID_COLS; x++) {
+      const bx = startX + x * cell;
+      const by = startY + y * cell;
+      const colorIdx = smiley[y][x];
+      if (count < revealed && colorIdx !== null) {
+        ctx.save();
+        if (count === revealed - 1) {
+          ctx.shadowColor = BEAD_COLORS[colorIdx];
+          ctx.shadowBlur = 6;
+        }
+        ctx.fillStyle = BEAD_COLORS[colorIdx];
+        ctx.beginPath();
+        ctx.arc(bx + cell / 2, by + cell / 2, cell * 0.38, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      } else {
+        // Empty peg board
+        ctx.fillStyle = 'rgba(148, 163, 184, 0.12)';
+        ctx.beginPath();
+        ctx.arc(bx + cell / 2, by + cell / 2, cell * 0.36, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      count++;
+    }
+  }
+
+  // Legend on the right side
+  const legX = startX + GRID_COLS * cell + 20;
+  const legY = startY + 8;
+  ctx.fillStyle = `${GRAY} 0.5)`;
+  ctx.font = '10px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  const usedColors = [3, 7]; // yellow and black in the smiley
+  usedColors.forEach((ci, i) => {
+    const ly = legY + i * 18;
+    ctx.fillStyle = BEAD_COLORS[ci];
+    ctx.beginPath();
+    ctx.arc(legX + 6, ly, 5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = `${GRAY} 0.75)`;
+    ctx.fillText(`× ${Math.floor(Math.random() * 30 + 10)}`, legX + 16, ly);
+  });
+
+  // Board boundary dashes
+  ctx.save();
+  ctx.strokeStyle = 'rgba(60, 140, 240, 0.3)';
+  ctx.setLineDash([4, 4]);
+  ctx.lineWidth = 1;
+  ctx.strokeRect(startX - 2, startY - 2, GRID_COLS * cell + 4, GRID_ROWS * cell + 4);
+  ctx.restore();
+}
+
 const DEMOS = {
   image: demoImage,
   video: demoVideo,
@@ -575,6 +665,7 @@ const DEMOS = {
   batch: demoBatch,
   handdraw: demoHanddraw,
   audio: demoAudio,
+  beadpattern: demoBeadPattern,
   aiagent: demoAiAgent
 } as const;
 
