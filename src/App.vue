@@ -9,6 +9,7 @@ import BatchExtractorPage from './pages/BatchExtractorPage.vue';
 import HandDrawPage from './pages/HandDrawPage.vue';
 import AudioExtractorPage from './pages/AudioExtractorPage.vue';
 import AiAgentPage from './pages/AiAgentPage.vue';
+import BeadPatternPage from './pages/BeadPatternPage.vue';
 import UserAuthPage from './pages/UserAuthPage.vue';
 import UserProfilePage from './pages/UserProfilePage.vue';
 import WatermarkLayer from './components/WatermarkLayer.vue';
@@ -28,6 +29,7 @@ const NAV = [
   { route: 'batch', labelKey: 'nav.batch', icon: '≣' },
   { route: 'handdraw', labelKey: 'nav.handdraw', icon: '✎' },
   { route: 'audio', labelKey: 'nav.audio', icon: '♪' },
+  { route: 'bead', labelKey: 'nav.bead', icon: '◎' },
   { route: 'ai', labelKey: 'nav.ai', icon: '✦' }
 ] as const;
 
@@ -41,6 +43,7 @@ const pages: Record<string, unknown> = {
   batch: BatchExtractorPage,
   handdraw: HandDrawPage,
   audio: AudioExtractorPage,
+  bead: BeadPatternPage,
   ai: AiAgentPage,
   user: UserAuthPage,
   profile: UserProfilePage
@@ -55,7 +58,7 @@ const route = ref(parseRoute());
 // All tool pages and the profile require a logged-in user. The home page,
 // login page, and unknown routes (which fall back to home) stay public.
 const PROTECTED = new Set([
-  'image', 'video', 'animation', 'font', 'batch', 'handdraw', 'audio', 'ai', 'profile'
+  'image', 'video', 'animation', 'font', 'batch', 'handdraw', 'audio', 'bead', 'ai', 'profile'
 ]);
 
 const needsLogin = computed(() => PROTECTED.has(route.value) && !auth.currentUser);
