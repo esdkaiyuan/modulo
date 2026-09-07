@@ -9,6 +9,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@imgly/background-removal": "^1.7.0",
     "@vitejs/plugin-vue": "^5.2.4",
     "gifuct-js": "^2.1.2",
     "pinia": "^2.3.1",

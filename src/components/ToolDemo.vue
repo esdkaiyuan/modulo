@@ -568,94 +568,173 @@ function demoAiAgent(ctx: CanvasRenderingContext2D, t: number) {
 }
 
 function demoBeadPattern(ctx: CanvasRenderingContext2D, t: number) {
-  // A small bead grid fills in color-by-color, simulating pattern generation.
-  // Each bead is a colored circle in a grid, with a materials legend on the right.
-  const BEAD_COLORS = ['#E53935', '#1E88E5', '#43A047', '#FFD600', '#7B1FA2', '#FF9100', '#FFFFFF', '#212121'];
-  const GRID_COLS = 12;
-  const GRID_ROWS = 10;
-  const cell = Math.min(CW, CH) * 1.6;
-  const startX = (W - GRID_COLS * cell) / 2 - 40;
-  const startY = (H - GRID_ROWS * cell) / 2;
-
-  // Generate a simple smiley face pattern
-  const smiley: (number | null)[][] = [];
-  for (let y = 0; y < GRID_ROWS; y++) {
-    smiley[y] = [];
-    for (let x = 0; x < GRID_COLS; x++) {
-      const dx = x - 5.5, dy = y - 4.5;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 5.2) smiley[y][x] = 3; // yellow face
-      else smiley[y][x] = null;
-    }
-  }
-  // Eyes
-  smiley[3][3] = 7; smiley[3][4] = 7;
-  smiley[3][7] = 7; smiley[3][8] = 7;
-  // Mouth
-  smiley[6][3] = 7; smiley[6][4] = 7;
-  smiley[6][7] = 7; smiley[6][8] = 7;
-  smiley[7][5] = 7; smiley[7][6] = 7;
-
-  const totalBeads = GRID_ROWS * GRID_COLS;
-  const T = 4.0;
+  // Scan line converts a soft gradient scene (tree + house) into
+  // color-quantized bead pattern. Full-width, higher detail.
+  const T = 4.4;
   const p = (t % T) / T;
-  const revealed = Math.floor(ease(p) * totalBeads);
+  const sweep = ease(p / 0.72) * (COLS + 2) - 1;
+  const donePulse = p > 0.78 ? Math.sin(((p - 0.78) / 0.22) * Math.PI) * 0.06 : 0;
 
-  // Draw grid
-  let count = 0;
-  for (let y = 0; y < GRID_ROWS; y++) {
-    for (let x = 0; x < GRID_COLS; x++) {
-      const bx = startX + x * cell;
-      const by = startY + y * cell;
-      const colorIdx = smiley[y][x];
-      if (count < revealed && colorIdx !== null) {
-        ctx.save();
-        if (count === revealed - 1) {
-          ctx.shadowColor = BEAD_COLORS[colorIdx];
-          ctx.shadowBlur = 6;
-        }
-        ctx.fillStyle = BEAD_COLORS[colorIdx];
-        ctx.beginPath();
-        ctx.arc(bx + cell / 2, by + cell / 2, cell * 0.38, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      } else {
-        // Empty peg board
-        ctx.fillStyle = 'rgba(148, 163, 184, 0.12)';
-        ctx.beginPath();
-        ctx.arc(bx + cell / 2, by + cell / 2, cell * 0.36, 0, Math.PI * 2);
-        ctx.fill();
+  // Scene: tree on left, house on right, grass ground
+  // Color codes: 0=empty, 1=dark green outline, 2=green, 3=brown (trunk/door),
+  // 4=red (roof), 5=yellow (house body), 6=blue (sky)
+  function beadColor(x: number, y: number): number {
+    // Ground: bottom 2 rows
+    if (y >= ROWS - 2) return 2; // green ground
+
+    // Sky background (light blue dots)
+    if (y < 2) return 6; // blue sky top
+
+    // Tree: left side (cols 2-9)
+    const treeCx = 6.5;
+    const treeTopY = 1;
+    const treeBotY = 8;
+    const treeW = 4;
+    const tx = x - treeCx;
+    const ty = y - treeTopY;
+    const th = treeBotY - treeTopY;
+    const tw = (1 - ty / th) * treeW;
+
+    if (x >= 3 && x <= 10 && y >= treeTopY && y <= treeBotY + 1) {
+      if (Math.abs(tx) <= tw) {
+        if (Math.abs(tx) >= tw - 0.8) return 1; // outline
+        return 2; // green leaves
       }
-      count++;
+    }
+    // Trunk
+    if (x === 6 || x === 7) {
+      if (y >= treeBotY - 1 && y <= ROWS - 3) return 3; // brown trunk
+    }
+
+    // House: right side (cols 15-26)
+    const houseLeft = 15;
+    const houseRight = 26;
+    const houseCx = (houseLeft + houseRight) / 2;
+    const roofTopY = 2;
+    const roofBotY = 6;
+    const wallTopY = 6;
+    const wallBotY = ROWS - 3;
+
+    // Roof (triangle)
+    if (y >= roofTopY && y <= roofBotY) {
+      const roofRow = y - roofTopY;
+      const roofHalf = (roofBotY - roofTopY - roofRow) * 1.2 + 1;
+      if (Math.abs(x - houseCx) <= roofHalf) {
+        if (Math.abs(Math.abs(x - houseCx) - roofHalf) < 0.7) return 4; // red outline-ish
+        return 4; // red roof
+      }
+    }
+
+    // House walls
+    if (y >= wallTopY && y <= wallBotY) {
+      if (x >= houseLeft && x <= houseRight) {
+        // Door (middle bottom)
+        if (Math.abs(x - houseCx) <= 1 && y >= wallBotY - 2) {
+          return 3; // brown door
+        }
+        // Window (left upper)
+        if (x >= houseLeft + 2 && x <= houseLeft + 4 && y >= wallTopY + 1 && y <= wallTopY + 3) {
+          if (x === houseLeft + 2 || x === houseLeft + 4 || y === wallTopY + 1 || y === wallTopY + 3) {
+            return 3; // window frame (brown)
+          }
+          return 6; // blue window glass
+        }
+        // Window (right upper)
+        if (x >= houseRight - 4 && x <= houseRight - 2 && y >= wallTopY + 1 && y <= wallTopY + 3) {
+          if (x === houseRight - 4 || x === houseRight - 2 || y === wallTopY + 1 || y === wallTopY + 3) {
+            return 3; // window frame
+          }
+          return 6; // blue window glass
+        }
+        // Wall body
+        if (x === houseLeft || x === houseRight || y === wallBotY) return 5; // darker outline
+        return 5; // yellow house
+      }
+    }
+
+    // Sky background dots
+    return 0;
+  }
+
+  const COLORS = [
+    'transparent',   // 0 empty
+    '#1B5E20',       // 1 dark green outline
+    '#4CAF50',       // 2 green (D series)
+    '#795548',       // 3 brown (G series)
+    '#D32F2F',       // 4 red (A series)
+    '#FFEB3B',       // 5 yellow (F series)
+    '#64B5F6',       // 6 light blue (C series)
+  ];
+
+  for (let y = 0; y < ROWS; y += 1) {
+    for (let x = 0; x < COLS; x += 1) {
+      const v = beadColor(x, y);
+      if (x < sweep) {
+        // Converted side: bead dots
+        if (v === 0) {
+          dotAt(ctx, x, y, DIM, 0.18);
+        } else {
+          // Bead body
+          dotAt(ctx, x, y, COLORS[v], 0.34 + donePulse);
+          // Peg hole
+          ctx.fillStyle = 'rgba(0,0,0,0.3)';
+          ctx.beginPath();
+          ctx.arc((x + 0.5) * CW, (y + 0.5) * CH, Math.min(CW, CH) * 0.11, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      } else {
+        // Un-converted side: soft gradient (source photo look)
+        if (v === 0) {
+          // Sky
+          ctx.fillStyle = 'rgba(100, 181, 246, 0.15)';
+        } else if (v === 6) {
+          // Window blue
+          ctx.fillStyle = 'rgba(100, 181, 246, 0.7)';
+        } else if (v === 2) {
+          // Green gradient
+          const dist = Math.abs(x - COLS / 2) / COLS;
+          ctx.fillStyle = `rgba(76, 175, 80, ${0.7 + dist * 0.3})`;
+        } else if (v === 4) {
+          // Red gradient
+          ctx.fillStyle = `rgba(211, 47, 47, 0.75)`;
+        } else if (v === 5) {
+          // Yellow gradient
+          ctx.fillStyle = `rgba(255, 235, 59, 0.7)`;
+        } else if (v === 3) {
+          // Brown
+          ctx.fillStyle = `rgba(121, 85, 72, 0.8)`;
+        } else {
+          // Dark green outline
+          ctx.fillStyle = `rgba(27, 94, 32, 0.8)`;
+        }
+        ctx.fillRect(x * CW + 0.5, y * CH + 0.5, CW - 1, CH - 1);
+      }
     }
   }
 
-  // Legend on the right side
-  const legX = startX + GRID_COLS * cell + 20;
-  const legY = startY + 8;
-  ctx.fillStyle = `${GRAY} 0.5)`;
-  ctx.font = '10px sans-serif';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  const usedColors = [3, 7]; // yellow and black in the smiley
-  usedColors.forEach((ci, i) => {
-    const ly = legY + i * 18;
-    ctx.fillStyle = BEAD_COLORS[ci];
-    ctx.beginPath();
-    ctx.arc(legX + 6, ly, 5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = `${GRAY} 0.75)`;
-    ctx.fillText(`× ${Math.floor(Math.random() * 30 + 10)}`, legX + 16, ly);
-  });
-
-  // Board boundary dashes
-  ctx.save();
-  ctx.strokeStyle = 'rgba(60, 140, 240, 0.3)';
-  ctx.setLineDash([4, 4]);
-  ctx.lineWidth = 1;
-  ctx.strokeRect(startX - 2, startY - 2, GRID_COLS * cell + 4, GRID_ROWS * cell + 4);
-  ctx.restore();
+  // Scan line
+  if (sweep > 0 && sweep < COLS) {
+    const sx = (sweep / COLS) * W;
+    const grad = ctx.createLinearGradient(sx - 26, 0, sx, 0);
+    grad.addColorStop(0, 'rgba(60, 140, 240, 0)');
+    grad.addColorStop(1, 'rgba(60, 140, 240, 0.18)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(sx - 26, 0, 26, H);
+    ctx.save();
+    ctx.shadowColor = ACCENT;
+    ctx.shadowBlur = 9;
+    ctx.fillStyle = ACCENT;
+    ctx.fillRect(sx - 1, 0, 2, H);
+    ctx.restore();
+  }
 }
+
+
+
+
+
+
+
 
 const DEMOS = {
   image: demoImage,

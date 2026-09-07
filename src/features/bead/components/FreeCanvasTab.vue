@@ -9,6 +9,8 @@ import { t } from '../../../i18n';
 import type { MaterialItem, PatternResult } from '../types';
 import type { CanvasObject } from '../canvasObjects';
 
+const store = useBeadPatternStore();
+
 const emit = defineEmits<{
   (e: 'dataUpdate', data: { materials: MaterialItem[]; totalBeads: number }): void;
   (e: 'patternUpdate', data: { pattern: PatternResult | null }): void;
@@ -53,7 +55,7 @@ function addPattern() {
   if (!beadStore.pattern) return;
   const p = beadStore.pattern;
   const cs = Math.min(12, Math.floor(400 / Math.max(p.width, p.height)));
-  const rendered = renderPattern(p, { cellSize: cs, showGrid: true, showCoordinates: false, showBoardLines: false, showLegend: false, title: '' });
+  const rendered = renderPattern(p, { cellSize: cs, showGrid: store.showGrid, showCoordinates: false, showBoardLines: store.showBoardLines, showCenterCrosshair: store.showCenterCrosshair, showColorCodes: store.showColorCodes, showLegend: false, title: '' });
   const cells: (string | null)[] = [];
   for (let r = 0; r < p.height; r++)
     for (let c = 0; c < p.width; c++)

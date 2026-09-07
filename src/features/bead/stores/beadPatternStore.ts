@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { computed, ref, watch } from 'vue';
 import { generatePattern, findClosestBead } from '../patternEngine';
+import { removeBackgroundAi, removeBackgroundSimple, loadAiRemoval } from '../backgroundRemoval';
 import { BEAD_BRANDS, getBrand, getSymbol } from '../paletteData';
 import type { BeadBrandId, MaterialItem, PatternResult, PatternSettings } from '../types';
 
@@ -16,13 +17,23 @@ export const useBeadPatternStore = defineStore('beadPattern', () => {
   const fileSize = ref(0);
 
   // ── Pattern settings ──
-  const brandId = ref<BeadBrandId>('artkal-s');
+  const brandId = ref<BeadBrandId>('mard-standard');
   const sizeMode = ref<BeadSizeMode>('aspect');
   const gridWidth = ref(29);
   const gridHeight = ref(29);
   const aspectLongEdge = ref(29);
   const boardSize = ref(29);
   const viewMode = ref<'colors' | 'symbols' | 'both'>('colors');
+  const showGrid = ref(true);
+  const showBoardLines = ref(true);
+  const showCenterCrosshair = ref(true);
+  const showColorCodes = ref(false);
+  const bgRemoveMode = ref<'none' | 'auto' | 'tolerance' | 'corner' | 'ai'>('none');
+  const bgTolerance = ref(25);
+  const isRemovingBg = ref(false);
+  const bgRemoveProgress = ref(0);
+  const originalImageData = ref<ImageData | null>(null);
+  const originalDataUrl = ref('');
   const excludeColors = ref<Set<string>>(new Set());
   const patternTitle = ref('');
 
@@ -139,6 +150,10 @@ export const useBeadPatternStore = defineStore('beadPattern', () => {
     imageData: ImageData;
     dataUrl: string;
   }) {
+    // Save original for bg removal switching
+    originalImageData.value = data.imageData;
+    originalDataUrl.value = data.dataUrl;
+
     sourceImageData.value = data.imageData;
     sourceDataUrl.value = data.dataUrl;
     sourceWidth.value = data.width;
@@ -170,7 +185,10 @@ export const useBeadPatternStore = defineStore('beadPattern', () => {
       boardSize: boardSize.value,
       lockAspectRatio: sizeMode.value === 'aspect',
       showSymbols: viewMode.value !== 'colors',
-      viewMode: viewMode.value
+      viewMode: viewMode.value,
+      showColorCodes: showColorCodes.value,
+      bgRemoveMode: bgRemoveMode.value,
+      bgTolerance: bgTolerance.value
     };
 
     requestAnimationFrame(() => {
@@ -243,6 +261,95 @@ export const useBeadPatternStore = defineStore('beadPattern', () => {
     viewMode.value = mode;
   }
 
+  function setShowGrid(value: boolean) {
+    showGrid.value = value;
+  }
+
+  function setShowBoardLines(value: boolean) {
+    showBoardLines.value = value;
+  }
+
+  function setShowCenterCrosshair(value: boolean) {
+    showCenterCrosshair.value = value;
+  }
+
+  function setShowColorCodes(value: boolean) {
+    showColorCodes.value = value;
+  }
+
+  function setBgRemoveMode(mode: 'none' | 'auto' | 'tolerance' | 'corner' | 'ai') {
+    bgRemoveMode.value = mode;
+    applyBgRemovalAndGenerate();
+  }
+
+  function setBgTolerance(val: number) {
+    bgTolerance.value = Math.max(0, Math.min(200, Math.round(val)));
+    if (bgRemoveMode.value !== 'none' && bgRemoveMode.value !== 'ai') {
+      applyBgRemovalAndGenerate();
+    }
+  }
+
+  /**
+   * Apply the current background removal mode to the original image,
+   * then regenerate the pattern.
+   */
+  async function applyBgRemovalAndGenerate() {
+    if (!originalImageData.value || !originalDataUrl.value) return;
+
+    const mode = bgRemoveMode.value;
+
+    if (mode === 'none') {
+      sourceImageData.value = originalImageData.value;
+      sourceDataUrl.value = originalDataUrl.value;
+      sourceWidth.value = originalImageData.value.width;
+      sourceHeight.value = originalImageData.value.height;
+      generate();
+      return;
+    }
+
+    if (mode === 'ai') {
+      isRemovingBg.value = true;
+      bgRemoveProgress.value = 0;
+      try {
+        const resultData = await removeBackgroundAi(
+          originalDataUrl.value,
+          (p) => { bgRemoveProgress.value = p; }
+        );
+        sourceImageData.value = resultData;
+        sourceWidth.value = resultData.width;
+        sourceHeight.value = resultData.height;
+        // Update dataUrl from the processed ImageData
+        const canvas = document.createElement('canvas');
+        canvas.width = resultData.width;
+        canvas.height = resultData.height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.putImageData(resultData, 0, 0);
+        sourceDataUrl.value = canvas.toDataURL('image/png');
+        generate();
+      } catch (err: any) {
+        console.error('AI bg removal failed:', err);
+        bgRemoveMode.value = 'none';
+      } finally {
+        isRemovingBg.value = false;
+        bgRemoveProgress.value = 0;
+      }
+      return;
+    }
+
+    // Simple modes: auto / tolerance / corner
+    const result = removeBackgroundSimple(originalImageData.value, mode as 'auto' | 'tolerance' | 'corner', bgTolerance.value);
+    sourceImageData.value = result;
+    sourceWidth.value = result.width;
+    sourceHeight.value = result.height;
+    const canvas = document.createElement('canvas');
+    canvas.width = result.width;
+    canvas.height = result.height;
+    const ctx = canvas.getContext('2d')!;
+    ctx.putImageData(result, 0, 0);
+    sourceDataUrl.value = canvas.toDataURL('image/png');
+    generate();
+  }
+
   function updatePresets(count: number, names: string[]) {
     presetCount.value = count;
     presetNames.value = names;
@@ -253,6 +360,8 @@ export const useBeadPatternStore = defineStore('beadPattern', () => {
     sourceDataUrl.value = '';
     sourceWidth.value = 0;
     sourceHeight.value = 0;
+    originalImageData.value = null;
+    originalDataUrl.value = '';
     fileName.value = '';
     fileSize.value = 0;
     pattern.value = null;
@@ -261,6 +370,8 @@ export const useBeadPatternStore = defineStore('beadPattern', () => {
     presetNames.value = [];
     excludeColors.value = new Set();
     patternTitle.value = '';
+    bgRemoveMode.value = 'none';
+    isRemovingBg.value = false;
   }
 
   return {
@@ -272,6 +383,11 @@ export const useBeadPatternStore = defineStore('beadPattern', () => {
     materials, totalBeads, boardCount,
     loadImage, generate, applyDrawCells, updatePresets,
     setBrand, setGridWidth, setGridHeight, setBoardSize, setSizeMode,
-    applyOriginalRatio, toggleExcludeColor, setViewMode, reset
+    applyOriginalRatio, toggleExcludeColor, setViewMode,
+    setShowGrid, setShowBoardLines, setShowCenterCrosshair, setShowColorCodes,
+    showGrid, showBoardLines, showCenterCrosshair,
+    bgRemoveMode, bgTolerance, isRemovingBg, bgRemoveProgress,
+    setBgRemoveMode, setBgTolerance,
+    showColorCodes, reset
   };
 });

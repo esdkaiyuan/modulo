@@ -7,9 +7,11 @@ import EncodingFields from '../components/EncodingFields.vue';
 import SizeModeFields from '../components/SizeModeFields.vue';
 import ColorModeFields from '../components/ColorModeFields.vue';
 import { useImageModuloStore } from '../features/image/stores/imageModuloStore';
+import { useFileRecordStore } from '../user/fileRecordStore';
 import { t } from '../i18n';
 
 const store = useImageModuloStore();
+const fileRecords = useFileRecordStore();
 const fileInput = ref<HTMLInputElement | null>(null);
 const dragOver = ref(false);
 const loadError = ref('');
@@ -53,6 +55,7 @@ async function loadFile(file: File) {
       imageData: ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight),
       dataUrl
     });
+    fileRecords.recordFile('image', file.name, file.size);
   } catch (error) {
     loadError.value = error instanceof Error ? error.message : 'Image failed to load';
   }

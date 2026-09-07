@@ -48,7 +48,7 @@ describe('waveformEnvelope', () => {
     const envelope = waveformEnvelope(new Float32Array([0.5, -0.5, 0.1, -0.1]), 2);
     expect(envelope[0]).toBe(-0.5); // bucket 0 min
     expect(envelope[1]).toBe(0.5);  // bucket 0 max
-    expect(envelope[2]).toBe(-0.1);
-    expect(envelope[3]).toBe(0.1);
+    expect(envelope[2]).toBeCloseTo(-0.1);
+    expect(envelope[3]).toBeCloseTo(0.1);
   });
 });

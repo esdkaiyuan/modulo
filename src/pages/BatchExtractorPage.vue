@@ -7,10 +7,12 @@ import EncodingFields from '../components/EncodingFields.vue';
 import SizeModeFields from '../components/SizeModeFields.vue';
 import ColorModeFields from '../components/ColorModeFields.vue';
 import { useBatchModuloStore } from '../features/batch/stores/batchModuloStore';
+import { useFileRecordStore } from '../user/fileRecordStore';
 import { t } from '../i18n';
 import type { MessageKey } from '../i18n/messages';
 
 const store = useBatchModuloStore();
+const fileRecords = useFileRecordStore();
 const fileInput = ref<HTMLInputElement | null>(null);
 const dragOver = ref(false);
 

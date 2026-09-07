@@ -5,12 +5,14 @@ import { getBrand } from './paletteData';
 /**
  * Export the pattern as a PNG image.
  */
-export function exportPng(pattern: PatternResult, title?: string): void {
+export function exportPng(pattern: PatternResult, title?: string, showColorCodes = false): void {
   const canvas = renderPattern(pattern, {
-    cellSize: 24,
+    cellSize: showColorCodes ? 64 : 48,
     showGrid: true,
     showCoordinates: true,
     showBoardLines: true,
+    showCenterCrosshair: true,
+    showColorCodes,
     showLegend: true,
     title: title || `Bead Pattern — ${pattern.width}×${pattern.height}`
   });
@@ -24,12 +26,14 @@ export function exportPng(pattern: PatternResult, title?: string): void {
 /**
  * Export the pattern as a JPEG image.
  */
-export function exportJpeg(pattern: PatternResult, title?: string): void {
+export function exportJpeg(pattern: PatternResult, title?: string, showColorCodes = false): void {
   const canvas = renderPattern(pattern, {
-    cellSize: 24,
+    cellSize: showColorCodes ? 64 : 48,
     showGrid: true,
     showCoordinates: true,
     showBoardLines: true,
+    showCenterCrosshair: true,
+    showColorCodes,
     showLegend: true,
     title: title || `Bead Pattern — ${pattern.width}×${pattern.height}`
   });
@@ -55,12 +59,14 @@ export function exportPreviewImage(pattern: PatternResult): void {
  * Open the browser print dialog with a print-optimized layout.
  * The user can then save as PDF from the print dialog.
  */
-export function exportPrint(pattern: PatternResult, title?: string): void {
+export function exportPrint(pattern: PatternResult, title?: string, showColorCodes = false): void {
   const canvas = renderPattern(pattern, {
-    cellSize: 18,
+    cellSize: showColorCodes ? 48 : 32,
+    showColorCodes,
     showGrid: true,
     showCoordinates: true,
     showBoardLines: true,
+    showCenterCrosshair: true,
     showLegend: true,
     title: title || `Bead Pattern — ${pattern.width}×${pattern.height}`
   });

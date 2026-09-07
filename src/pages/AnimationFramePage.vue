@@ -7,10 +7,12 @@ import EncodingFields from '../components/EncodingFields.vue';
 import SizeModeFields from '../components/SizeModeFields.vue';
 import ColorModeFields from '../components/ColorModeFields.vue';
 import { useAnimationModuloStore } from '../features/animation/stores/animationModuloStore';
+import { useFileRecordStore } from '../user/fileRecordStore';
 import { ANIMATION_ACCEPT, decodeAnimationFile } from '../features/animation/utils/animationDecoder';
 import { t } from '../i18n';
 
 const store = useAnimationModuloStore();
+const fileRecords = useFileRecordStore();
 const fileInput = ref<HTMLInputElement | null>(null);
 const loadError = ref('');
 const isPlaying = ref(false);
@@ -39,6 +41,7 @@ async function onFileChange(e: Event) {
     const decoded = await decodeAnimationFile(file);
     if (!decoded.frames.length) throw new Error('No frames found in this file');
     store.loadDecodedFrames({ fileName: file.name, width: decoded.width, height: decoded.height, frames: decoded.frames });
+    fileRecords.recordFile('animation', file.name, file.size);
   } catch (error) {
     loadError.value = error instanceof Error ? error.message : 'Image decode failed';
   }

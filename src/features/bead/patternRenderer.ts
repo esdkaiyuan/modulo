@@ -10,8 +10,12 @@ export interface RenderOptions {
   showCoordinates: boolean;
   /** Show board boundary lines */
   showBoardLines: boolean;
+  /** Show center crosshair */
+  showCenterCrosshair: boolean;
   /** View mode */
   viewMode: 'colors' | 'symbols' | 'both';
+  /** Show color code labels on each bead */
+  showColorCodes: boolean;
   /** Show legend */
   showLegend: boolean;
   /** Show title */
@@ -23,7 +27,9 @@ const DEFAULT_OPTIONS: RenderOptions = {
   showGrid: true,
   showCoordinates: true,
   showBoardLines: true,
+  showCenterCrosshair: true,
   viewMode: 'colors',
+  showColorCodes: false,
   showLegend: true,
   title: ''
 };
@@ -59,7 +65,7 @@ export function renderPattern(
   // Legend dimensions
   const legendCols = Math.min(4, materials.length);
   const legendRows = Math.ceil(materials.length / legendCols);
-  const legendItemH = 22;
+  const legendItemH = 28;
   const legendPad = 16;
   const legendW = opts.showLegend ? Math.max(gridW, legendCols * 220 + legendPad * 2) : 0;
   const legendH = opts.showLegend ? legendRows * legendItemH + legendPad * 2 + 28 : 0;
@@ -157,38 +163,119 @@ export function renderPattern(
         ctx.shadowBlur = 0;
       }
 
-      // Grid lines
-      if (opts.showGrid && cell >= 6) {
-        ctx.strokeStyle = 'rgba(0,0,0,0.1)';
-        ctx.lineWidth = 0.5;
-        ctx.strokeRect(x + 0.5, y + 0.5, cell - 1, cell - 1);
+      // Color code label
+      if (opts.showColorCodes && cellData.bead) {
+        const shortCode = cellData.bead.code.replace('-', '');
+        const fontSize = Math.max(7, Math.floor(cell * 0.38));
+        ctx.font = 'bold ' + fontSize + 'px "Cascadia Code", "Fira Code", "Segoe UI", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        const cx = x + cell / 2;
+        const cy = y + cell - Math.max(1, Math.floor(cell * 0.08));
+        // Stroke outline for contrast
+        ctx.strokeStyle = 'rgba(0,0,0,0.7)';
+        ctx.lineWidth = Math.max(1, cell * 0.05);
+        ctx.strokeText(shortCode, cx, cy);
+        // White fill
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(shortCode, cx, cy);
       }
+
     }
   }
 
-  // Board boundary lines
+  // ── Grid lines (real board style) ──
+  // Layer 1: fine grid lines between every bead
+  // Layer 2: every 5 beads — medium lines (counting aid)
+  // Layer 3: board boundaries — thick solid lines
+  // Layer 4: center crosshair
+  if (opts.showGrid && cell >= 4) {
+    // Fine grid: every bead
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)';
+    ctx.lineWidth = cell >= 16 ? 0.5 : 0.3;
+    ctx.beginPath();
+    for (let x = 0; x <= width; x++) {
+      const px = coordLeft + x * cell + 0.5;
+      ctx.moveTo(px, offsetY);
+      ctx.lineTo(px, offsetY + gridH);
+    }
+    for (let y = 0; y <= height; y++) {
+      const py = offsetY + y * cell + 0.5;
+      ctx.moveTo(coordLeft, py);
+      ctx.lineTo(coordLeft + gridW, py);
+    }
+    ctx.stroke();
+
+    // Every 5 beads: thicker counting lines
+    if (cell >= 10) {
+      ctx.strokeStyle = 'rgba(0,0,0,0.22)';
+      ctx.lineWidth = cell >= 16 ? 1.2 : 0.8;
+      ctx.beginPath();
+      for (let x = 5; x < width; x += 5) {
+        const px = coordLeft + x * cell + 0.5;
+        ctx.moveTo(px, offsetY);
+        ctx.lineTo(px, offsetY + gridH);
+      }
+      for (let y = 5; y < height; y += 5) {
+        const py = offsetY + y * cell + 0.5;
+        ctx.moveTo(coordLeft, py);
+        ctx.lineTo(coordLeft + gridW, py);
+      }
+      ctx.stroke();
+    }
+  }
+
+  // Board boundary lines (thick, board-sized)
   if (opts.showBoardLines) {
     const bs = pattern.boardSize;
-    ctx.strokeStyle = 'rgba(37, 99, 235, 0.4)';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 4]);
-
     const { cols, rows } = getBoardGrid(width, height, bs);
+
+    // Draw board boundaries as solid thick lines
+    ctx.strokeStyle = 'rgba(15, 23, 42, 0.6)';
+    ctx.lineWidth = cell >= 16 ? 2.5 : 1.5;
+    ctx.beginPath();
     for (let c = 1; c < cols; c++) {
       const x = coordLeft + c * bs * cell + 0.5;
-      ctx.beginPath();
       ctx.moveTo(x, offsetY);
       ctx.lineTo(x, offsetY + gridH);
-      ctx.stroke();
     }
     for (let r = 1; r < rows; r++) {
       const y = offsetY + r * bs * cell + 0.5;
-      ctx.beginPath();
       ctx.moveTo(coordLeft, y);
       ctx.lineTo(coordLeft + gridW, y);
-      ctx.stroke();
     }
-    ctx.setLineDash([]);
+    ctx.stroke();
+
+    // Outer border
+    ctx.strokeStyle = 'rgba(15, 23, 42, 0.7)';
+    ctx.lineWidth = cell >= 16 ? 3 : 2;
+    ctx.strokeRect(coordLeft + 0.5, offsetY + 0.5, gridW - 1, gridH - 1);
+
+    // Center crosshair (if pattern is a single board)
+    if (opts.showCenterCrosshair && width <= bs && height <= bs && cell >= 16) {
+      const cx = coordLeft + (width * cell) / 2;
+      const cy = offsetY + (height * cell) / 2;
+      const crossLen = cell * 0.8;
+
+      ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([3, 2]);
+      ctx.beginPath();
+      // Horizontal center line
+      ctx.moveTo(coordLeft, cy);
+      ctx.lineTo(coordLeft + gridW, cy);
+      // Vertical center line
+      ctx.moveTo(cx, offsetY);
+      ctx.lineTo(cx, offsetY + gridH);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Center dot
+      ctx.fillStyle = 'rgba(239, 68, 68, 0.8)';
+      ctx.beginPath();
+      ctx.arc(cx, cy, Math.max(2, cell * 0.08), 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   // Legend

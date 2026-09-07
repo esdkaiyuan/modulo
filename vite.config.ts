@@ -5,6 +5,10 @@ export default defineConfig({
   plugins: [vue()],
   server: {
     proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:3100',
+        changeOrigin: false
+      },
       // Email verification service blocks cross-origin browser calls, so dev
       // requests go through this proxy. Mirror it in the production reverse
       // proxy (same /mailapi prefix) when deploying.

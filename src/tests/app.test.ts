@@ -1,7 +1,27 @@
-import { describe, expect, it } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { enableAutoUnmount, mount } from '@vue/test-utils';
 import { createPinia } from 'pinia';
 import App from '../App.vue';
+import { locale } from '../i18n';
+
+const TEST_USER = {
+  id: 'u-app-test',
+  username: 'tester',
+  email: 'tester@example.com',
+  passHash: 'unused',
+  salt: 'unused',
+  createdAt: 1
+};
+
+enableAutoUnmount(afterEach);
+
+beforeEach(() => {
+  localStorage.clear();
+  localStorage.setItem('dms-users', JSON.stringify([TEST_USER]));
+  localStorage.setItem('dms-session', TEST_USER.id);
+  locale.value = 'en';
+  window.location.hash = '#/';
+});
 
 function mountAt(hash: string) {
   window.location.hash = hash;
@@ -80,14 +100,15 @@ describe('App', () => {
     expect(wrapper.find('input[type="file"][accept="video/*"]').exists()).toBe(true);
     expect(wrapper.text()).toContain('Re-extract Frames');
     expect(wrapper.text()).toContain('Frame Gallery');
-    expect(wrapper.text()).toContain('Sample FPS');
+    expect(wrapper.text()).toContain('Sample Rate');
   });
 
   it('exposes GIF frame extraction controls with playback', async () => {
     const wrapper = mountAt('#/animation');
     await wrapper.vm.$nextTick();
 
-    expect(wrapper.find('input[type="file"][accept="image/gif"]').exists()).toBe(true);
+    expect(wrapper.find('[data-test="open-gif"]').exists()).toBe(true);
+    expect(wrapper.find('input[type="file"]').exists()).toBe(true);
     expect(wrapper.text()).toContain('Frame Range');
     expect(wrapper.text()).toContain('Sample Step');
   });

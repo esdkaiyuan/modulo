@@ -28,7 +28,7 @@ export interface ExtractedVideoResult {
   frames: ExtractedVideoFrame[];
 }
 
-const DEFAULT_CAPTURE_MAX_EDGE = 640;
+const DEFAULT_CAPTURE_MAX_EDGE = 320;
 // Above this sampling interval (seconds), seeking straight to each sample
 // beats playing the video through, even with the keyframe-rewind cost.
 const SEEK_INTERVAL_THRESHOLD = 2;

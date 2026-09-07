@@ -7,9 +7,11 @@ import EncodingFields from '../components/EncodingFields.vue';
 import SizeModeFields from '../components/SizeModeFields.vue';
 import ColorModeFields from '../components/ColorModeFields.vue';
 import { useVideoModuloStore } from '../features/video/stores/videoModuloStore';
+import { useFileRecordStore } from '../user/fileRecordStore';
 import { t } from '../i18n';
 
 const store = useVideoModuloStore();
+const fileRecords = useFileRecordStore();
 const fileInput = ref<HTMLInputElement | null>(null);
 
 const MAX_THUMBS = 40;
@@ -18,6 +20,12 @@ const hiddenCount = computed(() => Math.max(0, store.processedFrames.length - MA
 const previewScale = computed(() => {
   const max = Math.max(store.targetWidth, store.targetHeight);
   return max <= 64 ? 5 : max <= 128 ? 3 : 2;
+});
+
+const audioProgressPct = computed(() => {
+  const range = store.endTime - store.startTime;
+  if (range <= 0) return 0;
+  return Math.min(100, Math.max(0, ((store.audioPlayTime - store.startTime) / range) * 100));
 });
 
 function pickFile() {
@@ -120,6 +128,61 @@ onBeforeUnmount(() => store.pause());
           <span>{{ t('video.noFrames') }}</span>
         </div>
       </Panel>
+
+      <!-- Audio waveform pixel-art -->
+      <Panel v-if="store.audioModEnabled && store.hasAudioWaveform" :title="t(`video.audioMod`)" class="audio-modo-panel">
+        <div class="audio-playback-bar">
+          <button class="btn sm" @click="store.toggleAudioPlay()">
+            {{ store.audioPlaying ? '⏸' : '▶' }}
+          </button>
+          <input
+            class="audio-seek" :style="{ '--progress': audioProgressPct + '%' }"
+            type="range"
+            :min="store.startTime"
+            :max="store.endTime"
+            step="0.01"
+            :value="store.audioPlayTime"
+            @input="store.seekAudio(Number(($event.target as HTMLInputElement).value))"
+          />
+          <span class="audio-time">
+            {{ formatTime(store.audioPlayTime) }} / {{ formatTime(store.endTime - store.startTime) }}
+          </span>
+        </div>
+        <div class="audio-modo-grid">
+          <div class="audio-modo-section">
+            <div class="audio-modo-label">
+              <span>{{ t('video.waveform') }} Waveform</span>
+              <span class="audio-modo-dims">{{ store.audioWaveformWidth }}×{{ store.audioWaveformHeight }}</span>
+            </div>
+            <div class="audio-modo-canvas">
+              <BitmapCanvas
+                v-if="store.audioWaveformBitmap"
+                :bitmap="store.audioWaveformBitmap"
+                :rgba="store.audioWaveformPreview ?? null"
+                :width="store.audioWaveformWidth"
+                :height="store.audioWaveformHeight"
+                :scale="2"
+              />
+            </div>
+          </div>
+          <div class="audio-modo-section">
+            <div class="audio-modo-label">
+              <span>{{ t('video.spectrum') }} Spectrum</span>
+              <span class="audio-modo-dims">{{ store.audioWaveformWidth }}×{{ store.audioWaveformHeight }}</span>
+            </div>
+            <div class="audio-modo-canvas">
+              <BitmapCanvas
+                v-if="store.audioSpectrumBitmap"
+                :bitmap="store.audioSpectrumBitmap"
+                :rgba="store.audioSpectrumPreview ?? null"
+                :width="store.audioWaveformWidth"
+                :height="store.audioWaveformHeight"
+                :scale="2"
+              />
+            </div>
+          </div>
+        </div>
+      </Panel>
     </div>
 
     <aside class="tool-side">
@@ -190,6 +253,11 @@ onBeforeUnmount(() => store.pause());
 
       <Panel v-if="store.hasAudio" :title="t('video.audioSettings')">
         <div class="field-stack">
+          <div v-if="!store.audioModEnabled" class="audio-mod-enable">
+            <p class="hint">{{ t('video.audioDecoded') }}</p>
+            <button class="btn primary" @click="store.enableAudioMod()">🎵 {{ t('video.genAudioMod') }}</button>
+          </div>
+          <div v-if="store.audioModEnabled">
           <div class="field-row">
             <label class="field">
               <span>{{ t('video.audioSampleRate') }}</span>
@@ -224,10 +292,22 @@ onBeforeUnmount(() => store.pause());
             <input v-model.number="store.audioGain" type="range" min="0" max="3" step="0.1" />
           </div>
           <label class="check"><input v-model="store.audioNormalize" type="checkbox" /> {{ t('video.audioNormalize') }}</label>
+          <div class="field-row">
+            <label class="field">
+              <span>{{ t('video.visualMode') }}</span>
+              <select v-model="store.audioVisualMode">
+                <option value="waveform">{{ t('video.waveform') }}</option>
+                <option value="spectrum">{{ t('video.spectrum') }}</option>
+                <option value="both">{{ t('video.both') }}</option>
+              </select>
+            </label>
+          </div>
+          <label class="check"><input v-model="store.audioPcmInOutput" type="checkbox" /> {{ t('video.includePcm') }}</label>
           <div class="stat-list">
             <div class="stat-row"><span>{{ t('video.audioSamples') }}</span><b>{{ store.audioSampleCount.toLocaleString() }}</b></div>
             <div class="stat-row"><span>{{ t('video.audioDuration') }}</span><b>{{ store.audioDuration.toFixed(3) }} s</b></div>
             <div class="stat-row"><span>{{ t('video.audioPeak') }}</span><b>{{ (store.audioPeak * 100).toFixed(1) }}%</b></div>
+          </div>
           </div>
         </div>
       </Panel>

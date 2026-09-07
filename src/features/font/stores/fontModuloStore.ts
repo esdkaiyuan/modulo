@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { computed, ref, watch } from 'vue';
+import { computed, onScopeDispose, ref, watch } from 'vue';
 import { encodeBitmap, type BitOrder, type Polarity, type ScanDirection } from '../../../engines/bitmapEncoder';
 import { fontImageDataToBitmap, makeFontIdentifier, renderTextToBitmap, renderTextToImageData } from '../../../engines/fontRenderer';
 import { processImageDataToColor, type ColorByteOrder, type ColorMode } from '../../../engines/colorProcessor';
@@ -168,6 +168,11 @@ export const useFontModuloStore = defineStore('fontModulo', () => {
       }, 120);
     }
   );
+
+  onScopeDispose(() => {
+    if (generateTimer) clearTimeout(generateTimer);
+    generateTimer = null;
+  });
 
   const outputFileName = computed(() => `${outputName.value}.h`);
 

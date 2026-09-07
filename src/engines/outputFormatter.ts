@@ -77,7 +77,7 @@ export function formatPalette16Array(palette: Uint8Array, indices: Uint8Array, o
     `  ${paletteColors.join(', ')}`,
     `};`,
     ``,
-    `// Pixel indices:`,
+    `// 像素索引 / Pixel indices:`,
     `const uint8_t ${name}[] PROGMEM = {`
   ];
 
@@ -121,9 +121,9 @@ export function colorValueChunks(bytes: Uint8Array, format: ColorFormat, byteOrd
 }
 
 const COLOR_COMMENTS: Record<ColorFormat, string> = {
-  rgb565: 'RGB565 (16-bit color)',
-  rgb888: 'RGB888 (24-bit color, R G B byte order)',
-  rgb332: 'RGB332 (8-bit color)',
+  rgb565: 'RGB565 16位色 / 16-bit color',
+  rgb888: 'RGB888 24位色 / 24-bit color (R G B byte order)',
+  rgb332: 'RGB332 8位色 / 8-bit color',
   palette16: '16-color palette (RGB565 palette + 8-bit indices)'
 };
 
@@ -134,7 +134,7 @@ export function formatColorArray(bytes: Uint8Array, format: ColorFormat, options
   const elementType = format === 'rgb565' ? 'uint16_t' : 'uint8_t';
   const lines = [
     `// Resolution: ${options.width}x${options.height}, ${COLOR_COMMENTS[format]}`,
-    `// ${COLOR_FORMAT_INFO[format].bytesPerPixel} byte(s)/pixel, byte order: ${format === 'rgb565' || format === 'palette16' ? byteOrder + '-endian' : 'n/a'}`
+    `// 每像素字节数 / Bytes per pixel: ${COLOR_FORMAT_INFO[format].bytesPerPixel}, 字节序 / Byte order: ${format === 'rgb565' || format === 'palette16' ? byteOrder + '-endian' : 'n/a'}`
   ];
 
   if (format === 'palette16') {

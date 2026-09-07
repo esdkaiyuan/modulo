@@ -4,9 +4,11 @@ import Panel from '../components/Panel.vue';
 import CodeOutput from '../components/CodeOutput.vue';
 import { waveformEnvelope, SAMPLE_RATES } from '../engines/audioProcessor';
 import { useAudioModuloStore } from '../features/audio/stores/audioModuloStore';
+import { useFileRecordStore } from '../user/fileRecordStore';
 import { t } from '../i18n';
 
 const store = useAudioModuloStore();
+const fileRecords = useFileRecordStore();
 const fileInput = ref<HTMLInputElement | null>(null);
 const waveCanvas = ref<HTMLCanvasElement | null>(null);
 

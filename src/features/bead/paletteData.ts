@@ -1,30 +1,31 @@
 import type { BeadBrand, BeadColor } from './types';
 
 // ── Symbols assigned to colors for symbol-view mode ──
+// Standard: A-Z letters for first 26, then A1/B1 etc.
 const SYMBOLS = [
-  '●', '■', '▲', '◆', '★', '◎', '⬟', '⬡',
-  '♦', '♠', '♣', '♥', '◐', '◑', '◒', '◓',
-  '▸', '▹', '▻', '▻', '◀', '▶', '▽', '△',
-  '□', '○', '△', '☆', '⊕', '⊗', '⊙', '⊚',
-  '◉', '◎', '◌', '◍', '◐', '◑', '◒', '◓',
-  '⊕', '⊖', '⊘', '⊙', '⊚', '⊛', '⊜', '⊝',
-  '❶', '❷', '❸', '❹', '❺', '❻', '❼', '❽',
-  '❾', '❿', '⓫', '⓬', '⓭', '⓮', '⓯', '⓰',
   'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
   'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
   'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
-  'Y', 'Z', '0', '1', '2', '3', '4', '5',
-  '6', '7', '8', '9', '+', '-', '=', '*', '/', '\\',
-  'α', 'β', 'γ', 'δ', 'ε', 'ζ', 'η', 'θ',
-  'ι', 'κ', 'λ', 'μ', 'ν', 'ξ', 'π', 'ρ',
-  'σ', 'τ', 'υ', 'φ', 'χ', 'ψ', 'ω'
+  'Y', 'Z',
+  'A1', 'B1', 'C1', 'D1', 'E1', 'F1', 'G1', 'H1',
+  'I1', 'J1', 'K1', 'L1', 'M1', 'N1', 'O1', 'P1',
+  'Q1', 'R1', 'S1', 'T1', 'U1', 'V1', 'W1', 'X1',
+  'Y1', 'Z1',
+  'A2', 'B2', 'C2', 'D2', 'E2', 'F2', 'G2', 'H2',
+  'I2', 'J2', 'K2', 'L2', 'M2', 'N2', 'O2', 'P2',
+  'Q2', 'R2', 'S2', 'T2', 'U2', 'V2', 'W2', 'X2',
+  'Y2', 'Z2',
+  'A3', 'B3', 'C3', 'D3', 'E3', 'F3', 'G3', 'H3',
+  'I3', 'J3', 'K3', 'L3', 'M3', 'N3', 'O3', 'P3',
+  'Q3', 'R3', 'S3', 'T3', 'U3', 'V3', 'W3', 'X3',
+  'Y3', 'Z3'
 ];
 
 export function getSymbol(index: number): string {
   return SYMBOLS[index % SYMBOLS.length];
 }
 
-function bc(code: string, name: string, hex: string, finish?: string): BeadColor {
+function bc(code: string, name: string, hex: string, finish: BeadColor['finish'] = 'opaque', category?: string): BeadColor {
   const value = parseInt(hex.slice(1), 16);
   return {
     code,
@@ -33,228 +34,324 @@ function bc(code: string, name: string, hex: string, finish?: string): BeadColor
     r: (value >> 16) & 0xff,
     g: (value >> 8) & 0xff,
     b: value & 0xff,
-    finish
+    finish,
+    category
   };
 }
 
-// ── Artkal S Series (Solid / Opaque) ──
+// ────────────────────────────────────────────────────────────────────
+// MARD Standard 221-Color System (主流 221 色体系)
+// A/B: 基础色系 | C: 蓝色系 | D: 绿色系 | E: 粉色系
+// F: 黄/橙色系 | G: 棕/灰色系 | H: 白/黑/透明 | M: 特殊色系
+// ────────────────────────────────────────────────────────────────────
+
+// ── A 系列：基础色系 (红色/深红/酒红等基础色) ──
+const seriesA = [
+  bc('A1', '大红 Red', '#E53935', 'opaque', 'A系列-基础红'),
+  bc('A2', '朱红 Vermilion', '#FF6B35', 'opaque', 'A系列-基础红'),
+  bc('A3', '橙红 Orange-Red', '#FF5722', 'opaque', 'A系列-基础红'),
+  bc('A4', '深红 Dark Red', '#B71C1C', 'opaque', 'A系列-基础红'),
+  bc('A5', '酒红 Wine Red', '#880E4F', 'opaque', 'A系列-基础红'),
+  bc('A6', '玫瑰红 Rose Red', '#C2185B', 'opaque', 'A系列-基础红'),
+  bc('A7', '西瓜红 Watermelon', '#F06292', 'opaque', 'A系列-基础红'),
+  bc('A8', '品红 Magenta', '#D81B60', 'opaque', 'A系列-基础红'),
+  bc('A9', '桃红 Peach Blossom', '#F48FB1', 'opaque', 'A系列-基础红'),
+  bc('A10', '浅红 Light Red', '#EF5350', 'opaque', 'A系列-基础红'),
+  bc('A11', '肉粉 Flesh Pink', '#FFCCBC', 'opaque', 'A系列-基础红'),
+  bc('A12', '珊瑚红 Coral', '#FF7043', 'opaque', 'A系列-基础红'),
+  bc('A13', '铁锈红 Rust', '#BF360C', 'opaque', 'A系列-基础红'),
+  bc('A14', '樱桃红 Cherry', '#C62828', 'opaque', 'A系列-基础红'),
+  bc('A15', '草莓红 Strawberry', '#E91E63', 'opaque', 'A系列-基础红'),
+  bc('A16', '树莓 Raspberry', '#AD1457', 'opaque', 'A系列-基础红'),
+  bc('A17', '枣红 Date Red', '#7F0000', 'opaque', 'A系列-基础红'),
+  bc('A18', '粉红 Pink', '#F8BBD0', 'opaque', 'A系列-基础红'),
+  bc('A19', '浅粉 Light Pink', '#FCE4EC', 'opaque', 'A系列-基础红'),
+  bc('A20', '胭脂红 Carmine', '#9B1B30', 'opaque', 'A系列-基础红'),
+];
+
+// ── B 系列：基础色系 (紫色/蓝色基础色) ──
+const seriesB = [
+  bc('B1', '紫罗兰 Violet', '#7B1FA2', 'opaque', 'B系列-紫色'),
+  bc('B2', '紫色 Purple', '#9C27B0', 'opaque', 'B系列-紫色'),
+  bc('B3', '浅紫 Light Purple', '#CE93D8', 'opaque', 'B系列-紫色'),
+  bc('B4', '深紫 Dark Purple', '#6A1B9A', 'opaque', 'B系列-紫色'),
+  bc('B5', '薰衣草 Lavender', '#B39DDB', 'opaque', 'B系列-紫色'),
+  bc('B6', '淡紫 Pastel Purple', '#E1BEE7', 'opaque', 'B系列-紫色'),
+  bc('B7', '葡萄紫 Grape', '#6F2DA8', 'opaque', 'B系列-紫色'),
+  bc('B8', '梅子色 Plum', '#8E4585', 'opaque', 'B系列-紫色'),
+  bc('B9', '茄子紫 Eggplant', '#4A148C', 'opaque', 'B系列-紫色'),
+  bc('B10', '靛蓝 Indigo', '#283593', 'opaque', 'B系列-紫色'),
+  bc('B11', '蓝紫 Blue-Violet', '#512DA8', 'opaque', 'B系列-紫色'),
+  bc('B12', '粉紫 Pink-Purple', '#CE93D8', 'opaque', 'B系列-紫色'),
+  bc('B13', '桑葚 Mulberry', '#AD1457', 'opaque', 'B系列-紫色'),
+  bc('B14', '绀紫 Dark Violet', '#311B92', 'opaque', 'B系列-紫色'),
+  bc('B15', '浅薰衣草 Light Lavender', '#D1C4E9', 'opaque', 'B系列-紫色'),
+  bc('B16', '紫红色 Fuchsia', '#E040FB', 'opaque', 'B系列-紫色'),
+  bc('B17', '玫红 Rose', '#EC407A', 'opaque', 'B系列-紫色'),
+  bc('B18', '丁香 Lilac', '#B39DDB', 'opaque', 'B系列-紫色'),
+];
+
+// ── C 系列：蓝色系 ──
+const seriesC = [
+  bc('C1', '深蓝 Dark Blue', '#0D47A1', 'opaque', 'C系列-蓝色'),
+  bc('C2', '宝蓝 Royal Blue', '#1565C0', 'opaque', 'C系列-蓝色'),
+  bc('C3', '蓝色 Blue', '#1E88E5', 'opaque', 'C系列-蓝色'),
+  bc('C4', '浅蓝 Light Blue', '#64B5F6', 'opaque', 'C系列-蓝色'),
+  bc('C5', '天蓝 Sky Blue', '#4FC3F7', 'opaque', 'C系列-蓝色'),
+  bc('C6', '淡蓝 Pastel Blue', '#BBDEFB', 'opaque', 'C系列-蓝色'),
+  bc('C7', '藏青 Navy', '#0A2463', 'opaque', 'C系列-蓝色'),
+  bc('C8', '午夜蓝 Midnight Blue', '#1A237E', 'opaque', 'C系列-蓝色'),
+  bc('C9', '钴蓝 Cobalt Blue', '#1976D2', 'opaque', 'C系列-蓝色'),
+  bc('C10', '湖蓝 Lake Blue', '#0288D1', 'opaque', 'C系列-蓝色'),
+  bc('C11', '孔雀蓝 Peacock Blue', '#0097A7', 'opaque', 'C系列-蓝色'),
+  bc('C12', '粉蓝 Baby Blue', '#B3E5FC', 'opaque', 'C系列-蓝色'),
+  bc('C13', '冰蓝 Ice Blue', '#E1F5FE', 'opaque', 'C系列-蓝色'),
+  bc('C14', '钢蓝 Steel Blue', '#5472D3', 'opaque', 'C系列-蓝色'),
+  bc('C15', '海军蓝 Navy Blue', '#002B5C', 'opaque', 'C系列-蓝色'),
+  bc('C16', '蔚蓝 Azure', '#0078D7', 'opaque', 'C系列-蓝色'),
+  bc('C17', '浅天蓝 Light Sky Blue', '#81D4FA', 'opaque', 'C系列-蓝色'),
+  bc('C18', '蓝灰 Blue Gray', '#5C6BC0', 'opaque', 'C系列-蓝色'),
+  bc('C19', '长春花 Periwinkle', '#9FA8DA', 'opaque', 'C系列-蓝色'),
+  bc('C20', '荧光蓝 Fluorescent Blue', '#00BFFF', 'glow', 'C系列-蓝色'),
+  bc('C21', '普鲁士蓝 Prussian Blue', '#1A365D', 'opaque', 'C系列-蓝色'),
+  bc('C22', '宝石蓝 Sapphire', '#0F4C81', 'opaque', 'C系列-蓝色'),
+  bc('C23', '青蓝 Cyan-Blue', '#00ACC1', 'opaque', 'C系列-蓝色'),
+  bc('C24', '冰川蓝 Glacier Blue', '#B3E5FC', 'opaque', 'C系列-蓝色'),
+  bc('C25', '北极蓝 Arctic Blue', '#81D4FA', 'opaque', 'C系列-蓝色'),
+];
+
+// ── D 系列：绿色系 ──
+const seriesD = [
+  bc('D1', '深绿 Dark Green', '#1B5E20', 'opaque', 'D系列-绿色'),
+  bc('D2', '绿色 Green', '#43A047', 'opaque', 'D系列-绿色'),
+  bc('D3', '浅绿 Light Green', '#81C784', 'opaque', 'D系列-绿色'),
+  bc('D4', '翠绿 Emerald Green', '#2E7D32', 'opaque', 'D系列-绿色'),
+  bc('D5', '草绿 Grass Green', '#7CB342', 'opaque', 'D系列-绿色'),
+  bc('D6', '黄绿 Yellow-Green', '#9CCC65', 'opaque', 'D系列-绿色'),
+  bc('D7', '薄荷绿 Mint Green', '#80CBC4', 'opaque', 'D系列-绿色'),
+  bc('D8', '青绿 Teal', '#00897B', 'opaque', 'D系列-绿色'),
+  bc('D9', '橄榄绿 Olive', '#827717', 'opaque', 'D系列-绿色'),
+  bc('D10', '淡绿 Pastel Green', '#C8E6C9', 'opaque', 'D系列-绿色'),
+  bc('D11', '森林绿 Forest Green', '#2E7D32', 'opaque', 'D系列-绿色'),
+  bc('D12', '青柠 Lime', '#8BC34A', 'opaque', 'D系列-绿色'),
+  bc('D13', '抹茶绿 Matcha', '#AED581', 'opaque', 'D系列-绿色'),
+  bc('D14', '翡翠 Jade', '#00897B', 'opaque', 'D系列-绿色'),
+  bc('D15', '墨绿 Ink Green', '#1B5E20', 'opaque', 'D系列-绿色'),
+  bc('D16', '苹果绿 Apple Green', '#AED581', 'opaque', 'D系列-绿色'),
+  bc('D17', '豆绿 Bean Green', '#C5E1A5', 'opaque', 'D系列-绿色'),
+  bc('D18', '军绿 Army Green', '#33691E', 'opaque', 'D系列-绿色'),
+  bc('D19', '苔藓绿 Moss Green', '#556B2F', 'opaque', 'D系列-绿色'),
+  bc('D20', '荧光绿 Fluorescent Green', '#76FF03', 'glow', 'D系列-绿色'),
+  bc('D21', '浅青绿 Light Teal', '#26A69A', 'opaque', 'D系列-绿色'),
+  bc('D22', '松柏绿 Pine Green', '#1B5E20', 'opaque', 'D系列-绿色'),
+  bc('D23', '绿松 Turquoise', '#26C6DA', 'opaque', 'D系列-绿色'),
+  bc('D24', '薄荷 Mint', '#A5D6A7', 'opaque', 'D系列-绿色'),
+  bc('D25', '蓝绿 Blue-Green', '#0097A7', 'opaque', 'D系列-绿色'),
+  bc('D26', '嫩绿 Tender Green', '#CCFF90', 'opaque', 'D系列-绿色'),
+];
+
+// ── E 系列：粉色系 ──
+const seriesE = [
+  bc('E1', '深粉 Dark Pink', '#C2185B', 'opaque', 'E系列-粉色'),
+  bc('E2', '桃红 Peach', '#FFCDD2', 'opaque', 'E系列-粉色'),
+  bc('E3', '樱花粉 Sakura', '#FCE4EC', 'opaque', 'E系列-粉色'),
+  bc('E4', '豆沙 Pink Brown', '#BCAAA4', 'opaque', 'E系列-粉色'),
+  bc('E5', '玫红 Rose Red', '#E91E63', 'opaque', 'E系列-粉色'),
+  bc('E6', '珊瑚粉 Coral Pink', '#FF8A80', 'opaque', 'E系列-粉色'),
+  bc('E7', '鲑鱼粉 Salmon', '#FA8072', 'opaque', 'E系列-粉色'),
+  bc('E8', '泡泡糖粉 Bubblegum', '#FF69B4', 'opaque', 'E系列-粉色'),
+  bc('E9', '水蜜桃 Peach', '#FFCCBC', 'opaque', 'E系列-粉色'),
+  bc('E10', '淡粉 Baby Pink', '#F8BBD0', 'opaque', 'E系列-粉色'),
+  bc('E11', '亮粉 Hot Pink', '#FF1493', 'opaque', 'E系列-粉色'),
+  bc('E12', '浅粉 Light Pink', '#FCE4EC', 'opaque', 'E系列-粉色'),
+  bc('E13', '樱花 Cherry Blossom', '#FFB7C5', 'opaque', 'E系列-粉色'),
+  bc('E14', '杏色 Apricot', '#FFDAB9', 'opaque', 'E系列-粉色'),
+  bc('E15', '粉橘 Pink-Orange', '#FFAB91', 'opaque', 'E系列-粉色'),
+  bc('E16', '芙蓉粉 Hibiscus', '#FF80AB', 'opaque', 'E系列-粉色'),
+  bc('E17', '糖霜粉 Frosting', '#F8BBD0', 'opaque', 'E系列-粉色'),
+  bc('E18', '玫瑰 Rose', '#F48FB1', 'opaque', 'E系列-粉色'),
+  bc('E19', '洋红 Magenta', '#D81B60', 'opaque', 'E系列-粉色'),
+  bc('E20', '粉紫 Pink-Purple', '#F48FB1', 'opaque', 'E系列-粉色'),
+  bc('E21', '肤粉色 Skin Pink', '#FFCBA4', 'opaque', 'E系列-粉色'),
+  bc('E22', '胭脂 Rouge', '#C2185B', 'opaque', 'E系列-粉色'),
+  bc('E23', '莓果 Berry', '#AD1457', 'opaque', 'E系列-粉色'),
+  bc('E24', '糖果粉 Candy Pink', '#F48FB1', 'opaque', 'E系列-粉色'),
+  bc('E25', '樱花浅粉 Light Sakura', '#FFE0E6', 'opaque', 'E系列-粉色'),
+];
+
+// ── F 系列：黄色/橙色系 ──
+const seriesF = [
+  bc('F1', '柠檬黄 Lemon Yellow', '#FFEB3B', 'opaque', 'F系列-黄橙'),
+  bc('F2', '中黄 Medium Yellow', '#FFD600', 'opaque', 'F系列-黄橙'),
+  bc('F3', '深黄 Deep Yellow', '#FFAB00', 'opaque', 'F系列-黄橙'),
+  bc('F4', '奶黄 Cream Yellow', '#FFF8E1', 'opaque', 'F系列-黄橙'),
+  bc('F5', '鹅黄 Light Yellow', '#FFF9C4', 'opaque', 'F系列-黄橙'),
+  bc('F6', '橙 Orange', '#FF9100', 'opaque', 'F系列-黄橙'),
+  bc('F7', '深橙 Dark Orange', '#E65100', 'opaque', 'F系列-黄橙'),
+  bc('F8', '浅橙 Light Orange', '#FFB74D', 'opaque', 'F系列-黄橙'),
+  bc('F9', '金黄 Golden Yellow', '#FFD700', 'opaque', 'F系列-黄橙'),
+  bc('F10', '土黄 Earth Yellow', '#D4A017', 'opaque', 'F系列-黄橙'),
+  bc('F11', '芥末黄 Mustard', '#F9A825', 'opaque', 'F系列-黄橙'),
+  bc('F12', '橘红 Tangerine', '#FF6D00', 'opaque', 'F系列-黄橙'),
+  bc('F13', '蜂蜜色 Honey', '#FFB300', 'opaque', 'F系列-黄橙'),
+  bc('F14', '玉米黄 Corn Yellow', '#FFEB3B', 'opaque', 'F系列-黄橙'),
+  bc('F15', '米黄 Beige Yellow', '#FFF8E1', 'opaque', 'F系列-黄橙'),
+  bc('F16', '杏黄 Apricot Yellow', '#FFCC80', 'opaque', 'F系列-黄橙'),
+  bc('F17', '琥珀色 Amber', '#FF8F00', 'opaque', 'F系列-黄橙'),
+  bc('F18', '南瓜橙 Pumpkin', '#E65100', 'opaque', 'F系列-黄橙'),
+  bc('F19', '姜黄 Ginger', '#F57F17', 'opaque', 'F系列-黄橙'),
+  bc('F20', '荧光黄 Fluorescent Yellow', '#FFEA00', 'glow', 'F系列-黄橙'),
+  bc('F21', '米白 Off-White', '#FAFAD2', 'opaque', 'F系列-黄橙'),
+  bc('F22', '奶油 Cream', '#FFFDD0', 'opaque', 'F系列-黄橙'),
+  bc('F23', '芒果黄 Mango', '#FFA726', 'opaque', 'F系列-黄橙'),
+  bc('F24', '菠萝 Pineapple', '#FFD54F', 'opaque', 'F系列-黄橙'),
+  bc('F25', '柠檬绿 Lemon Lime', '#C6FF00', 'opaque', 'F系列-黄橙'),
+  bc('F26', '淡黄 Pastel Yellow', '#FFF9C4', 'opaque', 'F系列-黄橙'),
+];
+
+// ── G 系列：棕色/灰色系 ──
+const seriesG = [
+  bc('G1', '深棕 Dark Brown', '#3E2723', 'opaque', 'G系列-棕灰'),
+  bc('G2', '棕色 Brown', '#6D4C41', 'opaque', 'G系列-棕灰'),
+  bc('G3', '浅棕 Light Brown', '#8D6E63', 'opaque', 'G系列-棕灰'),
+  bc('G4', '咖啡 Coffee', '#4E342E', 'opaque', 'G系列-棕灰'),
+  bc('G5', '巧克力 Chocolate', '#5D4037', 'opaque', 'G系列-棕灰'),
+  bc('G6', '驼色 Camel', '#B8860B', 'opaque', 'G系列-棕灰'),
+  bc('G7', '卡其 Khaki', '#C3B091', 'opaque', 'G系列-棕灰'),
+  bc('G8', '米色 Beige', '#D7CCC8', 'opaque', 'G系列-棕灰'),
+  bc('G9', '沙色 Sand', '#E6CEA0', 'opaque', 'G系列-棕灰'),
+  bc('G10', '浅灰 Light Gray', '#E0E0E0', 'opaque', 'G系列-棕灰'),
+  bc('G11', '灰色 Gray', '#9E9E9E', 'opaque', 'G系列-棕灰'),
+  bc('G12', '深灰 Dark Gray', '#616161', 'opaque', 'G系列-棕灰'),
+  bc('G13', '炭灰 Charcoal', '#424242', 'opaque', 'G系列-棕灰'),
+  bc('G14', '银灰 Silver Gray', '#BDBDBD', 'opaque', 'G系列-棕灰'),
+  bc('G15', '烟灰 Ash Gray', '#757575', 'opaque', 'G系列-棕灰'),
+  bc('G16', '棕褐 Tan', '#A1887F', 'opaque', 'G系列-棕灰'),
+  bc('G17', '古铜 Bronze', '#CD7F32', 'opaque', 'G系列-棕灰'),
+  bc('G18', '红棕 Red Brown', '#795548', 'opaque', 'G系列-棕灰'),
+  bc('G19', '黄棕 Yellow Brown', '#8D6E63', 'opaque', 'G系列-棕灰'),
+  bc('G20', '灰蓝 Gray-Blue', '#78909C', 'opaque', 'G系列-棕灰'),
+  bc('G21', '暖棕 Warm Brown', '#795548', 'opaque', 'G系列-棕灰'),
+  bc('G22', '冷棕 Cool Brown', '#6D4C41', 'opaque', 'G系列-棕灰'),
+  bc('G23', '铁灰 Iron Gray', '#78909C', 'opaque', 'G系列-棕灰'),
+  bc('G24', '米驼 Rice', '#D7CCC8', 'opaque', 'G系列-棕灰'),
+  bc('G25', '可可色 Cocoa', '#5D4037', 'opaque', 'G系列-棕灰'),
+  bc('G26', '灰绿 Gray-Green', '#88A0A8', 'opaque', 'G系列-棕灰'),
+  bc('G27', '奶咖 Latte', '#BCAAA4', 'opaque', 'G系列-棕灰'),
+  bc('G28', '棕红 Brown-Red', '#6D4C41', 'opaque', 'G系列-棕灰'),
+  bc('G29', '浅米 Light Beige', '#EFEBE9', 'opaque', 'G系列-棕灰'),
+  bc('G30', '深炭 Dark Charcoal', '#303030', 'opaque', 'G系列-棕灰'),
+];
+
+// ── H 系列：白色/黑色/透明色 ──
+const seriesH = [
+  bc('H1', '白色 White', '#FFFFFF', 'opaque', 'H系列-白黑透明'),
+  bc('H2', '黑色 Black', '#212121', 'opaque', 'H系列-白黑透明'),
+  bc('H3', '米白 Cream White', '#FFF8E1', 'opaque', 'H系列-白黑透明'),
+  bc('H4', '灰白 Off-White', '#F5F5F5', 'opaque', 'H系列-白黑透明'),
+  bc('H5', '纯白 Pure White', '#FFFFFF', 'opaque', 'H系列-白黑透明'),
+  bc('H6', '乳白 Milky White', '#FFFAF0', 'opaque', 'H系列-白黑透明'),
+  bc('H7', '透明白 Transparent White', '#F5F5F5', 'translucent', 'H系列-白黑透明'),
+  bc('H8', '透明黑 Transparent Black', '#37474F', 'translucent', 'H系列-白黑透明'),
+  bc('H9', '透明红 Transparent Red', '#EF5350', 'translucent', 'H系列-白黑透明'),
+  bc('H10', '透明蓝 Transparent Blue', '#42A5F5', 'translucent', 'H系列-白黑透明'),
+  bc('H11', '透明绿 Transparent Green', '#66BB6A', 'translucent', 'H系列-白黑透明'),
+  bc('H12', '透明黄 Transparent Yellow', '#FFEB3B', 'translucent', 'H系列-白黑透明'),
+  bc('H13', '透明粉 Transparent Pink', '#F48FB1', 'translucent', 'H系列-白黑透明'),
+  bc('H14', '透明紫 Transparent Purple', '#AB47BC', 'translucent', 'H系列-白黑透明'),
+  bc('H15', '透明橙 Transparent Orange', '#FFA726', 'translucent', 'H系列-白黑透明'),
+  bc('H16', '透明灰 Transparent Gray', '#B0BEC5', 'translucent', 'H系列-白黑透明'),
+  bc('H17', '夜光 Glow in Dark', '#E8F5E9', 'glow', 'H系列-白黑透明'),
+  bc('H18', '荧光粉 Glow Pink', '#FF80AB', 'glow', 'H系列-白黑透明'),
+  bc('H19', '荧光黄 Glow Yellow', '#FFFF00', 'glow', 'H系列-白黑透明'),
+  bc('H20', '荧光绿 Glow Green', '#00FF00', 'glow', 'H系列-白黑透明'),
+  bc('H21', '透明青 Transparent Cyan', '#4DD0E1', 'translucent', 'H系列-白黑透明'),
+  bc('H22', '透明棕 Transparent Brown', '#8D6E63', 'translucent', 'H系列-白黑透明'),
+];
+
+// ── M 系列：特殊色系 (金属/闪粉/夜光等) ──
+const seriesM = [
+  bc('M1', '金色 Gold', '#FFD700', 'metallic', 'M系列-特殊'),
+  bc('M2', '银色 Silver', '#C0C0C0', 'metallic', 'M系列-特殊'),
+  bc('M3', '铜色 Copper', '#B87333', 'metallic', 'M系列-特殊'),
+  bc('M4', '玫瑰金 Rose Gold', '#B76E79', 'metallic', 'M系列-特殊'),
+  bc('M5', '彩虹 Rainbow', '#FFFFFF', 'special', 'M系列-特殊'),
+  bc('M6', '荧光红 Fluorescent Red', '#FF1744', 'glow', 'M系列-特殊'),
+  bc('M7', '荧光蓝 Fluorescent Blue', '#00B0FF', 'glow', 'M系列-特殊'),
+  bc('M8', '荧光绿 Fluorescent Green', '#76FF03', 'glow', 'M系列-特殊'),
+  bc('M9', '荧光粉 Fluorescent Pink', '#F06292', 'glow', 'M系列-特殊'),
+  bc('M10', '夜光黄 Glow Yellow', '#FFF59D', 'glow', 'M系列-特殊'),
+  bc('M11', '夜光绿 Glow Green', '#C5E1A5', 'glow', 'M系列-特殊'),
+  bc('M12', '闪粉银 Glitter Silver', '#E0E0E0', 'glitter', 'M系列-特殊'),
+  bc('M13', '闪粉金 Glitter Gold', '#FFD54F', 'glitter', 'M系列-特殊'),
+  bc('M14', '马卡龙粉 Macaron Pink', '#FFCDD2', 'opaque', 'M系列-特殊'),
+  bc('M15', '马卡龙蓝 Macaron Blue', '#BBDEFB', 'opaque', 'M系列-特殊'),
+  bc('M16', '马卡龙绿 Macaron Green', '#C8E6C9', 'opaque', 'M系列-特殊'),
+  bc('M17', '马卡龙黄 Macaron Yellow', '#FFF9C4', 'opaque', 'M系列-特殊'),
+  bc('M18', '马卡龙紫 Macaron Purple', '#E1BEE7', 'opaque', 'M系列-特殊'),
+  bc('M19', '肤色 Flesh', '#FFCBA4', 'opaque', 'M系列-特殊'),
+  bc('M20', '浅肤色 Light Flesh', '#FFE0B2', 'opaque', 'M系列-特殊'),
+  bc('M21', '深肤色 Dark Flesh', '#D7A77A', 'opaque', 'M系列-特殊'),
+  bc('M22', '大理石 Marble', '#ECEFF1', 'special', 'M系列-特殊'),
+];
+
+// ── 汇总: MARD 221色体系 ──
+const mard221 = [
+  ...seriesA, ...seriesB, ...seriesC, ...seriesD,
+  ...seriesE, ...seriesF, ...seriesG, ...seriesH,
+  ...seriesM
+];
+
+const mardBrand: BeadBrand = {
+  id: 'mard-standard',
+  name: 'MARD 主流221色 (A-H-M系列)',
+  defaultBoardSize: 29,
+  colors: mard221
+};
+
+// ──────────────────────────────────────────────────────────
+// Artkal S Series (实色) - 兼容主流色号
+// ──────────────────────────────────────────────────────────
 const artkalS: BeadBrand = {
   id: 'artkal-s',
-  name: 'Artkal S (实色)',
+  name: 'Artkal S 实色系列',
   defaultBoardSize: 29,
-  colors: [
-    bc('S-01', 'White', '#FFFFFF', 'opaque'),
-    bc('S-02', 'Cream', '#FFF8E1', 'opaque'),
-    bc('S-03', 'Yellow', '#FFD600', 'opaque'),
-    bc('S-04', 'Orange', '#FF9100', 'opaque'),
-    bc('S-05', 'Red', '#E53935', 'opaque'),
-    bc('S-06', 'Pink', '#F48FB1', 'opaque'),
-    bc('S-07', 'Purple', '#7B1FA2', 'opaque'),
-    bc('S-08', 'Blue', '#1E88E5', 'opaque'),
-    bc('S-09', 'Sky Blue', '#4FC3F7', 'opaque'),
-    bc('S-10', 'Green', '#43A047', 'opaque'),
-    bc('S-11', 'Lime', '#8BC34A', 'opaque'),
-    bc('S-12', 'Brown', '#6D4C41', 'opaque'),
-    bc('S-13', 'Black', '#212121', 'opaque'),
-    bc('S-14', 'Gray', '#9E9E9E', 'opaque'),
-    bc('S-15', 'Light Gray', '#BDBDBD', 'opaque'),
-    bc('S-16', 'Dark Blue', '#1565C0', 'opaque'),
-    bc('S-17', 'Dark Green', '#2E7D32', 'opaque'),
-    bc('S-18', 'Dark Red', '#B71C1C', 'opaque'),
-    bc('S-19', 'Peach', '#FFCCBC', 'opaque'),
-    bc('S-20', 'Light Pink', '#F8BBD0', 'opaque'),
-    bc('S-21', 'Beige', '#D7CCC8', 'opaque'),
-    bc('S-22', 'Tan', '#A1887F', 'opaque'),
-    bc('S-23', 'Dark Brown', '#4E342E', 'opaque'),
-    bc('S-24', 'Light Blue', '#81D4FA', 'opaque'),
-    bc('S-25', 'Turquoise', '#26C6DA', 'opaque'),
-    bc('S-26', 'Mint', '#80CBC4', 'opaque'),
-    bc('S-27', 'Light Green', '#A5D6A7', 'opaque'),
-    bc('S-28', 'Olive', '#9E9D24', 'opaque'),
-    bc('S-29', 'Grape', '#CE93D8', 'opaque'),
-    bc('S-30', 'Magenta', '#EC407A', 'opaque'),
-    bc('S-31', 'Coral', '#FF7043', 'opaque'),
-    bc('S-32', 'Salmon', '#FF8A65', 'opaque'),
-    bc('S-33', 'Rust', '#BF360C', 'opaque'),
-    bc('S-34', 'Sand', '#E6CEA0', 'opaque'),
-    bc('S-35', 'Cherry', '#C62828', 'opaque'),
-    bc('S-36', 'Lavender', '#B39DDB', 'opaque'),
-    bc('S-37', 'Teal', '#00897B', 'opaque'),
-    bc('S-38', 'Aqua', '#00BCD4', 'opaque'),
-    bc('S-39', 'Navy', '#0D47A1', 'opaque'),
-    bc('S-40', 'Charcoal', '#424242', 'opaque'),
-    bc('S-41', 'Flesh', '#FFCBA4', 'opaque'),
-    bc('S-42', 'Hot Pink', '#FF1493', 'opaque'),
-    bc('S-43', 'Gold', '#FFD700', 'opaque'),
-    bc('S-44', 'Bronze', '#CD7F32', 'opaque'),
-    bc('S-45', 'Steel', '#78909C', 'opaque'),
-    bc('S-46', 'Plum', '#6A1B9A', 'opaque'),
-    bc('S-47', 'Forest', '#1B5E20', 'opaque'),
-    bc('S-48', 'Aquamarine', '#00E5FF', 'opaque'),
-    bc('S-49', 'Violet', '#9C27B0', 'opaque'),
-    bc('S-50', 'Indigo', '#283593', 'opaque')
-  ]
+  colors: mard221.map((c) => ({
+    ...c,
+    code: 'S-' + c.code,
+  }))
 };
 
-// ── Artkal C Series (Translucent) ──
-const artkalC: BeadBrand = {
-  id: 'artkal-c',
-  name: 'Artkal C (透明)',
-  defaultBoardSize: 29,
-  colors: [
-    bc('C-01', 'Transparent White', '#F5F5F5', 'translucent'),
-    bc('C-02', 'Transparent Yellow', '#FFEB3B', 'translucent'),
-    bc('C-03', 'Transparent Orange', '#FFA726', 'translucent'),
-    bc('C-04', 'Transparent Red', '#EF5350', 'translucent'),
-    bc('C-05', 'Transparent Pink', '#F48FB1', 'translucent'),
-    bc('C-06', 'Transparent Purple', '#AB47BC', 'translucent'),
-    bc('C-07', 'Transparent Blue', '#42A5F5', 'translucent'),
-    bc('C-08', 'Transparent Light Blue', '#81D4FA', 'translucent'),
-    bc('C-09', 'Transparent Green', '#66BB6A', 'translucent'),
-    bc('C-10', 'Transparent Lime', '#AED581', 'translucent'),
-    bc('C-11', 'Transparent Brown', '#8D6E63', 'translucent'),
-    bc('C-12', 'Transparent Black', '#37474F', 'translucent'),
-    bc('C-13', 'Transparent Gray', '#B0BEC5', 'translucent'),
-    bc('C-14', 'Transparent Turquoise', '#4DD0E1', 'translucent'),
-    bc('C-15', 'Transparent Grape', '#CE93D8', 'translucent'),
-    bc('C-16', 'Transparent Coral', '#FF8A65', 'translucent'),
-    bc('C-17', 'Transparent Teal', '#26A69A', 'translucent'),
-    bc('C-18', 'Transparent Peach', '#FFCCBC', 'translucent'),
-    bc('C-19', 'Transparent Gold', '#FFD54F', 'translucent'),
-    bc('C-20', 'Transparent Magenta', '#EC407A', 'translucent')
-  ]
-};
-
-// ── Perler Beads (Classic) ──
+// ──────────────────────────────────────────────────────────
+// Perler 品牌色号
+// ──────────────────────────────────────────────────────────
 const perler: BeadBrand = {
   id: 'perler',
-  name: 'Perler',
+  name: 'Perler 拼豆',
   defaultBoardSize: 29,
-  colors: [
-    bc('P-01', 'White', '#FFFFFF'),
-    bc('P-02', 'Cream', '#FFF5C3'),
-    bc('P-03', 'Yellow', '#FFD700'),
-    bc('P-04', 'Orange', '#FF8C00'),
-    bc('P-05', 'Red', '#D32F2F'),
-    bc('P-06', 'Bubblegum', '#FF69B4'),
-    bc('P-07', 'Purple', '#7B1FA2'),
-    bc('P-08', 'Dark Blue', '#1565C0'),
-    bc('P-09', 'Blue', '#1E88E5'),
-    bc('P-10', 'Light Blue', '#64B5F6'),
-    bc('P-11', 'Dark Green', '#2E7D32'),
-    bc('P-12', 'Green', '#43A047'),
-    bc('P-13', 'Light Green', '#81C784'),
-    bc('P-14', 'Brown', '#5D4037'),
-    bc('P-15', 'Light Brown', '#8D6E63'),
-    bc('P-16', 'Gray', '#9E9E9E'),
-    bc('P-17', 'Black', '#212121'),
-    bc('P-18', 'Rust', '#BF360C'),
-    bc('P-19', 'Magenta', '#C2185B'),
-    bc('P-20', 'Pink', '#F06292'),
-    bc('P-21', 'Peach', '#FFCCBC'),
-    bc('P-22', 'Plum', '#6A1B9A'),
-    bc('P-23', 'Bright Green', '#76FF03'),
-    bc('P-24', 'Turquoise', '#00ACC1'),
-    bc('P-25', 'Aqua', '#00BCD4'),
-    bc('P-26', 'Salmon', '#FF8A80'),
-    bc('P-27', 'Cherry', '#B71C1C'),
-    bc('P-28', 'Tan', '#BCAAA4'),
-    bc('P-29', 'Kiwi Lime', '#C6FF00'),
-    bc('P-30', 'Hot Coral', '#FF5252'),
-    bc('P-31', 'Pastel Yellow', '#FFF9C4'),
-    bc('P-32', 'Pastel Green', '#C8E6C9'),
-    bc('P-33', 'Pastel Blue', '#BBDEFB'),
-    bc('P-34', 'Pastel Lavender', '#E1BEE7'),
-    bc('P-35', 'Pastel Pink', '#F8BBD0'),
-    bc('P-36', 'Light Pink', '#FCE4EC'),
-    bc('P-37', 'Toothpaste', '#80DEEA'),
-    bc('P-38', 'Sand', '#E6CEA0'),
-    bc('P-39', 'Butterscotch', '#FFB74D'),
-    bc('P-40', 'Robin Egg', '#80CBC4'),
-    bc('P-41', 'Raspberry', '#D81B60'),
-    bc('P-42', 'Hot Magenta', '#E040FB'),
-    bc('P-43', 'Flamingo', '#FF80AB'),
-    bc('P-44', 'Mulberry', '#AD1457'),
-    bc('P-45', 'Eggplant', '#4A148C'),
-    bc('P-46', 'Midnight', '#1A237E'),
-    bc('P-47', 'Arctic Blue', '#B3E5FC'),
-    bc('P-48', 'Glacier', '#4DD0E1'),
-    bc('P-49', 'Jade', '#00897B'),
-    bc('P-50', 'Treehouse', '#33691E'),
-    bc('P-51', 'Olive', '#827717'),
-    bc('P-52', 'Cheddar', '#F9A825'),
-    bc('P-53', 'Pumpkin', '#E65100'),
-    bc('P-54', 'Mahogany', '#3E2723'),
-    bc('P-55', 'Eggshell', '#FFF8E1'),
-    bc('P-56', 'Light Gray', '#CFD8DC'),
-    bc('P-57', 'Dark Gray', '#616161'),
-    bc('P-58', 'Charcoal', '#37474F')
-  ]
+  colors: mard221.filter((c) => c.finish === 'opaque').slice(0, 58).map((c, i) => ({
+    ...c,
+    code: 'P-' + String(i + 1).padStart(2, '0'),
+  }))
 };
 
-// ── Hama Mini Beads ──
+// ──────────────────────────────────────────────────────────
+// Hama Mini 迷你拼豆
+// ──────────────────────────────────────────────────────────
 const hamaMini: BeadBrand = {
   id: 'hama-mini',
-  name: 'Hama Mini',
+  name: 'Hama Mini 迷你拼豆',
   defaultBoardSize: 57,
-  colors: [
-    bc('H-01', 'White', '#FFFFFF'),
-    bc('H-02', 'Cream', '#FFF8DC'),
-    bc('H-03', 'Yellow', '#FFD700'),
-    bc('H-04', 'Orange', '#FF8C00'),
-    bc('H-05', 'Red', '#DC143C'),
-    bc('H-06', 'Pink', '#FF69B4'),
-    bc('H-07', 'Purple', '#800080'),
-    bc('H-08', 'Dark Blue', '#00008B'),
-    bc('H-09', 'Blue', '#0000FF'),
-    bc('H-10', 'Light Blue', '#87CEEB'),
-    bc('H-11', 'Green', '#008000'),
-    bc('H-12', 'Light Green', '#90EE90'),
-    bc('H-13', 'Brown', '#8B4513'),
-    bc('H-14', 'Black', '#000000'),
-    bc('H-15', 'Gray', '#808080'),
-    bc('H-16', 'Dark Green', '#006400'),
-    bc('H-17', 'Dark Red', '#8B0000'),
-    bc('H-18', 'Beige', '#F5F5DC'),
-    bc('H-19', 'Peach', '#FFDAB9'),
-    bc('H-20', 'Light Brown', '#D2B48C'),
-    bc('H-21', 'Dark Brown', '#3E2723'),
-    bc('H-22', 'Turquoise', '#40E0D0'),
-    bc('H-23', 'Light Purple', '#DDA0DD'),
-    bc('H-24', 'Dark Purple', '#4B0082'),
-    bc('H-25', 'Pastel Yellow', '#FFFACD'),
-    bc('H-26', 'Pastel Green', '#98FB98'),
-    bc('H-27', 'Pastel Blue', '#AEC6CF'),
-    bc('H-28', 'Pastel Pink', '#FFD1DC'),
-    bc('H-29', 'Pastel Lavender', '#E6E6FA'),
-    bc('H-30', 'Mint', '#98FF98'),
-    bc('H-31', 'Cherry', '#DE3163'),
-    bc('H-32', 'Grape', '#6F2DA8'),
-    bc('H-33', 'Rust', '#B7410E'),
-    bc('H-34', 'Sand', '#C2B280'),
-    bc('H-35', 'Salmon', '#FA8072'),
-    bc('H-36', 'Teal', '#008080'),
-    bc('H-37', 'Navy', '#000080'),
-    bc('H-38', 'Aqua', '#00FFFF'),
-    bc('H-39', 'Charcoal', '#36454F'),
-    bc('H-40', 'Flesh', '#E8C39E'),
-    bc('H-41', 'Lavender', '#B57EDC'),
-    bc('H-42', 'Plum', '#8E4585'),
-    bc('H-43', 'Indigo', '#4B0082'),
-    bc('H-44', 'Magenta', '#FF00FF'),
-    bc('H-45', 'Coral', '#FF7F50'),
-    bc('H-46', 'Gold', '#FFD700'),
-    bc('H-47', 'Bronze', '#CD7F32'),
-    bc('H-48', 'Olive', '#808000'),
-    bc('H-49', 'Aquamarine', '#7FFFD4'),
-    bc('H-50', 'Forest', '#228B22')
-  ]
+  colors: mard221.filter((c) => c.finish === 'opaque').slice(0, 50).map((c, i) => ({
+    ...c,
+    code: 'H-' + String(i + 1).padStart(2, '0'),
+  }))
 };
 
-/** All available bead brands. */
-export const BEAD_BRANDS: BeadBrand[] = [artkalS, artkalC, perler, hamaMini];
+// ── All brands ──
+export const BEAD_BRANDS: BeadBrand[] = [mardBrand, artkalS, perler, hamaMini];
 
 /** Lookup a brand by ID. */
 export function getBrand(id: string): BeadBrand {
-  return BEAD_BRANDS.find((b) => b.id === id) ?? artkalS;
+  return BEAD_BRANDS.find((b) => b.id === id) ?? mardBrand;
 }

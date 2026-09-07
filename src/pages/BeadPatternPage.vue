@@ -9,6 +9,7 @@ import FreeCanvasTab from '../features/bead/components/FreeCanvasTab.vue';
 import { useBeadPatternStore } from '../features/bead/stores/beadPatternStore';
 import { exportPng, exportJpeg, exportPrint, exportCsv, exportJson } from '../features/bead/exportUtils';
 import { getBrand, getSymbol } from '../features/bead/paletteData';
+import { useFileRecordStore } from '../user/fileRecordStore';
 import type { PatternResult, MaterialItem } from '../features/bead/types';
 import { t } from '../i18n';
 
@@ -50,8 +51,10 @@ function drawToPatternResult(cells: (string | null)[], w: number, h: number, bra
 }
 
 const store = useBeadPatternStore();
+const fileRecords = useFileRecordStore();
 const activeTab = ref<'image' | 'draw' | 'canvas'>('image');
 const fileInput = ref<HTMLInputElement | null>(null);
+
 
 // ── Per-tab data for export ──
 const drawMaterials = ref<any[]>([]);
@@ -110,7 +113,8 @@ async function loadFile(file: File) {
       size: file.size,
       imageData: ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight),
       dataUrl
-    });
+        });
+    fileRecords.recordFile('bead', file.name, file.size);
   } catch { /* ignore */ }
 }
 
@@ -123,15 +127,15 @@ function onFileChange(e: Event) {
 
 function handleExportPng() {
   const p = getActivePattern();
-  if (p) exportPng(p, store.patternTitle || undefined);
+  if (p) exportPng(p, store.patternTitle || undefined, store.showColorCodes);
 }
 function handleExportJpeg() {
   const p = getActivePattern();
-  if (p) exportJpeg(p, store.patternTitle || undefined);
+  if (p) exportJpeg(p, store.patternTitle || undefined, store.showColorCodes);
 }
 function handleExportPrint() {
   const p = getActivePattern();
-  if (p) exportPrint(p, store.patternTitle || undefined);
+  if (p) exportPrint(p, store.patternTitle || undefined, store.showColorCodes);
 }
 function handleExportCsv() {
   const p = getActivePattern();
@@ -204,6 +208,10 @@ function getActivePattern(): PatternResult | null {
     <footer class="bead-bottombar" v-if="activeTotalBeads > 0">
       <span class="bead-bottombar-label">{{ t('bead.export') }}</span>
       <span class="bead-bottombar-info">{{ activeGridSize }} · {{ activeTotalBeads }} {{ t('bead.drawBeads') }} · {{ activeMaterials.length }} {{ t('bead.drawColors') }}</span>
+      <label class="checkbox-field">
+        <input type="checkbox" :checked="store.showColorCodes" @change="store.setShowColorCodes(($event.target as HTMLInputElement).checked)" />
+        <span>{{ t('bead.colorLabels') }}</span>
+      </label>
       <span class="divider-v"></span>
       <button class="btn sm" @click="handleExportPng">PNG</button>
       <button class="btn sm" @click="handleExportJpeg">JPEG</button>

@@ -1,0 +1,30 @@
+{
+  "users": [
+    {
+      "id": "ca1c92ca-2059-428c-b4e5-d9f85d77eba2",
+      "username": "demo",
+      "usernameNormalized": "demo",
+      "email": "demo@test.com",
+      "emailNormalized": "demo@test.com",
+      "passwordHash": "scrypt:16384:8:1:c602e73932e2ca477ca1f2122dd22b59:19aa64b2497d655c39464cf845c963ada76bd8bc8b55113993d490bebcfd1430",
+      "bio": null,
+      "createdAt": 1787664244770
+    }
+  ],
+  "sessions": {
+    "2bc4941a9166334ab156679596741cf529f075c2cfbf6a1760ba6448b1acc20a": "ca1c92ca-2059-428c-b4e5-d9f85d77eba2",
+    "61e34c7e50cca37eff373623069906a536ed82ba1f28994c6b67003e909756a9": "ca1c92ca-2059-428c-b4e5-d9f85d77eba2",
+    "da55c78e5edb29a7ab194db0ab603a3229371330b7647a0694d4c4dd8ee4db1c": "ca1c92ca-2059-428c-b4e5-d9f85d77eba2"
+  },
+  "activities": {
+    "ca1c92ca-2059-428c-b4e5-d9f85d77eba2": [
+      {
+        "id": "1c124c3b-1925-48ae-9c58-f08cc99f2385",
+        "tool": "image",
+        "ts": 1787664255492
+      }
+    ]
+  },
+  "aiConfigs": {},
+  "files": {}
+}

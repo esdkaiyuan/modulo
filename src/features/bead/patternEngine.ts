@@ -56,6 +56,90 @@ function resizeImageNearest(
   return out;
 }
 
+/** Compute the dominant background color by sampling border pixels. */
+function sampleBackgroundColor(
+  data: Uint8ClampedArray,
+  w: number,
+  h: number
+): { r: number; g: number; b: number } {
+  const samples: { r: number; g: number; b: number }[] = [];
+  // Sample top + bottom rows
+  for (let x = 0; x < w; x += Math.max(1, Math.floor(w / 40))) {
+    const ti = x * 4;
+    if (data[ti + 3] >= 128) samples.push({ r: data[ti], g: data[ti + 1], b: data[ti + 2] });
+    const bi = ((h - 1) * w + x) * 4;
+    if (data[bi + 3] >= 128) samples.push({ r: data[bi], g: data[bi + 1], b: data[bi + 2] });
+  }
+  // Sample left + right columns
+  for (let y = 1; y < h - 1; y += Math.max(1, Math.floor(h / 40))) {
+    const li = (y * w) * 4;
+    if (data[li + 3] >= 128) samples.push({ r: data[li], g: data[li + 1], b: data[li + 2] });
+    const ri = (y * w + w - 1) * 4;
+    if (data[ri + 3] >= 128) samples.push({ r: data[ri], g: data[ri + 1], b: data[ri + 2] });
+  }
+  if (samples.length === 0) return { r: 255, g: 255, b: 255 };
+  // Average of samples
+  let sr = 0, sg = 0, sb = 0;
+  for (const s of samples) { sr += s.r; sg += s.g; sb += s.b; }
+  return { r: Math.round(sr / samples.length), g: Math.round(sg / samples.length), b: Math.round(sb / samples.length) };
+}
+
+/**
+ * Flood-fill from corners to detect background region.
+ * Returns a boolean mask (true = background / empty).
+ */
+function cornerFloodMask(
+  data: Uint8ClampedArray,
+  w: number,
+  h: number,
+  bgColor: { r: number; g: number; b: number },
+  tolerance: number
+): Uint8Array {
+  const mask = new Uint8Array(w * h);
+  const tolSq = tolerance * tolerance * 3;
+  const stack: number[] = [];
+
+  // Start from all 4 corners and edge midpoints
+  const seeds = [
+    [0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1],
+    [Math.floor(w / 2), 0], [Math.floor(w / 2), h - 1],
+    [0, Math.floor(h / 2)], [w - 1, Math.floor(h / 2)]
+  ];
+
+  function pushIfBg(x: number, y: number) {
+    if (x < 0 || x >= w || y < 0 || y >= h) return;
+    const idx = y * w + x;
+    if (mask[idx]) return;
+    const pi = idx * 4;
+    if (data[pi + 3] < 128) {
+      mask[idx] = 1;
+      stack.push(idx);
+      return;
+    }
+    const dr = data[pi] - bgColor.r;
+    const dg = data[pi + 1] - bgColor.g;
+    const db = data[pi + 2] - bgColor.b;
+    if (dr * dr + dg * dg + db * db <= tolSq) {
+      mask[idx] = 1;
+      stack.push(idx);
+    }
+  }
+
+  for (const [sx, sy] of seeds) pushIfBg(sx, sy);
+
+  while (stack.length > 0) {
+    const idx = stack.pop()!;
+    const x = idx % w;
+    const y = Math.floor(idx / w);
+    pushIfBg(x + 1, y);
+    pushIfBg(x - 1, y);
+    pushIfBg(x, y + 1);
+    pushIfBg(x, y - 1);
+  }
+
+  return mask;
+}
+
 /**
  * Generate a perler bead pattern from an image's ImageData.
  *
@@ -81,6 +165,19 @@ export function generatePattern(
     h
   );
 
+  // Compute background color for removal
+  let bgColor: { r: number; g: number; b: number } | null = null;
+  let bgMask: Uint8Array | null = null;
+  if (settings.bgRemoveMode === 'auto' || settings.bgRemoveMode === 'corner') {
+    bgColor = sampleBackgroundColor(resized, w, h);
+    if (settings.bgRemoveMode === 'corner') {
+      bgMask = cornerFloodMask(resized, w, h, bgColor, settings.bgTolerance);
+      bgColor = null; // use mask instead of simple distance
+    }
+  } else if (settings.bgRemoveMode === 'tolerance') {
+    bgColor = { r: 255, g: 255, b: 255 }; // white background by default
+  }
+
   // Match each pixel to closest bead color
   const cells: (PatternCell | null)[][] = [];
   const beadCounts = new Map<string, { bead: BeadColor; count: number }>();
@@ -99,6 +196,22 @@ export function generatePattern(
       if (a < 128) {
         rowCells.push(null);
         continue;
+      }
+
+      // Background removal check
+      if (bgMask && bgMask[row * w + col]) {
+        rowCells.push(null);
+        continue;
+      }
+      if (bgColor) {
+        const tolSq = settings.bgTolerance * settings.bgTolerance * 3;
+        const dr = r - bgColor.r;
+        const dg = g - bgColor.g;
+        const db = b - bgColor.b;
+        if (dr * dr + dg * dg + db * db <= tolSq) {
+          rowCells.push(null);
+          continue;
+        }
       }
 
       const matched = findClosestBead(r, g, b, brand.colors, excludeColors);

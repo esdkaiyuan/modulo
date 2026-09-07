@@ -12,9 +12,11 @@ export interface BeadColor {
   b: number;
   /** Brand-specific notes (e.g. "opaque", "translucent", "glow") */
   finish?: string;
+  /** Color category for grouping */
+  category?: string;
 }
 
-export type BeadBrandId = 'artkal-s' | 'artkal-c' | 'perler' | 'hama-mini';
+export type BeadBrandId = 'mard-standard' | 'artkal-s' | 'perler' | 'hama-mini';
 
 export interface BeadBrand {
   id: BeadBrandId;
@@ -79,6 +81,12 @@ export interface PatternSettings {
   showSymbols: boolean;
   /** View mode: 'colors' | 'symbols' | 'both' */
   viewMode: 'colors' | 'symbols' | 'both';
+  /** Show color code labels on each bead */
+  showColorCodes: boolean;
+  /** Background removal mode */
+  bgRemoveMode: 'none' | 'auto' | 'tolerance' | 'corner' | 'ai';
+  /** Background color tolerance (0-200), used for tolerance/corner modes */
+  bgTolerance: number;
 }
 
 /** Export format options. */

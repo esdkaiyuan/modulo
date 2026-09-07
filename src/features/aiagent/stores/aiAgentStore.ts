@@ -18,44 +18,13 @@ import {
 } from '../../../engines/aiClient';
 import { makeTextBlob } from '../../../engines/outputFormatter';
 import { useAuthStore } from '../../../user/authStore';
-import { dbGetAiConfig, dbSaveAiConfig } from '../../../user/localDb';
-import { locale } from '../../../i18n';
-
-const CONFIG_KEY = 'dms-ai-config';
-
-interface StoredConfig {
-  protocol: AiProtocol;
-  baseUrl: string;
-  apiKey: string;
-  model: string;
-}
-
-function loadConfig(): StoredConfig {
-  try {
-    const raw = localStorage.getItem(CONFIG_KEY);
-    // SECURITY: the API key is intentionally never read from (or written to)
-    // the shared localStorage config — it lives only in the per-account
-    // IndexedDB record, so guests and other accounts can't inherit it.
-    if (raw) {
-      const parsed = { protocol: 'openai', baseUrl: '', model: '', ...JSON.parse(raw) };
-      if ('apiKey' in parsed) {
-        // One-time scrub of keys written by older versions.
-        localStorage.setItem(
-          CONFIG_KEY,
-          JSON.stringify({ protocol: parsed.protocol, baseUrl: parsed.baseUrl, model: parsed.model })
-        );
-      }
-      return { protocol: parsed.protocol, baseUrl: parsed.baseUrl, apiKey: '', model: parsed.model };
-    }
-  } catch {
-    /* corrupt config — fall through to defaults */
-  }
-  return { protocol: 'openai', baseUrl: 'https://api.deepseek.com', apiKey: '', model: 'deepseek-chat' };
-}
+import { request } from '../../../user/serverApi';
+import { locale, t } from '../../../i18n';
+import type { MessageKey } from '../../../i18n/messages';
 
 /** Every user-entered AI form field that should follow the account. Excludes
  *  input code, streamed output, and generated files (those are "content"). */
-interface AiFormSnapshot {
+export interface AiFormSnapshot {
   protocol: AiProtocol;
   baseUrl: string;
   apiKey: string;
@@ -72,21 +41,142 @@ interface AiFormSnapshot {
   uartBaud: string;
 }
 
+type AiFormField = keyof AiFormSnapshot;
+
+const AI_FORM_FIELDS: readonly AiFormField[] = [
+  'protocol',
+  'baseUrl',
+  'apiKey',
+  'model',
+  'deviceKind',
+  'deviceId',
+  'customDevice',
+  'platformId',
+  'extra',
+  'bus',
+  'pins',
+  'i2cAddr',
+  'busFreq',
+  'uartBaud'
+];
+
+interface AiConfigResponse {
+  config: AiFormSnapshot | null;
+}
+
+const AI_PROTOCOLS = new Set<AiProtocol>(['openai', 'anthropic']);
+const DEVICE_KINDS = new Set<DeviceKind>(['display', 'audio']);
+const BUS_PROTOCOLS = new Set<BusProtocol>(['i2c', 'spi', 'i2s', 'pwm', 'dac', 'onewire', 'uart']);
+
+function boundedString(value: unknown, max: number): value is string {
+  return typeof value === 'string' && value.length <= max;
+}
+
+function validHttpUrl(value: string): boolean {
+  try {
+    const protocol = new URL(value).protocol;
+    return protocol === 'http:' || protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+function validPins(value: unknown): value is Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const entries = Object.entries(value);
+  return entries.length <= 64
+    && entries.every(([key, pin]) => key.length <= 64 && boundedString(pin, 128));
+}
+
+function isAiFormSnapshot(value: unknown): value is AiFormSnapshot {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const config = value as Record<string, unknown>;
+  return typeof config.protocol === 'string'
+    && AI_PROTOCOLS.has(config.protocol as AiProtocol)
+    && boundedString(config.baseUrl, 2048)
+    && validHttpUrl(config.baseUrl)
+    && boundedString(config.apiKey, 4096)
+    && boundedString(config.model, 256)
+    && typeof config.deviceKind === 'string'
+    && DEVICE_KINDS.has(config.deviceKind as DeviceKind)
+    && boundedString(config.deviceId, 128)
+    && boundedString(config.customDevice, 256)
+    && boundedString(config.platformId, 128)
+    && boundedString(config.extra, 4096)
+    && typeof config.bus === 'string'
+    && BUS_PROTOCOLS.has(config.bus as BusProtocol)
+    && validPins(config.pins)
+    && boundedString(config.i2cAddr, 32)
+    && boundedString(config.busFreq, 32)
+    && boundedString(config.uartBaud, 32);
+}
+
+function isAiConfigResponse(value: unknown): value is AiConfigResponse {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const config = (value as { config?: unknown }).config;
+  return config === null || isAiFormSnapshot(config);
+}
+
+function pinsEqual(left: Record<string, string>, right: Record<string, string>): boolean {
+  const leftEntries = Object.entries(left);
+  return leftEntries.length === Object.keys(right).length
+    && leftEntries.every(([key, value]) => right[key] === value);
+}
+
+function formFieldChanged(field: AiFormField, current: AiFormSnapshot, previous: AiFormSnapshot): boolean {
+  if (field === 'pins') return !pinsEqual(current.pins, previous.pins);
+  return current[field] !== previous[field];
+}
+
+function mergeDirtyFields(
+  server: AiFormSnapshot,
+  local: AiFormSnapshot,
+  dirtyFields: ReadonlySet<AiFormField>
+): AiFormSnapshot {
+  return {
+    protocol: dirtyFields.has('protocol') ? local.protocol : server.protocol,
+    baseUrl: dirtyFields.has('baseUrl') ? local.baseUrl : server.baseUrl,
+    apiKey: dirtyFields.has('apiKey') ? local.apiKey : server.apiKey,
+    model: dirtyFields.has('model') ? local.model : server.model,
+    deviceKind: dirtyFields.has('deviceKind') ? local.deviceKind : server.deviceKind,
+    deviceId: dirtyFields.has('deviceId') ? local.deviceId : server.deviceId,
+    customDevice: dirtyFields.has('customDevice') ? local.customDevice : server.customDevice,
+    platformId: dirtyFields.has('platformId') ? local.platformId : server.platformId,
+    extra: dirtyFields.has('extra') ? local.extra : server.extra,
+    bus: dirtyFields.has('bus') ? local.bus : server.bus,
+    pins: { ...(dirtyFields.has('pins') ? local.pins : server.pins) },
+    i2cAddr: dirtyFields.has('i2cAddr') ? local.i2cAddr : server.i2cAddr,
+    busFreq: dirtyFields.has('busFreq') ? local.busFreq : server.busFreq,
+    uartBaud: dirtyFields.has('uartBaud') ? local.uartBaud : server.uartBaud
+  };
+}
+
+function defaultSnapshot(): AiFormSnapshot {
+  return {
+    protocol: 'openai',
+    baseUrl: 'https://api.deepseek.com',
+    apiKey: '',
+    model: 'deepseek-chat',
+    deviceKind: 'display',
+    deviceId: 'ssd1306-i2c',
+    customDevice: '',
+    platformId: 'esp32-arduino',
+    extra: '',
+    bus: 'i2c',
+    pins: defaultPins('esp32-arduino', 'i2c'),
+    i2cAddr: '0x3C',
+    busFreq: '400000',
+    uartBaud: '115200'
+  };
+}
+
 export const useAiAgentStore = defineStore('aiAgent', () => {
   // ── API configuration (persisted) ──
-  const stored = loadConfig();
-  const protocol = ref<AiProtocol>(stored.protocol);
-  const baseUrl = ref(stored.baseUrl);
-  const apiKey = ref(stored.apiKey);
-  const model = ref(stored.model);
-
-  // Shared (non-account) convenience config — never includes the API key.
-  watch([protocol, baseUrl, model], () => {
-    localStorage.setItem(
-      CONFIG_KEY,
-      JSON.stringify({ protocol: protocol.value, baseUrl: baseUrl.value, model: model.value })
-    );
-  });
+  const defaults = defaultSnapshot();
+  const protocol = ref<AiProtocol>(defaults.protocol);
+  const baseUrl = ref(defaults.baseUrl);
+  const apiKey = ref(defaults.apiKey);
+  const model = ref(defaults.model);
 
   // ── Input code ──
   const inputFiles = ref<InputCodeFile[]>([]);
@@ -99,17 +189,40 @@ export const useAiAgentStore = defineStore('aiAgent', () => {
   const fetchingModels = ref(false);
   const modelsError = ref('');
   const canFetchModels = computed(() => !!(baseUrl.value.trim() && apiKey.value.trim()) && !fetchingModels.value);
+  let modelLoadToken = 0;
+  let modelLoadController: AbortController | null = null;
+
+  function invalidateModelLoad() {
+    modelLoadToken += 1;
+    modelLoadController?.abort();
+    modelLoadController = null;
+    availableModels.value = [];
+    fetchingModels.value = false;
+    modelsError.value = '';
+  }
 
   async function loadModels() {
     if (!canFetchModels.value) return;
+    const expectedGeneration = configGeneration;
+    const userId = activeUserId;
+    if (!userId || !isCurrent(expectedGeneration, userId)) return;
+    const expectedModelLoad = ++modelLoadToken;
+    modelLoadController?.abort();
+    const controller = new AbortController();
+    modelLoadController = controller;
     fetchingModels.value = true;
     modelsError.value = '';
     try {
       const ids = await fetchModels({
         protocol: protocol.value,
         baseUrl: baseUrl.value.trim(),
-        apiKey: apiKey.value.trim()
+        apiKey: apiKey.value.trim(),
+        signal: controller.signal
       });
+      if (
+        modelLoadToken !== expectedModelLoad
+        || !isCurrent(expectedGeneration, userId)
+      ) return;
       availableModels.value = ids;
       if (ids.length === 0) {
         modelsError.value = 'empty';
@@ -118,17 +231,21 @@ export const useAiAgentStore = defineStore('aiAgent', () => {
         model.value = ids[0];
       }
     } catch (error) {
+      if (
+        modelLoadToken !== expectedModelLoad
+        || !isCurrent(expectedGeneration, userId)
+      ) return;
       modelsError.value = error instanceof Error ? error.message : String(error);
     } finally {
-      fetchingModels.value = false;
+      if (modelLoadToken === expectedModelLoad) {
+        fetchingModels.value = false;
+        if (modelLoadController === controller) modelLoadController = null;
+      }
     }
   }
 
   // A changed endpoint invalidates the previously fetched list.
-  watch([baseUrl, apiKey, protocol], () => {
-    availableModels.value = [];
-    modelsError.value = '';
-  });
+  watch([baseUrl, apiKey, protocol], invalidateModelLoad, { flush: 'sync' });
 
   async function addFiles(files: FileList | File[]) {
     for (const file of Array.from(files)) {
@@ -144,18 +261,18 @@ export const useAiAgentStore = defineStore('aiAgent', () => {
   }
 
   // ── Target selection ──
-  const deviceKind = ref<DeviceKind>('display');
-  const deviceId = ref('ssd1306-i2c');
-  const customDevice = ref('');
-  const platformId = ref('esp32-arduino');
-  const extra = ref('');
+  const deviceKind = ref<DeviceKind>(defaults.deviceKind);
+  const deviceId = ref(defaults.deviceId);
+  const customDevice = ref(defaults.customDevice);
+  const platformId = ref(defaults.platformId);
+  const extra = ref(defaults.extra);
 
   // ── Bus / wiring ──
-  const bus = ref<BusProtocol>('i2c');
-  const pins = ref<Record<string, string>>(defaultPins('esp32-arduino', 'i2c'));
-  const i2cAddr = ref('0x3C');
-  const busFreq = ref('400000');
-  const uartBaud = ref('115200');
+  const bus = ref<BusProtocol>(defaults.bus);
+  const pins = ref<Record<string, string>>({ ...defaults.pins });
+  const i2cAddr = ref(defaults.i2cAddr);
+  const busFreq = ref(defaults.busFreq);
+  const uartBaud = ref(defaults.uartBaud);
 
   const busPreset = computed(() => BUS_PRESETS.find((b) => b.id === bus.value) ?? BUS_PRESETS[0]);
 
@@ -193,13 +310,51 @@ export const useAiAgentStore = defineStore('aiAgent', () => {
     }
   });
 
-  // ── Per-account persistence of the whole AI form ──
-  // The AI tool's form (API keys, target device, protocol, pins, requirements)
-  // follows the logged-in user via IndexedDB, so returning users can generate
-  // immediately without re-entering everything. `restoring` suppresses the
-  // save watcher while we apply a saved snapshot.
+  // ── Per-account server persistence of the whole AI form ──
   const auth = useAuthStore();
-  let restoring = false;
+  const configErrorKey = ref<MessageKey | null>(null);
+  const configError = computed(() => configErrorKey.value ? t(configErrorKey.value) : '');
+  let configErrorKind: 'load' | 'save' | null = null;
+  let activeUserId: string | null = null;
+  let configGeneration = 0;
+  let loadSequence = 0;
+  let applyingSnapshot = 0;
+  let loadController: AbortController | null = null;
+
+  interface PendingSave {
+    value: AiFormSnapshot;
+    revision: number;
+  }
+
+  interface SaveState {
+    generation: number;
+    userId: string | null;
+    dirtyRevision: number;
+    dirtyFields: Set<AiFormField>;
+    loadPending: boolean;
+    pending: PendingSave | null;
+    halted: boolean;
+    timer: ReturnType<typeof setTimeout> | null;
+    controller: AbortController | null;
+    drainPromise: Promise<void> | null;
+  }
+
+  function createSaveState(generation: number, userId: string | null): SaveState {
+    return {
+      generation,
+      userId,
+      dirtyRevision: 0,
+      dirtyFields: new Set(),
+      loadPending: userId !== null,
+      pending: null,
+      halted: false,
+      timer: null,
+      controller: null,
+      drainPromise: null
+    };
+  }
+
+  let saveState = createSaveState(configGeneration, null);
 
   function snapshot(): AiFormSnapshot {
     return {
@@ -220,59 +375,217 @@ export const useAiAgentStore = defineStore('aiAgent', () => {
     };
   }
 
-  async function applySnapshot(snap: Partial<AiFormSnapshot>) {
-    restoring = true;
-    // Base fields first; their watchers reset pins/bus defaults on nextTick.
-    if (snap.protocol) protocol.value = snap.protocol;
-    if (snap.baseUrl !== undefined) baseUrl.value = snap.baseUrl;
-    if (snap.apiKey !== undefined) apiKey.value = snap.apiKey;
-    if (snap.model !== undefined) model.value = snap.model;
-    if (snap.deviceKind) deviceKind.value = snap.deviceKind;
-    if (snap.deviceId) deviceId.value = snap.deviceId;
-    if (snap.customDevice !== undefined) customDevice.value = snap.customDevice;
-    if (snap.platformId) platformId.value = snap.platformId;
-    if (snap.extra !== undefined) extra.value = snap.extra;
-    if (snap.bus) bus.value = snap.bus;
-    await nextTick();
-    // Now override the derived wiring fields the watchers just reset.
-    if (snap.pins) pins.value = { ...snap.pins };
-    if (snap.i2cAddr !== undefined) i2cAddr.value = snap.i2cAddr;
-    if (snap.busFreq !== undefined) busFreq.value = snap.busFreq;
-    if (snap.uartBaud !== undefined) uartBaud.value = snap.uartBaud;
-    await nextTick();
-    restoring = false;
+  function isCurrent(expectedGeneration: number, userId: string): boolean {
+    return configGeneration === expectedGeneration
+      && activeUserId === userId
+      && auth.status === 'authenticated'
+      && auth.currentUser?.id === userId;
   }
 
-  // Load the saved form whenever the logged-in user changes; clear back to
-  // defaults on logout so the next person doesn't inherit stale keys.
-  const defaults = snapshot();
-  watch(
-    () => auth.currentUser?.id,
-    async (uid) => {
-      if (!uid) {
-        // Belt and braces: the key must never survive a logout.
-        await applySnapshot({ ...defaults, apiKey: '' });
-        return;
-      }
-      const saved = await dbGetAiConfig(uid);
-      if (saved) {
-        const { userId: _omit, ...form } = saved;
-        await applySnapshot(form as Partial<AiFormSnapshot>);
-      }
-    },
-    { immediate: true }
-  );
+  function assignBaseSnapshot(value: AiFormSnapshot) {
+    protocol.value = value.protocol;
+    baseUrl.value = value.baseUrl;
+    apiKey.value = value.apiKey;
+    model.value = value.model;
+    deviceKind.value = value.deviceKind;
+    deviceId.value = value.deviceId;
+    customDevice.value = value.customDevice;
+    platformId.value = value.platformId;
+    extra.value = value.extra;
+  }
 
-  // Persist any form change for the current user (debounced via microtask
-  // coalescing is unnecessary — writes are cheap and best-effort).
-  watch(
-    () => JSON.stringify(snapshot()),
-    () => {
-      if (restoring) return;
-      const uid = auth.currentUser?.id;
-      if (!uid) return;
-      void dbSaveAiConfig({ userId: uid, ...snapshot() });
+  function assignWiringSnapshot(value: AiFormSnapshot) {
+    pins.value = { ...value.pins };
+    i2cAddr.value = value.i2cAddr;
+    busFreq.value = value.busFreq;
+    uartBaud.value = value.uartBaud;
+  }
+
+  function resetFormImmediately() {
+    applyingSnapshot += 1;
+    try {
+      const value = defaultSnapshot();
+      assignBaseSnapshot(value);
+      bus.value = value.bus;
+      assignWiringSnapshot(value);
+    } finally {
+      applyingSnapshot -= 1;
     }
+  }
+
+  async function applySnapshot(value: AiFormSnapshot, expectedGeneration: number, userId: string) {
+    applyingSnapshot += 1;
+    try {
+      if (!isCurrent(expectedGeneration, userId)) return;
+      assignBaseSnapshot(value);
+      await nextTick();
+      if (!isCurrent(expectedGeneration, userId)) return;
+      bus.value = value.bus;
+      await nextTick();
+      if (!isCurrent(expectedGeneration, userId)) return;
+      assignWiringSnapshot(value);
+      await nextTick();
+    } finally {
+      applyingSnapshot -= 1;
+    }
+  }
+
+  function isSaveStateCurrent(state: SaveState): state is SaveState & { userId: string } {
+    return saveState === state
+      && state.userId !== null
+      && isCurrent(state.generation, state.userId);
+  }
+
+  function cancelSaveState(state: SaveState) {
+    if (state.timer) clearTimeout(state.timer);
+    state.timer = null;
+    state.controller?.abort();
+    state.controller = null;
+    state.pending = null;
+    state.halted = true;
+  }
+
+  function finishConfigLoad(state: SaveState) {
+    if (!isSaveStateCurrent(state)) return;
+    state.loadPending = false;
+    if (state.pending && !state.timer && !state.halted) void drainSaveState(state);
+  }
+
+  async function loadConfig(): Promise<void> {
+    const userId = activeUserId;
+    const expectedGeneration = configGeneration;
+    if (!userId || !isCurrent(expectedGeneration, userId)) return;
+    const state = saveState;
+    if (!isSaveStateCurrent(state)) return;
+    state.loadPending = true;
+    const expectedLoad = ++loadSequence;
+    loadController?.abort();
+    const controller = new AbortController();
+    loadController = controller;
+    try {
+      const response = await request<AiConfigResponse>('/api/me/ai-config', {
+        signal: controller.signal,
+        validate: isAiConfigResponse
+      });
+      if (!isCurrent(expectedGeneration, userId) || loadSequence !== expectedLoad) return;
+      const dirtyFields = new Set(state.dirtyFields);
+      const merged = mergeDirtyFields(response.config ?? defaultSnapshot(), snapshot(), dirtyFields);
+      await applySnapshot(merged, expectedGeneration, userId);
+      if (!isCurrent(expectedGeneration, userId) || loadSequence !== expectedLoad) return;
+      if (dirtyFields.size > 0) {
+        state.pending = { value: snapshot(), revision: state.dirtyRevision };
+      }
+      state.dirtyFields.clear();
+      if (configErrorKind === 'load') {
+        configErrorKind = null;
+        configErrorKey.value = null;
+      }
+      finishConfigLoad(state);
+    } catch {
+      if (!isCurrent(expectedGeneration, userId) || loadSequence !== expectedLoad) return;
+      configErrorKind = 'load';
+      configErrorKey.value = 'ai.configLoadFailed';
+    } finally {
+      if (loadController === controller) loadController = null;
+    }
+  }
+
+  async function runSaveLoop(state: SaveState): Promise<void> {
+    while (
+      isSaveStateCurrent(state)
+      && !state.halted
+      && !state.loadPending
+      && !state.timer
+      && state.pending
+    ) {
+      const pending = state.pending;
+      state.pending = null;
+      const controller = new AbortController();
+      state.controller = controller;
+      try {
+        await request<void>('/api/me/ai-config', {
+          method: 'PUT',
+          body: pending.value,
+          signal: controller.signal
+        });
+        if (!isSaveStateCurrent(state)) return;
+        if (configErrorKind === 'save') {
+          configErrorKind = null;
+          configErrorKey.value = null;
+        }
+      } catch {
+        if (!isSaveStateCurrent(state)) return;
+        if (state.timer) clearTimeout(state.timer);
+        state.timer = null;
+        state.pending = { value: snapshot(), revision: state.dirtyRevision };
+        state.halted = true;
+        configErrorKind = 'save';
+        configErrorKey.value = 'ai.configSaveFailed';
+        return;
+      } finally {
+        if (state.controller === controller) state.controller = null;
+      }
+    }
+  }
+
+  async function drainSaveState(state: SaveState): Promise<void> {
+    if (state.drainPromise) return state.drainPromise;
+    const run = runSaveLoop(state);
+    state.drainPromise = run;
+    try {
+      await run;
+    } finally {
+      if (state.drainPromise === run) state.drainPromise = null;
+    }
+  }
+
+  function scheduleSave(state: SaveState) {
+    if (!isSaveStateCurrent(state)) return;
+    if (state.halted) {
+      state.pending = { value: snapshot(), revision: state.dirtyRevision };
+      return;
+    }
+    if (state.timer) clearTimeout(state.timer);
+    state.timer = setTimeout(() => {
+      state.timer = null;
+      if (!isSaveStateCurrent(state)) return;
+      state.pending = { value: snapshot(), revision: state.dirtyRevision };
+      if (!state.loadPending) void drainSaveState(state);
+    }, 400);
+  }
+
+  async function retryConfig(): Promise<void> {
+    if (configErrorKind === 'load') {
+      await loadConfig();
+      return;
+    }
+    if (configErrorKind !== 'save') return;
+    const state = saveState;
+    if (!isSaveStateCurrent(state)) return;
+    if (state.drainPromise) await state.drainPromise;
+    if (!isSaveStateCurrent(state)) return;
+    if (state.timer) clearTimeout(state.timer);
+    state.timer = null;
+    state.pending = { value: snapshot(), revision: state.dirtyRevision };
+    state.halted = false;
+    await drainSaveState(state);
+  }
+
+  watch(
+    snapshot,
+    (current, previous) => {
+      if (applyingSnapshot > 0) return;
+      const changedFields = AI_FORM_FIELDS.filter((field) => formFieldChanged(field, current, previous));
+      if (changedFields.length === 0) return;
+      const state = saveState;
+      if (!isSaveStateCurrent(state)) return;
+      if (state.loadPending) {
+        for (const field of changedFields) state.dirtyFields.add(field);
+      }
+      state.dirtyRevision += 1;
+      scheduleSave(state);
+    },
+    { flush: 'sync' }
   );
 
   // ── Generation ──
@@ -401,6 +714,35 @@ export const useAiAgentStore = defineStore('aiAgent', () => {
     refineInstruction.value = '';
   }
 
+  function clearAccountState() {
+    loadController?.abort();
+    loadController = null;
+    stop();
+    isGenerating.value = false;
+    inputFiles.value = [];
+    pastedCode.value = '';
+    invalidateModelLoad();
+    clearOutput();
+    systemPrompt = '';
+    resetFormImmediately();
+  }
+
+  watch(
+    () => auth.status === 'authenticated' ? auth.currentUser?.id ?? null : null,
+    (userId) => {
+      cancelSaveState(saveState);
+      configGeneration += 1;
+      loadSequence += 1;
+      activeUserId = userId;
+      saveState = createSaveState(configGeneration, userId);
+      configErrorKind = null;
+      configErrorKey.value = null;
+      clearAccountState();
+      if (userId) void loadConfig();
+    },
+    { immediate: true, flush: 'sync' }
+  );
+
   return {
     protocol,
     baseUrl,
@@ -411,8 +753,11 @@ export const useAiAgentStore = defineStore('aiAgent', () => {
     availableModels,
     fetchingModels,
     modelsError,
+    configError,
     canFetchModels,
     loadModels,
+    loadConfig,
+    retryConfig,
     deviceKind,
     deviceId,
     customDevice,

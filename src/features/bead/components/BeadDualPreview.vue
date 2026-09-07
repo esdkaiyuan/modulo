@@ -48,9 +48,11 @@ function renderPat(target: HTMLCanvasElement) {
   const fitCell = Math.min(patZoom.value, maxW / store.pattern.width);
   const rendered = renderPattern(store.pattern, {
     cellSize: fitCell,
-    showGrid: fitCell >= 6,
+    showGrid: store.showGrid,
     showCoordinates: fitCell >= 10,
-    showBoardLines: true,
+    showBoardLines: store.showBoardLines,
+    showCenterCrosshair: store.showCenterCrosshair,
+    showColorCodes: store.showColorCodes,
     showLegend: false,
     title: ''
   });
@@ -68,7 +70,7 @@ watch(() => [store.sourceDataUrl, origZoom.value], () => {
   });
 });
 
-watch(() => [store.pattern, patZoom.value], () => {
+watch(() => [store.pattern, patZoom.value, store.showGrid, store.showBoardLines, store.showCenterCrosshair, store.showColorCodes, store.viewMode], () => {
   nextTick(() => {
     if (patCanvas.value) renderPat(patCanvas.value);
     if (patFullscreen.value && patFsCanvas.value) renderPat(patFsCanvas.value);

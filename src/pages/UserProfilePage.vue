@@ -3,14 +3,36 @@ import { computed, ref } from 'vue';
 import Panel from '../components/Panel.vue';
 import { avatarCharFor, avatarHueFor, useAuthStore } from '../user/authStore';
 import { TOOL_META, useActivityStore } from '../user/activityStore';
+import { useFileRecordStore } from '../user/fileRecordStore';
 import { dbDeleteAiConfig } from '../user/localDb';
 import { locale, t } from '../i18n';
 
 const auth = useAuthStore();
 const activity = useActivityStore();
+const fileRecords = useFileRecordStore();
 
 const oldPass = ref('');
 const newPass = ref('');
+
+// ── Bio ──────────────────────────────────────────────
+const editingBio = ref(false);
+const bioDraft = ref('');
+
+function startEditBio() {
+  bioDraft.value = auth.currentUser?.bio ?? '';
+  editingBio.value = true;
+}
+
+function cancelEditBio() {
+  editingBio.value = false;
+  bioDraft.value = '';
+}
+
+async function saveBio() {
+  if (await auth.updateBio(bioDraft.value)) {
+    editingBio.value = false;
+  }
+}
 
 // ── Rename ───────────────────────────────────────────
 const editingName = ref(false);
@@ -130,6 +152,10 @@ async function doChangePassword() {
   }
 }
 
+function doClearFileRecords() {
+  if (window.confirm(t('profile.clearConfirm'))) void fileRecords.clearAll();
+}
+
 function doClearHistory() {
   if (window.confirm(t('profile.clearConfirm'))) activity.clearHistory();
 }
@@ -190,40 +216,59 @@ function doDelete() {
       <Panel :title="t('auth.profile')" class="col-full">
         <div class="profile-identity">
           <div class="profile-identity-main">
-            <div class="profile-head">
-              <div class="profile-avatar" data-test="profile-avatar" :style="avatarStyle">
-                {{ avatarCharFor(auth.currentUser.username) }}
+            <div class="profile-avatar" data-test="profile-avatar" :style="avatarStyle">
+              {{ avatarCharFor(auth.currentUser.username) }}
+            </div>
+            <div class="profile-meta">
+              <div v-if="!editingName" class="profile-name-row">
+                <b data-test="profile-name">{{ auth.currentUser.username }}</b>
+                <button class="btn sm" data-test="rename-start" @click="startRename">
+                  {{ t('profile.editName') }}
+                </button>
               </div>
-              <div class="profile-meta">
-                <div v-if="!editingName" class="profile-name-row">
-                  <b data-test="profile-name">{{ auth.currentUser.username }}</b>
-                  <button class="btn sm" data-test="rename-start" @click="startRename">
-                    {{ t('profile.editName') }}
-                  </button>
-                </div>
-                <div v-else class="profile-name-row">
-                  <input
-                    v-model="nameDraft"
-                    class="rename-input"
-                    data-test="rename-input"
-                    maxlength="20"
-                    @keyup.enter="saveRename"
-                  />
-                  <button class="btn sm primary" data-test="rename-save" @click="saveRename">
-                    {{ t('profile.saveName') }}
-                  </button>
-                  <button class="btn sm" data-test="rename-cancel" @click="editingName = false">
-                    {{ t('profile.cancel') }}
-                  </button>
-                </div>
+              <div v-else class="profile-name-row">
+                <input
+                  v-model="nameDraft"
+                  class="rename-input"
+                  data-test="rename-input"
+                  maxlength="20"
+                  @keyup.enter="saveRename"
+                />
+                <button class="btn sm primary" data-test="rename-save" @click="saveRename">
+                  {{ t('profile.saveName') }}
+                </button>
+                <button class="btn sm" data-test="rename-cancel" @click="editingName = false">
+                  {{ t('profile.cancel') }}
+                </button>
+              </div>
+              <div class="profile-info-line">
                 <span>{{ auth.currentUser.email }}</span>
-                <span class="profile-joined">{{ t('auth.joined') }}: {{ joined }}</span>
+                <span class="dot"></span>
+                <span>{{ t('auth.joined') }} {{ joined }}</span>
+              </div>
+              <div v-if="!editingBio" class="profile-bio">
+                <span v-if="auth.currentUser?.bio" class="bio-text">{{ auth.currentUser.bio }}</span>
+                <span v-else class="bio-placeholder">{{ t('profile.bioPlaceholder') }}</span>
+                <button class="btn sm bio-edit-btn" @click="startEditBio">编辑</button>
+              </div>
+              <div v-else class="profile-bio-edit">
+                <input
+                  v-model="bioDraft"
+                  class="bio-input"
+                  maxlength="200"
+                  :placeholder="t(`profile.bioHint`)"
+                  @keyup.enter="saveBio"
+                  @keyup.esc="cancelEditBio"
+                />
+                <div class="bio-actions">
+                  <span class="bio-count">{{ bioDraft.length }}/200</span>
+                  <button class="btn sm" @click="cancelEditBio">取消</button>
+                  <button class="btn sm primary" @click="saveBio">保存</button>
+                </div>
               </div>
             </div>
-            <div v-if="auth.authError" class="alert-error" data-test="auth-error">{{ auth.authError }}</div>
-            <p class="profile-note">{{ t('auth.watermarkNote') }}</p>
           </div>
-          <div class="stat-cards">
+          <div class="profile-stats">
             <div class="stat-card" data-test="stat-total">
               <b>{{ totalUses }}</b><span>{{ t('profile.statTotal') }}</span>
             </div>
@@ -239,11 +284,13 @@ function doDelete() {
             </div>
           </div>
         </div>
+        <div v-if="auth.authError" class="alert-error" data-test="auth-error" style="margin-top:10px">{{ auth.authError }}</div>
+        <p class="profile-note" style="margin-top:8px">{{ t('auth.watermarkNote') }}</p>
       </Panel>
 
       <!-- Pixel heatmap -->
       <Panel :title="t('profile.heatmap')" class="col-heat">
-        <div class="heatmap" data-test="heatmap">
+        <div class="heatmap-wrap"><div class="heatmap" data-test="heatmap">
           <span
             v-for="cell in heatmap"
             :key="cell.key"
@@ -251,7 +298,7 @@ function doDelete() {
             :class="`l${cell.level}`"
             :title="cell.label"
           ></span>
-        </div>
+        </div></div>
         <div class="heat-legend">
           <span>{{ t('profile.heatLess') }}</span>
           <span class="heat-cell l0"></span>
@@ -275,8 +322,13 @@ function doDelete() {
           >
             <span class="usage-icon">{{ TOOL_META[row.tool].icon }}</span>
             <span class="usage-name">{{ toolLabel(row.tool) }}</span>
-            <span class="usage-bar-track">
-              <span class="usage-bar" :style="{ width: `${row.pct}%` }"></span>
+            <span class="usage-pixel-bar">
+              <span
+                v-for="n in 25"
+                :key="n"
+                class="usage-pixel"
+                :class="{ active: n <= Math.ceil(row.pct / (100/25)), full: n <= Math.floor(row.pct / (100/25)) }"
+              ></span>
             </span>
             <span class="usage-count">{{ row.n }}</span>
           </button>
@@ -284,7 +336,7 @@ function doDelete() {
         <p v-else class="profile-empty" data-test="usage-empty">{{ t('profile.empty') }}</p>
       </Panel>
 
-      <!-- Recent activity -->
+            <!-- Recent activity -->
       <Panel :title="t('profile.recent')" class="col-half">
         <template #actions>
           <button
@@ -296,6 +348,12 @@ function doDelete() {
             {{ t('profile.clear') }}
           </button>
         </template>
+        <div v-if="activity.syncWarning" class="auth-notice" data-test="activity-sync-warning">
+          <span>{{ activity.syncWarning }}</span>
+          <button class="btn sm" type="button" data-test="activity-sync-retry" @click="activity.retrySync()">
+            {{ t('activity.retry') }}
+          </button>
+        </div>
         <ul v-if="recent.length" class="recent-list" data-test="recent-list">
           <li v-for="(e, i) in recent" :key="`${e.ts}-${i}`" class="recent-row">
             <span class="usage-icon">{{ TOOL_META[e.tool]?.icon ?? '·' }}</span>
@@ -304,6 +362,34 @@ function doDelete() {
           </li>
         </ul>
         <p v-else class="profile-empty" data-test="recent-empty">{{ t('profile.empty') }}</p>
+      </Panel>
+
+      <!-- File records -->
+      <Panel :title="t(`profile.fileRecords`)" class="col-half">
+        <template #actions>
+          <button
+            v-if="fileRecords.records.length"
+            class="btn sm"
+            @click="doClearFileRecords"
+          >
+            {{ t('profile.clear') }}
+          </button>
+        </template>
+        <ul v-if="fileRecords.records.length" class="recent-list">
+          <li
+            v-for="record in fileRecords.records.slice(0, 12)"
+            :key="record.id"
+            class="recent-row"
+            :title="record.fileName"
+          >
+            <span class="usage-icon">{{ TOOL_META[record.tool]?.icon ?? '·' }}</span>
+            <span class="usage-name" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%">
+              {{ record.fileName }}
+            </span>
+            <span class="recent-time">{{ relTime(record.createdAt) }}</span>
+          </li>
+        </ul>
+        <p v-else class="profile-empty">{{ t('profile.noFiles') }}</p>
       </Panel>
 
       <!-- Security -->
@@ -326,7 +412,7 @@ function doDelete() {
       </Panel>
 
       <!-- Account actions -->
-      <Panel :title="t('auth.accountActions')" class="col-full">
+      <Panel :title="t('auth.accountActions')" class="col-half">
         <div class="profile-actions">
           <button class="btn" data-test="export-data" @click="doExport">{{ t('profile.export') }}</button>
           <button class="btn" data-test="logout" @click="doLogout">{{ t('auth.logout') }}</button>

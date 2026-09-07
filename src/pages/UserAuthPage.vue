@@ -9,6 +9,8 @@ const tab = ref<'login' | 'register'>('login');
 
 const loginId = ref('');
 const loginPass = ref('');
+const migrationCode = ref('');
+const migrationUsername = ref('');
 
 const regUsername = ref('');
 const regEmail = ref('');
@@ -30,9 +32,11 @@ const emailState = computed<FieldState>(() =>
 const codeState = computed<FieldState>(() =>
   state(regCode.value !== '', /^\d{4,8}$/.test(regCode.value.trim()))
 );
-const passState = computed<FieldState>(() => state(regPass.value !== '', regPass.value.length >= 6));
+const passState = computed<FieldState>(() => state(
+  regPass.value !== '', regPass.value.length >= 8 && regPass.value.length <= 128
+));
 const confirmState = computed<FieldState>(() =>
-  state(regConfirm.value !== '', regConfirm.value === regPass.value && regPass.value.length >= 6)
+  state(regConfirm.value !== '', regConfirm.value === regPass.value && regPass.value.length >= 8 && regPass.value.length <= 128)
 );
 
 const hintClass = (s: FieldState) => (s === null ? '' : s ? 'ok' : 'bad');
@@ -60,6 +64,11 @@ async function doRegister() {
   });
   if (ok) afterAuth();
 }
+
+async function doLegacyMigration() {
+  const ok = await auth.completeLegacyMigration(migrationCode.value, migrationUsername.value || undefined);
+  if (ok) afterAuth();
+}
 </script>
 
 <template>
@@ -75,9 +84,81 @@ async function doRegister() {
             {{ t('auth.register') }}
           </button>
         </div>
-        <h2 class="auth-heading">{{ tab === 'login' ? t('auth.welcomeBack') : t('auth.createAccount') }}</h2>
+        <h2 class="auth-heading">
+          {{ auth.legacyMigration ? 'Move your legacy account' : tab === 'login' ? t('auth.welcomeBack') : t('auth.createAccount') }}
+        </h2>
 
-      <form v-if="tab === 'login'" class="field-stack" @submit.prevent="doLogin">
+      <form
+        v-if="auth.legacyMigration"
+        class="field-stack legacy-migration-panel"
+        data-test="migration-form"
+        @submit.prevent="doLegacyMigration"
+      >
+        <div class="legacy-migration-intro" data-test="legacy-migration">
+          <span class="legacy-migration-icon" aria-hidden="true">↗</span>
+          <div>
+            <b>Legacy account found</b>
+            <p>Verify {{ auth.legacyMigration.maskedEmail }} to securely move your account and saved settings.</p>
+          </div>
+        </div>
+        <div class="auth-code-row">
+          <label class="field">
+            <span>Six-digit code</span>
+            <input
+              v-model="migrationCode"
+              type="text"
+              inputmode="numeric"
+              maxlength="6"
+              autocomplete="one-time-code"
+              data-test="migration-code"
+              placeholder="123456"
+            />
+          </label>
+          <button
+            class="btn sm"
+            type="button"
+            data-test="migration-send-code"
+            :disabled="auth.legacySendingCode || auth.legacyCodeCooldown > 0 || auth.busy"
+            @click="auth.sendLegacyCode()"
+          >
+            <template v-if="auth.legacyCodeCooldown > 0">Resend ({{ auth.legacyCodeCooldown }}s)</template>
+            <template v-else>{{ auth.legacyMigration.needsCode ? 'Send code' : 'Resend code' }}</template>
+          </button>
+        </div>
+        <label v-if="auth.legacyMigration.usernameConflict" class="field">
+          <span>Choose a new username</span>
+          <input
+            v-model="migrationUsername"
+            type="text"
+            autocomplete="username"
+            data-test="migration-username"
+            placeholder="2–20 characters"
+          />
+          <small class="field-hint">Your legacy username is already in use.</small>
+        </label>
+        <div class="migration-progress" data-test="migration-progress" aria-live="polite">
+          <span v-if="auth.legacyMigrationProgress" class="migration-spinner" aria-hidden="true"></span>
+          {{ auth.legacyMigrationProgress }}
+        </div>
+        <div class="migration-message-slot">
+          <div class="alert-error" data-test="migration-error" aria-live="polite">{{ auth.authError }}</div>
+        </div>
+        <div class="migration-actions">
+          <button class="btn" type="button" data-test="migration-cancel" @click="auth.cancelLegacyMigration()">
+            Cancel
+          </button>
+          <button
+            class="btn primary"
+            type="submit"
+            data-test="migration-submit"
+            :disabled="auth.busy || auth.legacySendingCode || auth.legacyMigration.needsCode || !/^\d{6}$/.test(migrationCode) || (auth.legacyMigration.usernameConflict && !migrationUsername.trim())"
+          >
+            Move account
+          </button>
+        </div>
+      </form>
+
+      <form v-else-if="tab === 'login'" class="field-stack" data-test="login-form" @submit.prevent="doLogin">
         <label class="field">
           <span>{{ t('auth.identifier') }}</span>
           <input v-model="loginId" type="text" data-test="login-id" autocomplete="username" />
@@ -93,7 +174,7 @@ async function doRegister() {
         </button>
       </form>
 
-      <form v-else class="field-stack" @submit.prevent="doRegister">
+      <form v-else class="field-stack" data-test="register-form" @submit.prevent="doRegister">
         <label class="field">
           <span>{{ t('auth.username') }}</span>
           <input

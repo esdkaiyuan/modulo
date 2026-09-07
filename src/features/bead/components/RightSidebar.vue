@@ -73,10 +73,10 @@ function onCustomSizeInput(e: Event) {
       <div class="field-stack">
         <label class="field">
           <select :value="isCustomBoard ? 'custom' : store.boardSize" @change="onBoardSizeChange">
-            <option :value="29">29×29 {{ t('bead.standard') }}</option>
-            <option :value="57">57×57 {{ t('bead.large') }}</option>
-            <option :value="58">58×58 {{ t('bead.artkal') }}</option>
-            <option value="custom">{{ t('bead.customSize') }}</option>
+            <option :value="29">29×29 标准板 (MARD/Perler)</option>
+            <option :value="57">57×57 大板 (Hama Mini)</option>
+            <option :value="58">58×58 大板 (Artkal)</option>
+            <option value="custom">自定义尺寸</option>
           </select>
         </label>
         <div v-if="isCustomBoard" class="field-row">
@@ -93,6 +93,55 @@ function onCustomSizeInput(e: Event) {
       </div>
     </Panel>
 
+    <Panel title="显示选项">
+      <div class="field-stack">
+        <label class="checkbox-field">
+          <input type="checkbox" :checked="store.showGrid" @change="store.setShowGrid(($event.target as HTMLInputElement).checked)" />
+          <span>网格线（5格加粗）</span>
+        </label>
+        <label class="checkbox-field">
+          <input type="checkbox" :checked="store.showBoardLines" @change="store.setShowBoardLines(($event.target as HTMLInputElement).checked)" />
+          <span>板边界线</span>
+        </label>
+        <label class="checkbox-field">
+          <input type="checkbox" :checked="store.showCenterCrosshair" @change="store.setShowCenterCrosshair(($event.target as HTMLInputElement).checked)" />
+          <span>中心定位十字线</span>
+        </label>
+        <p class="hint">按照真实拼豆底板样式：5格分线 + 板边界 + 中心定位</p>
+      </div>
+    </Panel>
+
+    <Panel title="背景去除">
+      <div class="field-stack">
+        <label class="field">
+          <select :value="store.bgRemoveMode" @change="store.setBgRemoveMode(($event.target as HTMLSelectElement).value as any)" :disabled="store.isRemovingBg">
+            <option value="none">关闭</option>
+            <option value="ai">AI 智能抠图（推荐）</option>
+            <option value="corner">边缘填充</option>
+            <option value="auto">自动识别背景色</option>
+            <option value="tolerance">白色背景（容差）</option>
+          </select>
+        </label>
+        <div v-if="store.isRemovingBg" class="bg-removing-indicator">
+          <div class="bg-progress-bar">
+            <div class="bg-progress-fill" :style="{ width: Math.round(store.bgRemoveProgress * 100) + '%' }"></div>
+          </div>
+          <p class="hint">AI 正在处理中... {{ Math.round(store.bgRemoveProgress * 100) }}%</p>
+        </div>
+        <template v-else-if="store.bgRemoveMode !== 'none' && store.bgRemoveMode !== 'ai'">
+          <label class="field">
+            <span>容差: {{ store.bgTolerance }}</span>
+            <input type="range" min="0" max="150" :value="store.bgTolerance"
+              @input="store.setBgTolerance(Number(($event.target as HTMLInputElement).value))" />
+          </label>
+          <p class="hint" v-if="store.bgRemoveMode === 'auto'">从图片边缘取样背景色，接近的区域变空</p>
+          <p class="hint" v-if="store.bgRemoveMode === 'tolerance'">将白色及接近白色的区域设为空</p>
+          <p class="hint" v-if="store.bgRemoveMode === 'corner'">从边缘填充式去除背景，适合主体居中的图片</p>
+        </template>
+        <p class="hint" v-if="store.bgRemoveMode === 'ai' && !store.isRemovingBg">基于 U2-Net 深度学习模型，高质量自动识别主体</p>
+      </div>
+    </Panel>
+
     <Panel :title="t('bead.viewMode')">
       <div class="field-stack">
         <div class="bead-view-btns">
@@ -100,6 +149,10 @@ function onCustomSizeInput(e: Event) {
           <button class="btn sm" :class="{ toggled: store.viewMode === 'symbols' }" @click="store.setViewMode('symbols')">{{ t('bead.viewSymbols') }}</button>
           <button class="btn sm" :class="{ toggled: store.viewMode === 'both' }" @click="store.setViewMode('both')">{{ t('bead.viewBoth') }}</button>
         </div>
+        <label class="checkbox-field">
+          <input type="checkbox" :checked="store.showColorCodes" @change="store.setShowColorCodes(($event.target as HTMLInputElement).checked)" />
+          <span>显示色号标注</span>
+        </label>
       </div>
     </Panel>
 

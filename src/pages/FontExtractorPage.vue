@@ -7,9 +7,11 @@ import EncodingFields from '../components/EncodingFields.vue';
 import SizeModeFields from '../components/SizeModeFields.vue';
 import ColorModeFields from '../components/ColorModeFields.vue';
 import { useFontModuloStore } from '../features/font/stores/fontModuloStore';
+import { useFileRecordStore } from '../user/fileRecordStore';
 import { t } from '../i18n';
 
 const store = useFontModuloStore();
+const fileRecords = useFileRecordStore();
 const fontInput = ref<HTMLInputElement | null>(null);
 const fontError = ref('');
 const customFonts = ref<string[]>([]);
