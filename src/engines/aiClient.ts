@@ -482,6 +482,8 @@ export async function fetchModels(config: {
   protocol: AiProtocol;
   baseUrl: string;
   apiKey: string;
+  /** Lets the caller abort an in-flight model listing. */
+  signal?: AbortSignal;
 }): Promise<string[]> {
   const isAnthropic = config.protocol === 'anthropic';
   const url = joinUrl(config.baseUrl, isAnthropic ? '/v1/models' : '/models');
@@ -493,7 +495,7 @@ export async function fetchModels(config: {
       }
     : { authorization: `Bearer ${config.apiKey}` };
 
-  const response = await fetch(url, { method: 'GET', headers });
+  const response = await fetch(url, { method: 'GET', headers, signal: config.signal });
   if (!response.ok) await throwHttpError(response);
 
   const json = await response.json();

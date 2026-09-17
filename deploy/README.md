@@ -224,26 +224,31 @@ add_header Access-Control-Allow-Methods 'GET, POST, OPTIONS';
 # 1) 构建（base 必须是 /modulo/，Pages 项目站点在子路径下）
 MSYS_NO_PATHCONV=1 VITE_BASE=/modulo/ npx vite build --outDir dist-pages-build
 
-# 2) 用 worktree 把产物推到 gh-pages（不动主干工作区）
-git worktree add --detach .ghpages-tmp
-git -C .ghpages-tmp checkout --orphan gh-pages
-git -C .ghpages-tmp rm -rf . -q
+# 2) 基于远端 gh-pages 建临时 worktree，替换产物后推送（fast-forward）
+git fetch origin gh-pages
+git worktree add --detach .ghpages-tmp origin/gh-pages
+git -C .ghpages-tmp checkout -B gh-pages origin/gh-pages
+git -C .ghpages-tmp rm -rf . -q        # 清掉上一次的产物（含旧 hash 资源）
 cp -r dist-pages-build/. .ghpages-tmp/
 touch .ghpages-tmp/.nojekyll
 git -C .ghpages-tmp add -A
 git -C .ghpages-tmp commit -m "chore: publish static build"
-git -C .ghpages-tmp push -u origin gh-pages
+git -C .ghpages-tmp push origin gh-pages
 
-# 3) 清理
-cd .. && git worktree remove .ghpages-tmp --force && rm -rf dist-pages-build
+# 3) 清理（务必先把 shell 切回仓库根目录，否则 Windows 下删不掉该目录）
+cd /d/aesdnew/modulo
+git worktree remove .ghpages-tmp --force
+rm -rf dist-pages-build
 ```
+
+> 该分支首次建立时用的是 orphan 提交（历史里只有一次）；之后都按上面的增量流程，推送是快进的。
 
 ### 注意点
 
 - 构建必须带 `VITE_BASE=/modulo/`，否则资源 404；Windows Git Bash 下还需 `MSYS_NO_PATHCONV=1`，否则 `/modulo/` 会被 MSYS 当成路径转换。
 - 应用用 hash 路由（`#/xxx`），**不需要** SPA 回退配置，直接刷新不会 404。
 - `.nojekyll` 必须保留，避免 Jekyll 处理资源目录。
-- `npm run build` 目前会失败：它的 `vue-tsc` 步骤撞上 4 个既有类型错误（账户/AI 迁移未完成部分），所以部署时直接用 `npx vite build`；类型修好后建议恢复类型门禁。
+- 完整构建可直接用 `npm run build`（含 `vue-tsc` 类型检查）；只想出产物、跳过类型门禁时用 `npx vite build`。上面的部署命令因为要自定义 `--outDir`，用的是后者。
 
 ### 当前限制（重要）
 

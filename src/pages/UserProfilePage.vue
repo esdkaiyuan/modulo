@@ -13,6 +13,8 @@ const fileRecords = useFileRecordStore();
 
 const oldPass = ref('');
 const newPass = ref('');
+/** Password typed to confirm account deletion (server verifies it). */
+const deletePass = ref('');
 
 // ── Bio ──────────────────────────────────────────────
 const editingBio = ref(false);
@@ -43,8 +45,8 @@ function startRename() {
   editingName.value = true;
 }
 
-function saveRename() {
-  if (auth.renameUser(nameDraft.value)) editingName.value = false;
+async function saveRename() {
+  if (await auth.renameUser(nameDraft.value)) editingName.value = false;
 }
 
 const avatarStyle = computed(() => {
@@ -186,16 +188,16 @@ function doLogout() {
   window.location.hash = '#/';
 }
 
-function doDelete() {
-  if (window.confirm(t('auth.deleteConfirm'))) {
-    const uid = auth.currentUser?.id;
-    if (uid) {
-      activity.purgeUser(uid);
-      void dbDeleteAiConfig(uid);
-    }
-    auth.deleteAccount();
-    window.location.hash = '#/';
+async function doDelete() {
+  if (!window.confirm(t('auth.deleteConfirm'))) return;
+  const uid = auth.currentUser?.id;
+  if (!(await auth.deleteAccount(deletePass.value))) return;
+  // 只有在服务端确认删除后才清本地数据（密码错误时不应丢失本地记录）。
+  if (uid) {
+    activity.purgeUser(uid);
+    void dbDeleteAiConfig(uid);
   }
+  window.location.hash = '#/';
 }
 </script>
 
@@ -416,7 +418,12 @@ function doDelete() {
         <div class="profile-actions">
           <button class="btn" data-test="export-data" @click="doExport">{{ t('profile.export') }}</button>
           <button class="btn" data-test="logout" @click="doLogout">{{ t('auth.logout') }}</button>
-          <button class="btn danger" data-test="delete-account" @click="doDelete">{{ t('auth.deleteAccount') }}</button>
+          <button class="btn danger" data-test="delete-account" :disabled="!deletePass" @click="doDelete">{{ t('auth.deleteAccount') }}</button>
+          <label class="field" style="flex-basis:100%">
+            <span>{{ t('auth.deletePass') }}</span>
+            <input v-model="deletePass" type="password" data-test="delete-pass" autocomplete="current-password" />
+          </label>
+          <div v-if="auth.authError" class="alert-error" data-test="delete-error">{{ auth.authError }}</div>
           <span class="profile-note profile-actions-note">{{ t('profile.exportNote') }}</span>
         </div>
       </Panel>

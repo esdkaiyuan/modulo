@@ -145,7 +145,7 @@ describe('authStore', () => {
     mockMailApi(true);
     const store = useAuthStore();
     await store.register(REG_INPUT);
-    store.deleteAccount();
+    await store.deleteAccount(REG_INPUT.password);
     expect(store.currentUser).toBeNull();
     expect(JSON.parse(localStorage.getItem('dms-users')!)).toHaveLength(0);
     expect(watermarkUserId.value).toBe('guest');
