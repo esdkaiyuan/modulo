@@ -210,3 +210,43 @@ add_header Access-Control-Allow-Methods 'GET, POST, OPTIONS';
 ---
 
 **祝您部署顺利！** 🎉
+
+---
+
+## 🌐 GitHub Pages 托管（当前线上方案）
+
+**站点地址**：https://esdkaiyuan.github.io/modulo/
+**发布方式**：构建产物推送到 `gh-pages` 分支，仓库 Pages 的 Source 即该分支根目录。
+
+### 重新部署
+
+```bash
+# 1) 构建（base 必须是 /modulo/，Pages 项目站点在子路径下）
+MSYS_NO_PATHCONV=1 VITE_BASE=/modulo/ npx vite build --outDir dist-pages-build
+
+# 2) 用 worktree 把产物推到 gh-pages（不动主干工作区）
+git worktree add --detach .ghpages-tmp
+git -C .ghpages-tmp checkout --orphan gh-pages
+git -C .ghpages-tmp rm -rf . -q
+cp -r dist-pages-build/. .ghpages-tmp/
+touch .ghpages-tmp/.nojekyll
+git -C .ghpages-tmp add -A
+git -C .ghpages-tmp commit -m "chore: publish static build"
+git -C .ghpages-tmp push -u origin gh-pages
+
+# 3) 清理
+cd .. && git worktree remove .ghpages-tmp --force && rm -rf dist-pages-build
+```
+
+### 注意点
+
+- 构建必须带 `VITE_BASE=/modulo/`，否则资源 404；Windows Git Bash 下还需 `MSYS_NO_PATHCONV=1`，否则 `/modulo/` 会被 MSYS 当成路径转换。
+- 应用用 hash 路由（`#/xxx`），**不需要** SPA 回退配置，直接刷新不会 404。
+- `.nojekyll` 必须保留，避免 Jekyll 处理资源目录。
+- `npm run build` 目前会失败：它的 `vue-tsc` 步骤撞上 4 个既有类型错误（账户/AI 迁移未完成部分），所以部署时直接用 `npx vite build`；类型修好后建议恢复类型门禁。
+
+### 当前限制（重要）
+
+Pages 是纯静态托管，**没有 `/api` 后端**：登录/注册走 `/api/auth/*` 与 `/mailapi`（邮箱验证码），而这些请求在 Pages 上会 404；同时所有工具页都受登录保护（`src/App.vue` 的 PROTECTED 列表）。**线上目前只有首页与登录页可用，9 个工具页进不去。**
+
+要恢复功能需要：把后端（Express+MySQL 方案，见 `docs/superpowers/specs/`）部署到公网可访问的服务，并让前端支持外部 API 地址与跨域凭据（`credentials: 'include'` + 后端 CORS）。
