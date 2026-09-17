@@ -3,6 +3,9 @@ import vue from '@vitejs/plugin-vue';
 
 export default defineConfig({
   plugins: [vue()],
+  // GitHub Pages serves project sites from /<repo>/, so the Pages workflow sets
+  // VITE_BASE=/modulo/. Local dev and server (nginx) deploys keep the root base.
+  base: process.env.VITE_BASE ?? '/',
   server: {
     proxy: {
       '/api': {
