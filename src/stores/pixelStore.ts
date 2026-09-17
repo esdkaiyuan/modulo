@@ -1,10 +1,11 @@
 import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 import { encodeBitmap, type BitOrder, type Polarity, type ScanDirection } from '../engines/bitmapEncoder';
-import { floodFill } from '../engines/fill';
+import { floodFill, lineCells } from '../engines/fill';
 import { type PixelValue } from '../engines/modulo';
 import { findClosestPaletteColor, PALETTE_16_COLORS, rgbToRgb332, rgbToRgb565, type ColorByteOrder, type ColorMode } from '../engines/colorProcessor';
-import { formatCArray, formatColorArray, makeTextBlob } from '../engines/outputFormatter';
+import { colorValueChunks, formatCArray, formatColorArray, makeTextBlob } from '../engines/outputFormatter';
+import { t } from '../i18n';
 
 export type Tool = 'pencil' | 'eraser' | 'fill' | 'eyedropper';
 export type HanddrawOutputFormat = 'c-array' | 'hex' | 'bin';
@@ -94,6 +95,12 @@ function createCatPixels(width: number, height: number): PixelValue[] {
   return pixels;
 }
 
+interface PixelSnapshot {
+  pixels: PixelValue[];
+  width: number;
+  height: number;
+}
+
 export const usePixelStore = defineStore('pixel', () => {
   const width = ref(32);
   const height = ref(32);
@@ -108,7 +115,7 @@ export const usePixelStore = defineStore('pixel', () => {
   const cursorY = ref(0);
   const palette = ref(defaultPalette);
   const pixels = ref<PixelValue[]>(createCatPixels(width.value, height.value));
-  const history = ref<PixelValue[][]>([[...pixels.value]]);
+  const history = ref<PixelSnapshot[]>([{ pixels: [...pixels.value], width: width.value, height: height.value }]);
   const historyIndex = ref(0);
   const scanDirection = ref<ScanDirection>('horizontal-ltr');
   const bitOrder = ref<BitOrder>('msb');
@@ -175,12 +182,10 @@ export const usePixelStore = defineStore('pixel', () => {
         width: width.value,
         height: height.value
       }));
-  const hexOutput = computed(() => Array.from(byteOutput.value)
-    .map((byte) => `0x${byte.toString(16).padStart(2, '0').toUpperCase()}`)
-    .join(', '));
+  const hexOutput = computed(() => colorValueChunks(byteOutput.value, 'rgb888', 'big', 16).join('\n'));
   const currentOutput = computed(() => {
     if (outputFormat.value === 'hex') return hexOutput.value;
-    if (outputFormat.value === 'bin') return `[binary output] ${byteOutput.value.length} bytes`;
+    if (outputFormat.value === 'bin') return t('draw.binNotice', { n: byteOutput.value.length });
     return cArrayOutput.value;
   });
   const outputFileName = computed(() => {
@@ -205,7 +210,7 @@ export const usePixelStore = defineStore('pixel', () => {
   function commit(nextPixels: PixelValue[]) {
     pixels.value = nextPixels;
     history.value = history.value.slice(0, historyIndex.value + 1);
-    history.value.push([...nextPixels]);
+    history.value.push({ pixels: [...nextPixels], width: width.value, height: height.value });
     historyIndex.value = history.value.length - 1;
   }
 
@@ -274,6 +279,22 @@ export const usePixelStore = defineStore('pixel', () => {
     commit(nextPixels);
   }
 
+  /** Paint every cell between two points — fast drags would otherwise skip cells. */
+  function paintLine(fromX: number, fromY: number, toX: number, toY: number) {
+    if (activeTool.value === 'fill' || activeTool.value === 'eyedropper') return;
+
+    const value = activeTool.value === 'eraser' ? null : activeColor.value;
+    const nextPixels = [...pixels.value];
+    for (const [x, y] of lineCells(fromX, fromY, toX, toY)) writePixel(nextPixels, x, y, value);
+
+    if (strokeActive) {
+      pixels.value = nextPixels;
+      strokeChanged = true;
+      return;
+    }
+    commit(nextPixels);
+  }
+
   function setCursor(x: number, y: number) {
     cursorX.value = x;
     cursorY.value = y;
@@ -303,16 +324,22 @@ export const usePixelStore = defineStore('pixel', () => {
     commit(createEmptyPixels(width.value, height.value));
   }
 
+  function restore(snapshot: PixelSnapshot) {
+    pixels.value = [...snapshot.pixels];
+    width.value = snapshot.width;
+    height.value = snapshot.height;
+  }
+
   function undo() {
     if (historyIndex.value <= 0) return;
     historyIndex.value -= 1;
-    pixels.value = [...history.value[historyIndex.value]];
+    restore(history.value[historyIndex.value]);
   }
 
   function redo() {
     if (historyIndex.value >= history.value.length - 1) return;
     historyIndex.value += 1;
-    pixels.value = [...history.value[historyIndex.value]];
+    restore(history.value[historyIndex.value]);
   }
 
   const canUndo = computed(() => historyIndex.value > 0);
@@ -355,6 +382,7 @@ export const usePixelStore = defineStore('pixel', () => {
     canRedo,
     pixelAt,
     paintPixel,
+    paintLine,
     beginStroke,
     endStroke,
     setCursor,

@@ -736,6 +736,18 @@ function demoBeadPattern(ctx: CanvasRenderingContext2D, t: number) {
 
 
 
+function demoUnknown(ctx: CanvasRenderingContext2D, t: number) {
+  // Placeholder for "coming soon" cards — faint pulsing dots.
+  for (let y = 0; y < ROWS; y += 1) {
+    for (let x = 0; x < COLS; x += 1) {
+      if ((x + y) % 3 === 0) {
+        const pulse = 0.08 + 0.06 * Math.sin(t * 2 + x * 0.5 + y * 0.4);
+        dotAt(ctx, x, y, DIM, pulse);
+      }
+    }
+  }
+}
+
 const DEMOS = {
   image: demoImage,
   video: demoVideo,
@@ -748,6 +760,9 @@ const DEMOS = {
   aiagent: demoAiAgent
 } as const;
 
+// @ts-ignore - fallback for unknown types (e.g. "coming soon" placeholders)
+(DEMOS as Record<string, Function>).default = demoUnknown;
+
 // ── Render loop (paused off-screen via IntersectionObserver) ──
 
 let observer: IntersectionObserver | null = null;
@@ -756,7 +771,9 @@ function paint(ctx: CanvasRenderingContext2D, t: number) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.fillStyle = BG;
   ctx.fillRect(0, 0, W, H);
-  DEMOS[props.type](ctx, t);
+  const fn = (DEMOS as unknown as Record<string, (ctx: CanvasRenderingContext2D, t: number) => void>)[props.type]
+    ?? (DEMOS as unknown as Record<string, (ctx: CanvasRenderingContext2D, t: number) => void>).default;
+  if (fn) fn(ctx, t);
 }
 
 function frame(now: number) {

@@ -80,9 +80,10 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
   const audioBytes = shallowRef<Uint8Array>(new Uint8Array());
   const audioPeak = ref(0);
   const isProcessingAudio = ref(false);
-  const audioPcmInOutput = ref(false); // whether to include raw PCM in code output (heavy)
+  /** Include quantized PCM C arrays in the code panel (default on with video+audio). */
+  const audioPcmInOutput = ref(true);
   type AudioVisualMode = 'waveform' | 'spectrum' | 'both';
-  const audioVisualMode = ref<AudioVisualMode>('waveform');
+  const audioVisualMode = ref<AudioVisualMode>('both');
 
   // ── Audio waveform pixel化 (取模) ──
   const audioWaveformWidth = ref(256);
@@ -101,9 +102,11 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
     ? Math.ceil(targetWidth.value * targetHeight.value / 8)
     : targetWidth.value * targetHeight.value * COLOR_FORMAT_INFO[colorMode.value].bytesPerPixel
   );
-  const estimatedBytes = computed(() =>
-    processedFrames.value.reduce((sum, f) => sum + f.bytes.length, 0)
-  );
+  const estimatedBytes = computed(() => {
+    const frameBytes = processedFrames.value.reduce((sum, f) => sum + f.bytes.length, 0);
+    const pcmBytes = audioPcmInOutput.value ? audioBytes.value.length : 0;
+    return frameBytes + pcmBytes;
+  });
   const outputName = computed(() => `${sanitizeIdentifier(fileName.value || 'video')}_video`);
   const totalFrames = computed(() => processedFrames.value.length);
   const hasFrames = computed(() => processedFrames.value.length > 0);
@@ -155,6 +158,42 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
   const audioFramesSource = computed(() => {
     const lines: string[] = [];
 
+    // ── Audio PCM (same shape as the standalone audio tool) ──
+    if (audioPcmInOutput.value && audioBytes.value.length > 0) {
+      const audioName = `${outputName.value}_audio`;
+      const sampleCount = audioSamples.value.length;
+      lines.push('');
+      lines.push(`// Audio PCM: ${sampleCount} samples, ${audioSampleRate.value} Hz, mono`);
+      lines.push(
+        audioBitDepth.value === 8
+          ? '// Format: 8-bit unsigned (0x80 = silence)'
+          : `// Format: 16-bit signed, ${audioByteOrder.value}-endian`
+      );
+      lines.push(`// Duration: ${(sampleCount / audioSampleRate.value).toFixed(3)} s`);
+      if (audioBitDepth.value === 8) {
+        lines.push(`const uint8_t ${audioName}[] PROGMEM = {`);
+        const data = audioBytes.value;
+        for (let i = 0; i < data.length; i += 16) {
+          const chunk = Array.from(data.slice(i, i + 16), (b) => `0x${b.toString(16).padStart(2, '0').toUpperCase()}`);
+          lines.push(`  ${chunk.join(', ')}${i + 16 < data.length ? ',' : ''}`);
+        }
+      } else {
+        lines.push(`const int16_t ${audioName}[] PROGMEM = {`);
+        const data = audioBytes.value;
+        const words: string[] = [];
+        for (let i = 0; i + 1 < data.length; i += 2) {
+          const raw = audioByteOrder.value === 'little' ? data[i] | (data[i + 1] << 8) : (data[i] << 8) | data[i + 1];
+          words.push(String(raw > 32767 ? raw - 65536 : raw));
+        }
+        for (let i = 0; i < words.length; i += 12) {
+          lines.push(`  ${words.slice(i, i + 12).join(', ')}${i + 12 < words.length ? ',' : ''}`);
+        }
+      }
+      lines.push('};');
+      lines.push(`const uint32_t ${audioName}_len = ${sampleCount};`);
+      lines.push(`const uint32_t ${audioName}_rate = ${audioSampleRate.value};`);
+    }
+
     // ── Audio waveform bitmap (pixel-mod) ──
     const wfBitmap = audioWaveformBitmap.value;
     if ((audioVisualMode.value === 'waveform' || audioVisualMode.value === 'both') && wfBitmap && wfBitmap.length > 0) {
@@ -201,44 +240,35 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
       lines.push(`const uint16_t ${spName}_height = ${spH};`);
     }
 
-    // ── Audio PCM raw data (optional, heavy - only if explicitly enabled) ──
-    if (audioPcmInOutput.value && audioBytes.value.length > 0) {
-      const audioName = `${outputName.value}_audio`;
-      const sampleCount = audioSamples.value.length;
-      lines.push('');
-      lines.push(`// Audio PCM: ${sampleCount} samples, ${audioSampleRate.value} Hz, mono, ${audioBitDepth.value}-bit`);
-      if (audioBitDepth.value === 8) {
-        lines.push(`const uint8_t ${audioName}[] PROGMEM = {`);
-        const data = audioBytes.value;
-        for (let i = 0; i < data.length; i += 16) {
-          const chunk = Array.from(data.slice(i, i + 16), (b) => `0x${b.toString(16).padStart(2, '0').toUpperCase()}`);
-          lines.push(`  ${chunk.join(', ')}${i + 16 < data.length ? ',' : ''}`);
-        }
-      } else {
-        lines.push(`const int16_t ${audioName}[] PROGMEM = {`);
-        const data = audioBytes.value;
-        const words: string[] = [];
-        for (let i = 0; i + 1 < data.length; i += 2) {
-          const raw = audioByteOrder.value === 'little' ? data[i] | (data[i + 1] << 8) : (data[i] << 8) | data[i + 1];
-          words.push(String(raw > 32767 ? raw - 65536 : raw));
-        }
-        for (let i = 0; i < words.length; i += 12) {
-          lines.push(`  ${words.slice(i, i + 12).join(', ')}${i + 12 < words.length ? ',' : ''}`);
-        }
-      }
-      lines.push('};');
-      lines.push(`const uint32_t ${audioName}_len = ${sampleCount};`);
-      lines.push(`const uint32_t ${audioName}_rate = ${audioSampleRate.value};`);
-    }
-
     return lines.join('\n');
   });
 
   const generatedSource = computed(() => {
+    if (!hasFrames.value) return '';
     const videoPart = videoFramesSource.value;
+    if (!audioModEnabled.value) return videoPart;
     const audioPart = audioFramesSource.value;
-    return audioPart ? videoPart + audioPart : videoPart;
+    return audioPart ? `${videoPart}\n${audioPart}` : videoPart;
   });
+
+  /** Decode → visualize → quantize PCM for the current time window. */
+  async function syncAudioFromVideo() {
+    const buffer = decodedAudioBuffer.value;
+    if (!buffer) {
+      audioModEnabled.value = false;
+      audioSamples.value = new Float32Array();
+      audioBytes.value = new Uint8Array();
+      audioPeak.value = 0;
+      audioWaveformBitmap.value = null;
+      audioWaveformPreview.value = null;
+      audioSpectrumBitmap.value = null;
+      audioSpectrumPreview.value = null;
+      return;
+    }
+    audioModEnabled.value = true;
+    generateAudioVisuals();
+    await processAudio();
+  }
 
   // ── Processing ──────────────────────────────────────
   let processTimer: ReturnType<typeof setTimeout> | null = null;
@@ -246,10 +276,18 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
 
   let processCancelToken = { cancelled: false };
   let processBusy = false;
+  /** Set when a run is requested while another is still winding down. */
+  let processQueued = false;
 
   async function processAll() {
     if (!extractedFrames.value.length) return;
-    if (processBusy) return; // skip if already running
+    if (processBusy) {
+      // The frames changed while a run is in flight (new file / re-extract):
+      // remember the request instead of dropping it, otherwise the output
+      // stays on the previous video's frames.
+      processQueued = true;
+      return;
+    }
     processBusy = true;
     isProcessing.value = true;
     processCancelToken.cancelled = false;
@@ -323,14 +361,24 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
     } finally {
       isProcessing.value = false;
       processBusy = false;
+      if (processQueued) {
+        processQueued = false;
+        scheduleProcess();
+      }
     }
   }
 
   // ── Audio playback ──────────────────────────────────
   function ensureAudioElement() {
-    if (audioPlayEl) return audioPlayEl;
+    if (audioPlayEl && audioPlayUrl === objectUrl.value) return audioPlayEl;
+    if (audioPlayEl) {
+      audioPlayEl.pause();
+      audioPlayEl = null;
+      audioPlayUrl = '';
+    }
     if (!objectUrl.value) return null;
-    audioPlayEl = new Audio(objectUrl.value);
+    audioPlayUrl = objectUrl.value;
+    audioPlayEl = new Audio(audioPlayUrl);
     audioPlayEl.addEventListener('timeupdate', () => {
       audioPlayTime.value = audioPlayEl!.currentTime;
     });
@@ -658,15 +706,14 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
       });
       sourceFile.value = file;
       loadVideo(result);
-      // Decode audio from the video file
+      // Decode + modulo audio from the same video (non-fatal if track missing).
       try {
         decodedAudioBuffer.value = await decodeAudioFile(file);
+        await syncAudioFromVideo();
       } catch {
-        // Audio decode failure is non-fatal — video frames still work
         decodedAudioBuffer.value = null;
+        await syncAudioFromVideo();
       }
-      // Don't auto-process — wait for user to click "音频取模" button
-      // await processAudio();
       return true;
     } catch (error) {
       extractError.value = error instanceof Error ? error.message : 'Video failed to load';
@@ -704,9 +751,8 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
       loadVideo(result);
       startTime.value = keepStart;
       endTime.value = keepEnd || result.duration;
-      // Re-process audio with updated time range
-      // Don't auto-process — wait for user to click "音频取模" button
-      // await processAudio();
+      // Keep audio modulo in sync with the new extraction window.
+      await syncAudioFromVideo();
       return true;
     } catch (error) {
       extractError.value = error instanceof Error ? error.message : 'Frame extraction failed';
@@ -723,10 +769,20 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
   function play() {
     if (isPlaying.value) return;
     isPlaying.value = true;
+    // Keep the video-frame preview in sync with the source audio track.
+    const el = ensureAudioElement();
+    if (el && decodedAudioBuffer.value) {
+      const frame = processedFrames.value[selectedIndex.value];
+      el.currentTime = frame?.time ?? startTime.value;
+      void el.play().catch(() => {});
+    }
     const interval = 1000 / outputFps.value;
     playTimer = window.setInterval(() => {
       if (selectedIndex.value >= processedFrames.value.length - 1) {
         selectedIndex.value = 0;
+        if (el && decodedAudioBuffer.value) {
+          el.currentTime = processedFrames.value[0]?.time ?? startTime.value;
+        }
       } else {
         selectedIndex.value++;
       }
@@ -739,6 +795,7 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
       clearInterval(playTimer);
       playTimer = null;
     }
+    if (audioPlayEl && !audioPlayEl.paused) audioPlayEl.pause();
   }
 
   function togglePlay() {
@@ -765,13 +822,13 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
     }
   );
 
-  // Auto re-process audio on audio settings change (debounced)
+  // Auto re-process audio on audio settings / clip window change (debounced)
   let audioTimer: ReturnType<typeof setTimeout> | null = null;
   watch(
     () => [
       audioModEnabled.value, audioPcmInOutput.value, audioSampleRate.value, audioBitDepth.value, audioByteOrder.value,
       audioNormalize.value, audioGain.value, startTime.value, endTime.value,
-      audioWaveformWidth.value, audioWaveformHeight.value
+      audioWaveformWidth.value, audioWaveformHeight.value, audioVisualMode.value
     ],
     () => {
       if (!decodedAudioBuffer.value || !audioModEnabled.value) return;
@@ -779,9 +836,7 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
       audioTimer = setTimeout(() => {
         audioTimer = null;
         generateAudioVisuals();
-        if (audioPcmInOutput.value) {
-          void processAudio();
-        }
+        void processAudio();
       }, 200);
     }
   );
@@ -789,6 +844,11 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
   const outputFileName = computed(() => `${outputName.value}.h`);
   function cleanup() {
     pause();
+    if (audioPlayEl) {
+      audioPlayEl.pause();
+      audioPlayEl = null;
+    }
+    audioPlayUrl = '';
     if (objectUrl.value) URL.revokeObjectURL(objectUrl.value);
     objectUrl.value = '';
     sourceFile.value = null;
@@ -804,6 +864,11 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
     audioSamples.value = new Float32Array();
     audioBytes.value = new Uint8Array();
     audioPeak.value = 0;
+    audioModEnabled.value = false;
+    audioWaveformBitmap.value = null;
+    audioWaveformPreview.value = null;
+    audioSpectrumBitmap.value = null;
+    audioSpectrumPreview.value = null;
   }
 
   return {
@@ -832,8 +897,9 @@ export const useVideoModuloStore = defineStore('videoModulo', () => {
     enableAudioMod() {
       if (audioModEnabled.value) return;
       audioModEnabled.value = true;
-      setTimeout(() => { generateAudioVisuals(); }, 0);
+      void syncAudioFromVideo();
     },
+    syncAudioFromVideo,
     toggleAudioPcmOutput() {
       audioPcmInOutput.value = !audioPcmInOutput.value;
     },

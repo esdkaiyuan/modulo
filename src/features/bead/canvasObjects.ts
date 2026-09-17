@@ -38,20 +38,3 @@ export interface CanvasObject {
   /** For 'image' type: data URL */
   imageDataUrl?: string;
 }
-
-let _nextId = 1;
-
-export function createCanvasObject(partial: Partial<CanvasObject> & { type: CanvasObjectType }): CanvasObject {
-  return {
-    id: `obj-${_nextId++}`,
-    x: 100,
-    y: 100,
-    rotation: 0,
-    scale: 1,
-    width: 100,
-    height: 100,
-    selected: false,
-    zIndex: 1,
-    ...partial
-  };
-}

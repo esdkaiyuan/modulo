@@ -1,5 +1,7 @@
 import type { PatternCell, PatternResult, PatternSettings } from './types';
 import { getBoardGrid } from './patternEngine';
+import { getBrand, brandName } from './paletteData';
+import { t } from '../../i18n';
 
 export interface RenderOptions {
   /** Pixel size of each bead cell */
@@ -43,6 +45,15 @@ function rowLabel(index: number): string {
     n = Math.floor(n / 26) - 1;
   } while (n >= 0);
   return label;
+}
+
+/**
+ * Label drawn inside a bead when color codes are on. Long manufacturer codes
+ * (e.g. Perler SKUs like `80-19001`) don't fit on a bead, so they fall back to
+ * the legend symbol — the printed legend maps the symbol back to the code.
+ */
+export function colorLabel(code: string, symbol: string): string {
+  return code.length <= 4 ? code.replace('-', '') : symbol;
 }
 
 /**
@@ -97,7 +108,13 @@ export function renderPattern(
     ctx.fillStyle = '#5d6b81';
     ctx.font = '12px "Inter", "Segoe UI", "Microsoft YaHei", sans-serif';
     ctx.fillText(
-      `${width}×${height} · ${pattern.totalBeads} beads · ${materials.length} colors · ${pattern.brandId}`,
+      t('bead.renderSubtitle', {
+        w: width,
+        h: height,
+        beads: pattern.totalBeads,
+        colors: materials.length,
+        brand: brandName(getBrand(pattern.brandId))
+      }),
       coordLeft,
       34
     );
@@ -165,7 +182,7 @@ export function renderPattern(
 
       // Color code label
       if (opts.showColorCodes && cellData.bead) {
-        const shortCode = cellData.bead.code.replace('-', '');
+        const label = colorLabel(cellData.bead.code, cellData.symbol);
         const fontSize = Math.max(7, Math.floor(cell * 0.38));
         ctx.font = 'bold ' + fontSize + 'px "Cascadia Code", "Fira Code", "Segoe UI", monospace';
         ctx.textAlign = 'center';
@@ -175,10 +192,10 @@ export function renderPattern(
         // Stroke outline for contrast
         ctx.strokeStyle = 'rgba(0,0,0,0.7)';
         ctx.lineWidth = Math.max(1, cell * 0.05);
-        ctx.strokeText(shortCode, cx, cy);
+        ctx.strokeText(label, cx, cy);
         // White fill
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(shortCode, cx, cy);
+        ctx.fillText(label, cx, cy);
       }
 
     }
@@ -288,7 +305,7 @@ export function renderPattern(
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillText(
-      `Materials · ${materials.length} colors · ${pattern.totalBeads} total beads`,
+      t('bead.renderLegend', { colors: materials.length, beads: pattern.totalBeads }),
       coordLeft,
       legendY
     );
@@ -341,22 +358,4 @@ export function renderPattern(
   }
 
   return canvas;
-}
-
-/**
- * Render a small preview of the pattern (no legend, compact).
- */
-export function renderPreview(
-  pattern: PatternResult,
-  maxPixels = 400
-): HTMLCanvasElement {
-  const cellSize = Math.max(2, Math.floor(maxPixels / Math.max(pattern.width, pattern.height)));
-  return renderPattern(pattern, {
-    cellSize,
-    showGrid: cellSize >= 6,
-    showCoordinates: false,
-    showBoardLines: false,
-    showLegend: false,
-    title: ''
-  });
 }

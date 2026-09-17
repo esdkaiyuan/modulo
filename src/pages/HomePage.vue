@@ -82,7 +82,7 @@ type CardSize = 'md' | 'sm' | 'banner';
 
 // Bento rhythm: two 2-col cards, four 1-col cards, then two full-width
 // banners (audio demo-left, AI demo-right) closing the grid in a zig-zag.
-const tools: { route: string; demo: DemoType | 'coming' | 'coming2'; icon: string; size: CardSize; soon?: boolean; label?: string }[] = [
+const tools: { route: string; demo: DemoKind; icon: string; size: CardSize; soon?: boolean; label?: string }[] = [
   { route: 'image', demo: 'image', icon: '▣', size: 'md' },
   { route: 'video', demo: 'video', icon: '▶', size: 'md' },
   { route: 'animation', demo: 'animation', icon: '◧', size: 'sm' },
@@ -96,10 +96,15 @@ const tools: { route: string; demo: DemoType | 'coming' | 'coming2'; icon: strin
   { route: 'ai', demo: 'aiagent', icon: '✦', size: 'banner' }
 ];
 
-const key = (demo: DemoType, part: 'title' | 'desc' | 'tag1' | 'tag2' | 'tag3') =>
+type DemoKind = DemoType | 'coming' | 'coming2';
+
+const key = (demo: DemoKind, part: 'title' | 'desc' | 'tag1' | 'tag2' | 'tag3') =>
   `home.${demo}.${part}` as MessageKey;
 
+const soonLabel = (label?: string) => (label ?? 'home.soon') as MessageKey;
+
 function launch(route: string) {
+  if (!route) return;
   window.location.hash = `#/${route}`;
 }
 </script>
@@ -122,30 +127,32 @@ function launch(route: string) {
     <div class="home-grid">
       <article
         v-for="(tool, i) in tools"
-        :key="tool.route"
+        :key="tool.route || tool.demo"
         class="tool-card"
-        :class="[`tool-card--${tool.size}`, { 'tool-card--reverse': tool.route === 'ai' }]"
+        :class="[`tool-card--${tool.size}`, { 'tool-card--reverse': tool.route === 'ai', 'tool-card--soon': tool.soon }]"
         :style="{ '--enter-delay': `${i * 60}ms` }"
         :data-test="`card-${tool.route}`"
         @click="launch(tool.route)"
       >
         <div class="card-demo">
-          <ToolDemo :type="tool.demo" />
+          <ToolDemo v-if="!tool.soon" :type="(tool.demo as DemoType)" />
+          <div v-else class="card-demo-soon">{{ tool.icon }}</div>
         </div>
         <div class="card-body">
           <header class="card-head">
             <span class="card-icon">{{ tool.icon }}</span>
             <h2>{{ t(key(tool.demo, 'title')) }}</h2>
+            <span v-if="tool.soon" class="card-soon-badge" :title="t(soonLabel(tool.label))">{{ t('home.soon') }}</span>
             <span class="card-index">{{ String(i + 1).padStart(2, '0') }}</span>
           </header>
-          <p>{{ t(key(tool.demo, 'desc')) }}</p>
+          <p :class="{ 'card-soon-desc': tool.soon }">{{ t(key(tool.demo, 'desc')) }}</p>
           <div class="card-foot">
             <div class="card-tags">
               <span class="card-tag">{{ t(key(tool.demo, 'tag1')) }}</span>
               <span class="card-tag">{{ t(key(tool.demo, 'tag2')) }}</span>
               <span class="card-tag">{{ t(key(tool.demo, 'tag3')) }}</span>
             </div>
-            <button class="launch-btn" :data-test="`launch-${tool.route}`" @click.stop="launch(tool.route)">
+            <button v-if="!tool.soon" class="launch-btn" :data-test="`launch-${tool.route}`" @click.stop="launch(tool.route)">
               {{ t('home.launch') }}<span class="launch-arrow">→</span>
             </button>
           </div>

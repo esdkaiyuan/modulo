@@ -12,27 +12,20 @@ describe('fontModuloStore', () => {
     vi.useRealTimers();
   });
 
-  it('generates bitmap bytes and C source from injected image data', () => {
+  it('keeps glyph array names unique for repeated characters', () => {
     const store = useFontModuloStore();
-    const image = new ImageData(
-      new Uint8ClampedArray([
-        0, 0, 0, 255,
-        255, 255, 255, 255,
-        255, 255, 255, 255,
-        0, 0, 0, 255
-      ]),
-      2,
-      2
-    );
 
-    store.text = '汉';
-    store.targetWidth = 2;
-    store.targetHeight = 2;
-    store.generateFromImageData(image);
+    store.text = 'aa';
+    store.targetWidth = 4;
+    store.targetHeight = 4;
+    store.generate();
 
-    expect(Array.from(store.bitmap)).toEqual([1, 0, 0, 1]);
-    expect(Array.from(store.bytes)).toEqual([0x90]);
-    expect(store.generatedSource).toContain('const uint8_t font_u6c49_2x2[] PROGMEM');
+    const names = [...store.generatedSource.matchAll(/const uint8_t (font_\w+)\[\] PROGMEM/g)]
+      .map((match) => match[1]);
+    expect(names.length).toBe(2);
+    expect(new Set(names).size).toBe(names.length);
+    expect(names[0]).toBe('font_a_4x4');
+    expect(names[1]).toBe('font_a_4x4_2');
   });
 
   it('cancels pending generation when the store is disposed', async () => {

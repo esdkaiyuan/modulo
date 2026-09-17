@@ -22,25 +22,36 @@ export class FrameProcessorPool {
 
   constructor(concurrency = Math.min(8, Math.max(1, Math.floor((navigator.hardwareConcurrency ?? 2) / 2)))) {
     for (let i = 0; i < concurrency; i++) {
-      const w = new Worker(new URL('./frameProcessor.worker.ts', import.meta.url), { type: 'module' });
-      w.onmessage = (e: MessageEvent<WorkerProcessResult>) => {
-        const p = this.inflight.get(w);
-        this.inflight.delete(w);
-        p?.resolve(e.data);
-        this.dispatch(w);
-      };
-      w.onerror = (e) => {
-        const p = this.inflight.get(w);
-        this.inflight.delete(w);
-        p?.reject(new Error(e.message ?? 'Worker error'));
-        this.dispatch(w);
-      };
-      this.workers.push(w);
+      this.workers.push(this.spawn(i));
       this.idle.push(i);
     }
   }
 
   get concurrency() { return this.workers.length; }
+
+  /** Create a worker and wire its handlers (also used to replace a crashed one). */
+  private spawn(index: number): Worker {
+    const worker = new Worker(new URL('./frameProcessor.worker.ts', import.meta.url), { type: 'module' });
+    worker.onmessage = (event: MessageEvent<WorkerProcessResult>) => {
+      const pending = this.inflight.get(worker);
+      this.inflight.delete(worker);
+      pending?.resolve(event.data);
+      this.dispatch(worker);
+    };
+    worker.onerror = (event) => {
+      const pending = this.inflight.get(worker);
+      this.inflight.delete(worker);
+      pending?.reject(new Error(event.message ?? 'Worker error'));
+      // A crashed worker can't process anything else, so swap in a fresh one
+      // instead of handing it the next job from the queue.
+      if (this.workers[index] === worker) {
+        worker.terminate();
+        this.workers[index] = this.spawn(index);
+      }
+      this.dispatch(this.workers[index]);
+    };
+    return worker;
+  }
 
   process(req: Omit<WorkerProcessRequest, 'id'>): Promise<WorkerProcessResult> {
     return new Promise((resolve, reject) => {

@@ -159,7 +159,7 @@ onBeforeUnmount(() => store.stopPlayback());
 
       <Panel :title="t('common.stats')">
         <div class="stat-list">
-          <div class="stat-row"><span>{{ t('audio.sourceRate') }}</span><b>{{ store.sourceSampleRate || '—' }} Hz</b></div>
+          <div class="stat-row" :title="t('audio.sourceRateHint')"><span>{{ t('audio.sourceRate') }}</span><b>{{ store.sourceSampleRate || '—' }} Hz</b></div>
           <div class="stat-row"><span>{{ t('audio.channels') }}</span><b>{{ store.sourceChannels || '—' }}</b></div>
           <div class="stat-row"><span>{{ t('audio.clipLength') }}</span><b>{{ store.clipDuration.toFixed(2) }} s</b></div>
           <div class="stat-row"><span>{{ t('audio.samples') }}</span><b>{{ store.samples.length }}</b></div>
@@ -174,7 +174,7 @@ onBeforeUnmount(() => store.stopPlayback());
         :name="store.outputName"
         :width="store.samples.length"
         :height="1"
-        :bytes="Array.from(store.bytes)"
+        :bytes="store.sampleValues"
         :extra="{ sampleRate: store.sampleRate, bitDepth: store.bitDepth }"
       />
     </div>

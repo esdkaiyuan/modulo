@@ -68,7 +68,6 @@ const drawTotalBeads = computed(() => pattern.value.cells.filter(Boolean).length
 
 // ── Sync to store ──
 function syncToStore() {
-  store.applyDrawCells([...pattern.value.cells], W.value, H.value);
   emit('dataUpdate', {
     materials: drawMaterials.value,
     totalBeads: drawTotalBeads.value,
@@ -322,11 +321,18 @@ const TOOLS: Array<{ key: DrawTool; icon: string; tip: MessageKey; kb: string }>
         <span class="draw-status-swatch" :style="{ background: activeBead.hex }"></span>
         {{ activeBead.code }} · {{ activeBead.name }}
       </span>
-      <span class="draw-status-dim">{{ W }}×{{ H }}</span>
+      <span class="draw-size-group">
+        <span class="draw-status-dim">{{ t('bead.drawSize') }}</span>
+        <input class="canvas-grid-input" type="number" min="1" max="200" :value="W" :title="t('common.width')"
+          @change="resize(Number(($event.target as HTMLInputElement).value), H)" />
+        <span class="draw-status-dim">×</span>
+        <input class="canvas-grid-input" type="number" min="1" max="200" :value="H" :title="t('common.height')"
+          @change="resize(W, Number(($event.target as HTMLInputElement).value))" />
+      </span>
       <span class="draw-status-count">{{ beadCount.toLocaleString() }} {{ t('bead.drawBeads') }}</span>
       <span class="draw-status-colors">{{ usedColors }} {{ t('bead.drawColors') }}</span>
       <span class="toolbar-spacer"></span>
-      <span class="draw-status-hint">B 画笔 · E 橡皮 · G 填充 · I 取色 · 1-4 缩放 · Ctrl+Z/Y</span>
+      <span class="draw-status-hint">{{ t('bead.drawShortcuts') }}</span>
     </div>
   </div>
 </template>

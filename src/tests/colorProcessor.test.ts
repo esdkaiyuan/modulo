@@ -25,7 +25,17 @@ describe('colorProcessor', () => {
     expect(rgbToRgb565(0, 255, 0)).toBe(0x07e0);
     expect(rgbToRgb565(0, 0, 255)).toBe(0x001f);
     expect(rgbToRgb565(255, 255, 255)).toBe(0xffff);
-    expect(rgb565ToRgb(0xf800)).toEqual([248, 0, 0]);
+    expect(rgb565ToRgb(0xf800)).toEqual([255, 0, 0]);
+    expect(rgb565ToRgb(0x07e0)).toEqual([0, 255, 0]);
+    expect(rgb565ToRgb(0xffff)).toEqual([255, 255, 255]);
+    expect(rgb565ToRgb(0)).toEqual([0, 0, 0]);
+  });
+
+  it('rounds channel quantization instead of truncating', () => {
+    // 7 → round(7·31/255) = 1 where truncation gave 0: dark values aren't biased down.
+    expect(rgbToRgb565(7, 0, 0)).toBe(0x0800);
+    expect(rgbToRgb332(20, 0, 0)).toBe(0b00100000);
+    expect(rgbToRgb332(0, 0, 140)).toBe(0b00000010);
   });
 
   it('converts RGB to RGB332 and expands back to full range', () => {

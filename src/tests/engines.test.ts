@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { floodFill } from '../engines/fill';
+import { floodFill, lineCells } from '../engines/fill';
 import { formatCArray, packBitsToBytes, pixelsToBits } from '../engines/modulo';
 
 describe('modulo engine', () => {
@@ -18,6 +18,22 @@ describe('modulo engine', () => {
 
     expect(output).toContain('const uint8_t image_4x4[] PROGMEM = {');
     expect(output).toContain('0xAA, 0x0F');
+  });
+});
+
+describe('lineCells', () => {
+  it('interpolates every cell between two points', () => {
+    expect(lineCells(0, 0, 3, 0)).toEqual([[0, 0], [1, 0], [2, 0], [3, 0]]);
+    expect(lineCells(0, 0, 3, 3)).toEqual([[0, 0], [1, 1], [2, 2], [3, 3]]);
+    expect(lineCells(2, 2, 2, 2)).toEqual([[2, 2]]);
+    expect(lineCells(3, 0, 0, 0)).toEqual([[3, 0], [2, 0], [1, 0], [0, 0]]);
+  });
+
+  it('covers every column on shallow diagonals (no gaps across a fast drag)', () => {
+    const cells = lineCells(0, 0, 5, 2);
+    expect(cells.length).toBe(6);
+    expect(new Set(cells.map(([x]) => x)).size).toBe(6);
+    expect(cells[cells.length - 1]).toEqual([5, 2]);
   });
 });
 

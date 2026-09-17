@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { computed, onScopeDispose, ref, watch } from 'vue';
 import { encodeBitmap, type BitOrder, type Polarity, type ScanDirection } from '../../../engines/bitmapEncoder';
-import { fontImageDataToBitmap, makeFontIdentifier, renderTextToBitmap, renderTextToImageData } from '../../../engines/fontRenderer';
+import { makeFontIdentifier, renderTextToBitmap, renderTextToImageData, uniqueGlyphNames } from '../../../engines/fontRenderer';
 import { processImageDataToColor, type ColorByteOrder, type ColorMode } from '../../../engines/colorProcessor';
 import { formatCArray, formatColorArray, makeTextBlob } from '../../../engines/outputFormatter';
 import type { SizeMode } from '../../shared/sizeMode';
@@ -66,12 +66,12 @@ export const useFontModuloStore = defineStore('fontModulo', () => {
       return formatOne(glyphs.value[0].bytes, outputName.value);
     }
     // One array per character plus an index table.
-    const sections = glyphs.value.map((glyph) =>
-      formatOne(glyph.bytes, makeFontIdentifier(glyph.char, targetWidth.value, targetHeight.value))
+    const names = uniqueGlyphNames(
+      glyphs.value.map((glyph) => glyph.char),
+      targetWidth.value,
+      targetHeight.value
     );
-    const names = glyphs.value.map((glyph) =>
-      makeFontIdentifier(glyph.char, targetWidth.value, targetHeight.value)
-    );
+    const sections = glyphs.value.map((glyph, index) => formatOne(glyph.bytes, names[index]));
     const tableType = colorMode.value === 'rgb565' ? 'uint16_t' : 'uint8_t';
     sections.push([
       `// Glyph table: "${text.value}"`,
@@ -132,17 +132,6 @@ export const useFontModuloStore = defineStore('fontModulo', () => {
       return { char, bitmap: glyphBitmap, bytes: glyphBytes };
     });
     selectedGlyphIndex.value = Math.min(selectedGlyphIndex.value, Math.max(0, glyphs.value.length - 1));
-  }
-
-  function generateFromImageData(imageData: ImageData) {
-    const glyphBitmap = fontImageDataToBitmap(imageData, threshold.value, invert.value);
-    const glyphBytes = encodeBitmap(glyphBitmap, targetWidth.value, targetHeight.value, {
-      scan: scanDirection.value,
-      bitOrder: bitOrder.value,
-      polarity: polarity.value
-    });
-    glyphs.value = [{ char: text.value || '?', bitmap: glyphBitmap, bytes: glyphBytes }];
-    selectedGlyphIndex.value = 0;
   }
 
   function outputBlob() {
@@ -214,7 +203,6 @@ export const useFontModuloStore = defineStore('fontModulo', () => {
     generatedSource,
     outputFileName,
     generate,
-    generateFromImageData,
     outputBlob
   };
 });

@@ -21,18 +21,17 @@ export function imageDataToGray(imageData: ImageData): Uint8ClampedArray {
 
   for (let i = 0; i < result.length; i += 1) {
     const offset = i * 4;
-    const alpha = imageData.data[offset + 3];
+    const alpha = imageData.data[offset + 3] / 255;
 
-    if (alpha === 0) {
-      result[i] = 255;
-      continue;
-    }
-
-    result[i] = clampByte(
+    const luminance =
       imageData.data[offset] * 0.299 +
       imageData.data[offset + 1] * 0.587 +
-      imageData.data[offset + 2] * 0.114
-    );
+      imageData.data[offset + 2] * 0.114;
+
+    // Composite onto white exactly like the color pipeline (`alpha` weights sum
+    // to 1, so blending after the weighted sum is equivalent), otherwise a
+    // semi-transparent pixel would resolve differently in mono vs color modes.
+    result[i] = clampByte(luminance * alpha + 255 * (1 - alpha));
   }
 
   return result;
@@ -155,29 +154,3 @@ export function imageDataToBitmap(imageData: ImageData, options: Omit<ProcessIma
     sourceHeight: imageData.height
   });
 }
-
-// ── Color quantization (delegates to colorProcessor; kept for back-compat) ──
-
-import { findClosestPaletteColor, PALETTE_16_COLORS as PALETTE, rgbToRgb565 } from './colorProcessor';
-
-export function quantizeToRgb565(imageData: ImageData): Uint16Array {
-  const result = new Uint16Array(imageData.width * imageData.height);
-  const data = imageData.data;
-  for (let i = 0; i < result.length; i++) {
-    const offset = i * 4;
-    result[i] = rgbToRgb565(data[offset], data[offset + 1], data[offset + 2]);
-  }
-  return result;
-}
-
-export function quantizeToPalette16(imageData: ImageData): Uint8Array {
-  const result = new Uint8Array(imageData.width * imageData.height);
-  const data = imageData.data;
-  for (let i = 0; i < result.length; i++) {
-    const offset = i * 4;
-    result[i] = findClosestPaletteColor(data[offset], data[offset + 1], data[offset + 2], PALETTE);
-  }
-  return result;
-}
-
-export const PALETTE_16_COLORS = PALETTE;

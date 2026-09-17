@@ -7,19 +7,23 @@ import {
   type AudioBitDepth,
   type AudioByteOrder
 } from '../../../engines/audioProcessor';
-import { makeTextBlob, sanitizeIdentifier } from '../../../engines/outputFormatter';
+import { colorValueChunks, makeTextBlob, sanitizeIdentifier } from '../../../engines/outputFormatter';
 
 export const useAudioModuloStore = defineStore('audioModulo', () => {
   // ── Source ──
   const fileName = ref('');
   const fileSize = ref(0);
   const objectUrl = ref('');
+  /** Rate of the decoded buffer — decodeAudioData resamples to the device rate,
+   *  so this is NOT necessarily the file's original sample rate. */
   const sourceSampleRate = ref(0);
   const sourceChannels = ref(0);
   const duration = ref(0);
   const decodedBuffer = shallowRef<AudioBuffer | null>(null);
   const loadError = ref('');
   const isProcessing = ref(false);
+  /** Monotonic token so a slow older render can't overwrite a newer result. */
+  let processToken = 0;
 
   // ── Settings ──
   const startTime = ref(0);
@@ -66,6 +70,8 @@ export const useAudioModuloStore = defineStore('audioModulo', () => {
   async function process() {
     const buffer = decodedBuffer.value;
     if (!buffer) return;
+    // Guard against out-of-order results: only the newest run may publish.
+    const token = (processToken += 1);
     isProcessing.value = true;
     try {
       const mono = await resampleToMono(buffer, sampleRate.value, startTime.value, endTime.value);
@@ -75,43 +81,56 @@ export const useAudioModuloStore = defineStore('audioModulo', () => {
         gain: gain.value,
         normalize: normalize.value
       });
+      if (token !== processToken) return;
       samples.value = mono;
       bytes.value = result.bytes;
       peak.value = result.peak;
     } finally {
-      isProcessing.value = false;
+      if (token === processToken) isProcessing.value = false;
     }
   }
 
-  const generatedSource = computed(() => {
+  /**
+   * Sample values exactly as the C array lists them: unsigned bytes for 8-bit,
+   * signed int16 for 16-bit. Every export format reuses this so `.py` / `.json`
+   * describe the same numbers as the `.h` instead of the raw byte stream.
+   */
+  const sampleValues = computed<number[]>(() => {
     const data = bytes.value;
-    if (!data.length) return '';
+    if (!data.length) return [];
+    if (bitDepth.value === 8) return Array.from(data);
+    const values: number[] = [];
+    for (let i = 0; i + 1 < data.length; i += 2) {
+      const raw = byteOrder.value === 'little' ? data[i] | (data[i + 1] << 8) : (data[i] << 8) | data[i + 1];
+      values.push(raw > 32767 ? raw - 65536 : raw);
+    }
+    return values;
+  });
+
+  const generatedSource = computed(() => {
+    const values = sampleValues.value;
+    if (!values.length) return '';
     const name = outputName.value;
     const sampleCount = samples.value.length;
     const head = [
       `// PCM audio: ${sampleCount} samples, ${sampleRate.value} Hz, mono`,
       bitDepth.value === 8
         ? '// Format: 8-bit unsigned (0x80 = silence)'
-        : `// Format: 16-bit signed, ${byteOrder.value}-endian byte stream`,
+        : `// Format: 16-bit signed (${byteOrder.value}-endian source byte order)`,
       `// Duration: ${(sampleCount / sampleRate.value).toFixed(3)} s`
     ];
     const lines: string[] = [];
     if (bitDepth.value === 8) {
       lines.push(`const uint8_t ${name}[] PROGMEM = {`);
-      for (let i = 0; i < data.length; i += 16) {
-        const chunk = Array.from(data.slice(i, i + 16), (b) => `0x${b.toString(16).padStart(2, '0').toUpperCase()}`);
-        lines.push(`  ${chunk.join(', ')}${i + 16 < data.length ? ',' : ''}`);
-      }
+      const chunks = colorValueChunks(Uint8Array.from(values), 'rgb888', 'big', 16);
+      chunks.forEach((chunk, index) => {
+        lines.push(`  ${chunk}${index < chunks.length - 1 ? ',' : ''}`);
+      });
     } else {
       // Emit int16_t values so C code indexes samples directly.
       lines.push(`const int16_t ${name}[] PROGMEM = {`);
-      const words: string[] = [];
-      for (let i = 0; i + 1 < data.length; i += 2) {
-        const raw = byteOrder.value === 'little' ? data[i] | (data[i + 1] << 8) : (data[i] << 8) | data[i + 1];
-        words.push(String(raw > 32767 ? raw - 65536 : raw));
-      }
-      for (let i = 0; i < words.length; i += 12) {
-        lines.push(`  ${words.slice(i, i + 12).join(', ')}${i + 12 < words.length ? ',' : ''}`);
+      for (let i = 0; i < values.length; i += 12) {
+        lines.push(`  ${values.slice(i, i + 12).join(', ')}${i + 12 < values.length ? ',' : ''}`);
       }
     }
     lines.push('};');
@@ -215,6 +234,7 @@ export const useAudioModuloStore = defineStore('audioModulo', () => {
     normalize,
     gain,
     samples,
+    sampleValues,
     bytes,
     peak,
     hasAudio,

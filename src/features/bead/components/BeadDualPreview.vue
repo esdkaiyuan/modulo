@@ -54,7 +54,8 @@ function renderPat(target: HTMLCanvasElement) {
     showCenterCrosshair: store.showCenterCrosshair,
     showColorCodes: store.showColorCodes,
     showLegend: false,
-    title: ''
+    title: '',
+    viewMode: store.viewMode
   });
   target.width = rendered.width;
   target.height = rendered.height;

@@ -39,16 +39,26 @@ export interface ColorProcessResult {
   preview: Uint8ClampedArray;
 }
 
+/** Quantize an 8-bit channel to `maxLevel` steps, rounding to the nearest step. */
+function quantizeChannel(value: number, maxLevel: number): number {
+  return Math.round((value * maxLevel) / 255);
+}
+
 export function rgbToRgb565(r: number, g: number, b: number): number {
-  return ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3);
+  return (quantizeChannel(r, 31) << 11) | (quantizeChannel(g, 63) << 5) | quantizeChannel(b, 31);
 }
 
 export function rgb565ToRgb(color: number): [number, number, number] {
-  return [((color >> 11) & 0x1f) << 3, ((color >> 5) & 0x3f) << 2, (color & 0x1f) << 3];
+  const r5 = (color >> 11) & 0x1f;
+  const g6 = (color >> 5) & 0x3f;
+  const b5 = color & 0x1f;
+  // Expand via repetition so 5/6-bit max maps back to 255, not 248/252 —
+  // the same trick rgb332ToRgb uses, so previews and dither targets agree.
+  return [(r5 << 3) | (r5 >> 2), (g6 << 2) | (g6 >> 4), (b5 << 3) | (b5 >> 2)];
 }
 
 export function rgbToRgb332(r: number, g: number, b: number): number {
-  return ((r >> 5) << 5) | ((g >> 5) << 2) | (b >> 6);
+  return (quantizeChannel(r, 7) << 5) | (quantizeChannel(g, 7) << 2) | quantizeChannel(b, 3);
 }
 
 export function rgb332ToRgb(color: number): [number, number, number] {

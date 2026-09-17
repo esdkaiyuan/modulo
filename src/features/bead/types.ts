@@ -1,3 +1,5 @@
+import type { MessageKey } from '../../i18n/messages';
+
 /** A single perler bead color from a manufacturer palette. */
 export interface BeadColor {
   /** Manufacturer code, e.g. "S-01", "P-01", "H-01" */
@@ -12,16 +14,14 @@ export interface BeadColor {
   b: number;
   /** Brand-specific notes (e.g. "opaque", "translucent", "glow") */
   finish?: string;
-  /** Color category for grouping */
-  category?: string;
 }
 
-export type BeadBrandId = 'mard-standard' | 'artkal-s' | 'perler' | 'hama-mini';
+export type BeadBrandId = 'mard-standard' | 'artkal-s' | 'artkal-c' | 'perler' | 'hama-mini';
 
 export interface BeadBrand {
   id: BeadBrandId;
-  /** Display name */
-  name: string;
+  /** i18n key for the display name */
+  nameKey: MessageKey;
   /** Default board size in beads (width × height) */
   defaultBoardSize: number;
   /** All available colors */
@@ -77,8 +77,6 @@ export interface PatternSettings {
   boardSize: number;
   /** If true, lock aspect ratio when resizing grid */
   lockAspectRatio: boolean;
-  /** Show symbols on beads */
-  showSymbols: boolean;
   /** View mode: 'colors' | 'symbols' | 'both' */
   viewMode: 'colors' | 'symbols' | 'both';
   /** Show color code labels on each bead */
@@ -88,6 +86,3 @@ export interface PatternSettings {
   /** Background color tolerance (0-200), used for tolerance/corner modes */
   bgTolerance: number;
 }
-
-/** Export format options. */
-export type ExportFormat = 'png' | 'jpeg' | 'print' | 'csv' | 'json';

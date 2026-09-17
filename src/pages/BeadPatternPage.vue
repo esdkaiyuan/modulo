@@ -7,9 +7,10 @@ import BeadDualPreview from '../features/bead/components/BeadDualPreview.vue';
 import DrawTab from '../features/bead/components/DrawTab.vue';
 import FreeCanvasTab from '../features/bead/components/FreeCanvasTab.vue';
 import { useBeadPatternStore } from '../features/bead/stores/beadPatternStore';
-import { exportPng, exportJpeg, exportPrint, exportCsv, exportJson } from '../features/bead/exportUtils';
+import { exportPng, exportJpeg, exportPrint, exportCsv, exportJson, exportCArray, exportCoordinatesCsv } from '../features/bead/exportUtils';
 import { getBrand, getSymbol } from '../features/bead/paletteData';
 import { useFileRecordStore } from '../user/fileRecordStore';
+import { decodeImageFile } from '../features/shared/imageDecode';
 import type { PatternResult, MaterialItem } from '../features/bead/types';
 import { t } from '../i18n';
 
@@ -82,38 +83,15 @@ const activeTotalBeads = computed(() => {
 
 const activeGridSize = computed(() => {
   if (activeTab.value === 'image') return `${store.gridWidth}×${store.gridHeight}`;
-  if (activeTab.value === 'draw') return 'Draw';
-  return 'Canvas';
+  if (activeTab.value === 'draw') return t('bead.tabDraw');
+  return t('bead.tabCanvas');
 });
 
 function pickFile() { fileInput.value?.click(); }
 
 async function loadFile(file: File) {
   try {
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.onerror = () => reject(new Error('File read failed'));
-      reader.readAsDataURL(file);
-    });
-    const img = new Image();
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error('Unable to decode image'));
-      img.src = dataUrl;
-    });
-    const ctx = document.createElement('canvas').getContext('2d')!;
-    ctx.canvas.width = img.naturalWidth;
-    ctx.canvas.height = img.naturalHeight;
-    ctx.drawImage(img, 0, 0);
-    store.loadImage({
-      fileName: file.name,
-      width: img.naturalWidth,
-      height: img.naturalHeight,
-      size: file.size,
-      imageData: ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight),
-      dataUrl
-        });
+    store.loadImage(await decodeImageFile(file));
     fileRecords.recordFile('bead', file.name, file.size);
   } catch { /* ignore */ }
 }
@@ -144,6 +122,14 @@ function handleExportCsv() {
 function handleExportJson() {
   const p = getActivePattern();
   if (p) exportJson(p, store.patternTitle || undefined);
+}
+function handleExportCArray() {
+  const p = getActivePattern();
+  if (p) exportCArray(p, store.patternTitle || undefined);
+}
+function handleExportCoords() {
+  const p = getActivePattern();
+  if (p) exportCoordinatesCsv(p, store.patternTitle || undefined);
 }
 
 // ── Get pattern for current active tab ──
@@ -201,7 +187,7 @@ function getActivePattern(): PatternResult | null {
 
     <!-- ④ Right sidebar: parameters -->
     <aside class="bead-col-right">
-      <RightSidebar />
+      <RightSidebar :active-tab="activeTab" />
     </aside>
 
     <!-- ⑤ Bottom bar: export -->
@@ -219,6 +205,9 @@ function getActivePattern(): PatternResult | null {
       <span class="divider-v"></span>
       <button class="btn sm" @click="handleExportCsv">CSV {{ t('bead.materials') }}</button>
       <button class="btn sm" @click="handleExportJson">JSON</button>
+      <span class="divider-v"></span>
+      <button class="btn sm accent" @click="handleExportCArray">{{ t('bead.exportC') }}</button>
+      <button class="btn sm" @click="handleExportCoords">{{ t('bead.exportCoords') }}</button>
       <span class="toolbar-spacer"></span>
       <span class="bead-bottombar-hint">{{ t('bead.exportHint') }}</span>
     </footer>

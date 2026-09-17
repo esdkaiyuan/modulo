@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import Panel from '../components/Panel.vue';
 import ColorModeFields from '../components/ColorModeFields.vue';
 import { usePixelStore, type Tool } from '../stores/pixelStore';
-import { buildExport, downloadExport } from '../features/shared/exportVariants';
+import { buildExport, downloadBlobFile, downloadExport } from '../features/shared/exportVariants';
 import { t } from '../i18n';
 import type { MessageKey } from '../i18n/messages';
 
@@ -24,7 +24,19 @@ const TOOLS: Array<{ key: Tool; labelKey: MessageKey; icon: string; shortcut: st
 const cellSize = computed(() => Math.max(8, Math.round(store.zoom / 50)));
 const canvasSize = computed(() => store.width * cellSize.value);
 
-// ── Canvas rendering ─────────────────────────────────
+// ── Canvas rendering ────────────────────────────────
+/** Coalesce redraws into one frame — a drag fires many store updates per second. */
+let renderScheduled = false;
+function scheduleRender() {
+  if (renderScheduled) return;
+  renderScheduled = true;
+  requestAnimationFrame(() => {
+    renderScheduled = false;
+    render();
+    renderPreview();
+  });
+}
+
 function render() {
   const el = canvas.value;
   if (!el) return;
@@ -86,11 +98,23 @@ function pointerToPixel(event: PointerEvent) {
   return { x, y };
 }
 
+/** Last cell painted in the current stroke, for gap-free interpolation. */
+let lastCell: { x: number; y: number } | null = null;
+
 function drawAt(event: PointerEvent) {
   const pixel = pointerToPixel(event);
-  if (!pixel) return;
+  if (!pixel) {
+    lastCell = null;
+    return;
+  }
   store.setCursor(pixel.x, pixel.y);
-  store.paintPixel(pixel.x, pixel.y);
+  const interpolate = store.activeTool !== 'fill' && store.activeTool !== 'eyedropper';
+  if (lastCell && interpolate && (lastCell.x !== pixel.x || lastCell.y !== pixel.y)) {
+    store.paintLine(lastCell.x, lastCell.y, pixel.x, pixel.y);
+  } else {
+    store.paintPixel(pixel.x, pixel.y);
+  }
+  lastCell = pixel;
 }
 
 function onPointerDown(event: PointerEvent) {
@@ -109,6 +133,7 @@ function onPointerMove(event: PointerEvent) {
 function onPointerUp(event: PointerEvent) {
   if (isDrawing.value) store.endStroke();
   isDrawing.value = false;
+  lastCell = null;
   canvas.value?.releasePointerCapture(event.pointerId);
 }
 
@@ -147,12 +172,7 @@ async function copyOutput() {
 }
 
 function downloadCurrent() {
-  const url = URL.createObjectURL(store.outputBlob());
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = store.outputFileName;
-  a.click();
-  URL.revokeObjectURL(url);
+  downloadBlobFile(store.outputBlob(), store.outputFileName);
 }
 
 function exportAs(format: string) {
@@ -177,8 +197,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKeyDown));
 
 watch(
   () => [store.pixels, store.showGrid, store.zoom, store.width, store.height],
-  () => nextTick(() => { render(); renderPreview(); }),
-  { deep: true }
+  () => scheduleRender(),
+  { flush: 'post' }
 );
 </script>
 
@@ -330,7 +350,7 @@ watch(
               <option value="hex">HEX Bytes</option>
               <option value="bin">Binary (.bin)</option>
             </select>
-            <button class="code-btn" @click="copyOutput">{{ copied ? t('code.copied') : t('code.copy') }}</button>
+            <button class="code-btn" :disabled="store.outputFormat === 'bin'" @click="copyOutput">{{ copied ? t('code.copied') : t('code.copy') }}</button>
             <button class="code-btn accent" @click="downloadCurrent">⇩ {{ store.outputFileName }}</button>
           </div>
         </header>

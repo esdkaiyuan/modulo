@@ -15,6 +15,7 @@ const store = useAnimationModuloStore();
 const fileRecords = useFileRecordStore();
 const fileInput = ref<HTMLInputElement | null>(null);
 const loadError = ref('');
+const loadWarning = ref('');
 const isPlaying = ref(false);
 let playTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -36,11 +37,13 @@ async function onFileChange(e: Event) {
   input.value = '';
   if (!file) return;
   loadError.value = '';
+  loadWarning.value = '';
   stop();
   try {
     const decoded = await decodeAnimationFile(file);
     if (!decoded.frames.length) throw new Error('No frames found in this file');
     store.loadDecodedFrames({ fileName: file.name, width: decoded.width, height: decoded.height, frames: decoded.frames });
+    if (decoded.multiFrameUnsupported) loadWarning.value = t('anim.decodeSingleFrame');
     fileRecords.recordFile('animation', file.name, file.size);
   } catch (error) {
     loadError.value = error instanceof Error ? error.message : 'Image decode failed';
@@ -100,7 +103,8 @@ onBeforeUnmount(stop);
     </div>
 
     <div class="tool-main">
-      <div v-if="loadError" class="alert-error">{{ loadError }}</div>
+      <div v-if="loadError" class="alert-error">{{ t('anim.decodeFailed', { msg: loadError }) }}</div>
+      <div v-else-if="loadWarning" class="alert-warn">{{ loadWarning }}</div>
 
       <Panel :title="t('anim.preview', { w: store.targetWidth, h: store.targetHeight })">
         <div class="canvas-frame">
@@ -177,6 +181,10 @@ onBeforeUnmount(stop);
             <span>{{ t('anim.outputFrames') }}</span>
             <input v-model.number="store.targetFrameCount" type="number" min="1" :max="store.decodedFrames.length || 1" />
           </label>
+          <p
+            v-if="store.samplingMode === 'count' && store.processedFrames.length !== store.targetFrameCount"
+            class="hint"
+          >{{ t('anim.countNote', { requested: store.targetFrameCount, actual: store.processedFrames.length }) }}</p>
         </div>
       </Panel>
 

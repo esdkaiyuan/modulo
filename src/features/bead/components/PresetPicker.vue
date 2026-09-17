@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { PRESET_CATEGORIES, getPresetsByCategory, type PresetItem } from '../presets';
 import { t } from '../../../i18n';
+import type { MessageKey } from '../../../i18n/messages';
 
 const emit = defineEmits<{
   (e: 'select', id: string): void;
@@ -10,10 +11,10 @@ const emit = defineEmits<{
 
 const activeCategory = ref<string>('emoji');
 
-const categoryLabels: Record<string, string> = {
-  emoji: 'Emoji',
-  symbol: 'Symbols',
-  shape: 'Shapes'
+const categoryLabels: Record<string, MessageKey> = {
+  emoji: 'bead.presetCat.emoji',
+  symbol: 'bead.presetCat.symbol',
+  shape: 'bead.presetCat.shape'
 };
 
 function selectPreset(preset: PresetItem) {
@@ -30,18 +31,18 @@ function selectPreset(preset: PresetItem) {
         class="btn sm"
         :class="{ toggled: activeCategory === cat }"
         @click="activeCategory = cat"
-      >{{ categoryLabels[cat] || cat }}</button>
+      >{{ categoryLabels[cat] ? t(categoryLabels[cat]) : cat }}</button>
     </div>
     <div class="bead-preset-grid">
       <button
         v-for="preset in getPresetsByCategory(activeCategory)"
         :key="preset.id"
         class="bead-preset-item"
-        :title="preset.label"
+        :title="t(preset.labelKey)"
         @click="selectPreset(preset)"
       >
         <span class="bead-preset-char">{{ preset.char }}</span>
-        <span class="bead-preset-label">{{ preset.label }}</span>
+        <span class="bead-preset-label">{{ t(preset.labelKey) }}</span>
       </button>
     </div>
   </div>

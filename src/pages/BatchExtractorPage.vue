@@ -8,6 +8,7 @@ import SizeModeFields from '../components/SizeModeFields.vue';
 import ColorModeFields from '../components/ColorModeFields.vue';
 import { useBatchModuloStore } from '../features/batch/stores/batchModuloStore';
 import { useFileRecordStore } from '../user/fileRecordStore';
+import { decodeImageFile } from '../features/shared/imageDecode';
 import { t } from '../i18n';
 import type { MessageKey } from '../i18n/messages';
 
@@ -24,50 +25,14 @@ function pickFiles() {
   fileInput.value?.click();
 }
 
-function readAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
-}
-
-function decodeImage(dataUrl: string): Promise<ImageData> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = image.naturalWidth;
-      canvas.height = image.naturalHeight;
-      const context = canvas.getContext('2d');
-      if (!context) {
-        reject(new Error('Canvas 2D is unavailable'));
-        return;
-      }
-      context.drawImage(image, 0, 0);
-      resolve(context.getImageData(0, 0, canvas.width, canvas.height));
-    };
-    image.onerror = () => reject(new Error('Unable to decode image'));
-    image.src = dataUrl;
-  });
-}
-
 async function addFiles(files: FileList | File[] | null) {
   if (!files) return;
   for (const file of Array.from(files)) {
     try {
-      const dataUrl = await readAsDataUrl(file);
-      const imageData = await decodeImage(dataUrl);
-      store.addImageData({
-        fileName: file.name,
-        size: file.size,
-        type: file.type || 'image/*',
-        imageData,
-        dataUrl
-      });
+      store.addImageData(await decodeImageFile(file));
     } catch {
-      // Skip unreadable files instead of aborting the whole batch.
+      // Skip unreadable files instead of aborting the whole batch, but say so.
+      store.log(`${t('batch.skipFile')}: ${file.name}`);
     }
   }
 }

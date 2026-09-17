@@ -23,6 +23,12 @@ describe('imageProcessor', () => {
     expect(Array.from(imageDataToGray(image))).toEqual([76, 150, 29, 255]);
   });
 
+  it('composites semi-transparent pixels onto white', () => {
+    const half = new ImageData(new Uint8ClampedArray([255, 0, 0, 128]), 1, 1);
+    // luminance(255,0,0) = 76 → 76·(128/255) + 255·(1 − 128/255) ≈ 165
+    expect(Array.from(imageDataToGray(half))).toEqual([165]);
+  });
+
   it('resizes grayscale data with nearest neighbor sampling', () => {
     const source = new Uint8ClampedArray([
       10, 20,

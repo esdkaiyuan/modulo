@@ -32,9 +32,14 @@ const DEFAULT_CAPTURE_MAX_EDGE = 320;
 // Above this sampling interval (seconds), seeking straight to each sample
 // beats playing the video through, even with the keyframe-rewind cost.
 const SEEK_INTERVAL_THRESHOLD = 2;
+// A seek or metadata load that never settles used to hang extraction forever
+// (leaving the UI stuck in "extracting"); bound every wait instead.
+const METADATA_TIMEOUT_MS = 30_000;
+const SEEK_TIMEOUT_MS = 15_000;
 
-function waitForEvent(target: EventTarget, event: string): Promise<void> {
+function waitForEvent(target: EventTarget, event: string, timeoutMs = METADATA_TIMEOUT_MS): Promise<void> {
   return new Promise((resolve, reject) => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
     const onError = () => {
       cleanup();
       reject(new Error(`Video failed while waiting for ${event}`));
@@ -43,12 +48,18 @@ function waitForEvent(target: EventTarget, event: string): Promise<void> {
       cleanup();
       resolve();
     };
+    const onTimeout = () => {
+      cleanup();
+      reject(new Error(`Timed out waiting for ${event}`));
+    };
     const cleanup = () => {
+      if (timer) clearTimeout(timer);
       target.removeEventListener(event, onEvent);
       target.removeEventListener('error', onError);
     };
     target.addEventListener(event, onEvent, { once: true });
     target.addEventListener('error', onError, { once: true });
+    if (timeoutMs > 0) timer = setTimeout(onTimeout, timeoutMs);
   });
 }
 
@@ -153,7 +164,7 @@ async function extractViaSeek(
   let lastActualTime = -1;
   for (let time = start; time <= end + 0.0001; time += step) {
     video.currentTime = Math.min(time, duration);
-    await waitForEvent(video, 'seeked');
+    await waitForEvent(video, 'seeked', SEEK_TIMEOUT_MS);
     if (Math.abs(video.currentTime - lastActualTime) < 0.0005) continue;
     lastActualTime = video.currentTime;
     ctx.drawImage(video, 0, 0, cw, ch);
@@ -163,11 +174,25 @@ async function extractViaSeek(
   return frames;
 }
 
+/**
+ * Extract frames from a video file. The resulting object URL belongs to the
+ * caller (used for playback), so a failed extraction revokes it here instead of
+ * leaking the whole file for the rest of the session.
+ */
 export async function extractVideoFrames(options: VideoExtractionOptions): Promise<ExtractedVideoResult> {
   if (options.sampleFps <= 0) {
     throw new Error('Sample rate must be greater than 0');
   }
   const objectUrl = URL.createObjectURL(options.file);
+  try {
+    return await extractWithVideoElement(options, objectUrl);
+  } catch (error) {
+    URL.revokeObjectURL(objectUrl);
+    throw error;
+  }
+}
+
+async function extractWithVideoElement(options: VideoExtractionOptions, objectUrl: string): Promise<ExtractedVideoResult> {
   const video = document.createElement('video');
   video.src = objectUrl;
   video.muted = true;

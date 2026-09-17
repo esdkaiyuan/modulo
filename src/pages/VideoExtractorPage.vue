@@ -36,8 +36,30 @@ async function onFileChange(e: Event) {
   const input = e.target as HTMLInputElement;
   const file = input.files?.[0];
   input.value = '';
-  if (file) await store.loadVideoFile(file);
+  if (!file) return;
+  const ok = await store.loadVideoFile(file);
+  if (ok) {
+    void fileRecords.recordFile('video', file.name, file.size, {
+      hasAudio: store.hasAudio,
+      duration: store.duration,
+      frames: store.processedFrames.length
+    });
+  }
 }
+
+const exportExtra = computed(() => {
+  const extra: Record<string, number | number[] | string> = { fps: store.outputFps };
+  if (store.audioModEnabled && store.audioPcmInOutput && store.audioBytes.length) {
+    extra.sampleRate = store.audioSampleRate;
+    extra.bitDepth = store.audioBitDepth;
+    extra.audioLen = store.audioSampleCount;
+    // Keep structured exports useful without dumping multi-MB PCM into JSON/Python.
+    if (store.audioBytes.length <= 256 * 1024) {
+      extra.audio = Array.from(store.audioBytes);
+    }
+  }
+  return extra;
+});
 
 function formatTime(seconds: number) {
   const m = Math.floor(seconds / 60);
@@ -45,7 +67,9 @@ function formatTime(seconds: number) {
   return `${m}:${s.padStart(4, '0')}`;
 }
 
-onBeforeUnmount(() => store.pause());
+onBeforeUnmount(() => {
+  store.pause();
+});
 </script>
 
 <template>
@@ -253,11 +277,7 @@ onBeforeUnmount(() => store.pause());
 
       <Panel v-if="store.hasAudio" :title="t('video.audioSettings')">
         <div class="field-stack">
-          <div v-if="!store.audioModEnabled" class="audio-mod-enable">
-            <p class="hint">{{ t('video.audioDecoded') }}</p>
-            <button class="btn primary" @click="store.enableAudioMod()">🎵 {{ t('video.genAudioMod') }}</button>
-          </div>
-          <div v-if="store.audioModEnabled">
+          <p v-if="store.isProcessingAudio" class="hint">{{ t('video.audioProcessing') }}</p>
           <div class="field-row">
             <label class="field">
               <span>{{ t('video.audioSampleRate') }}</span>
@@ -308,7 +328,6 @@ onBeforeUnmount(() => store.pause());
             <div class="stat-row"><span>{{ t('video.audioDuration') }}</span><b>{{ store.audioDuration.toFixed(3) }} s</b></div>
             <div class="stat-row"><span>{{ t('video.audioPeak') }}</span><b>{{ (store.audioPeak * 100).toFixed(1) }}%</b></div>
           </div>
-          </div>
         </div>
       </Panel>
 
@@ -317,6 +336,10 @@ onBeforeUnmount(() => store.pause());
           <div class="stat-row"><span>{{ t('video.extractedFrames') }}</span><b>{{ store.extractedFrames.length }}</b></div>
           <div class="stat-row"><span>{{ t('video.processedFrames') }}</span><b>{{ store.processedFrames.length }}</b></div>
           <div class="stat-row"><span>{{ t('video.bytesPerFrame') }}</span><b>{{ store.bytesPerFrame }}</b></div>
+          <div v-if="store.audioModEnabled && store.audioPcmInOutput" class="stat-row">
+            <span>{{ t('video.audioDataSize') }}</span>
+            <b>{{ (store.audioBytes.length / 1024).toFixed(2) }} KB</b>
+          </div>
           <div class="stat-row"><span>{{ t('video.totalSize') }}</span><b>{{ (store.estimatedBytes / 1024).toFixed(2) }} KB</b></div>
         </div>
       </Panel>
@@ -324,12 +347,13 @@ onBeforeUnmount(() => store.pause());
 
     <div class="tool-output">
       <CodeOutput
-        :source="store.hasFrames ? store.generatedSource : ''"
+        :source="store.generatedSource"
         :name="store.outputName"
         :width="store.targetWidth"
         :height="store.targetHeight"
         :frames="store.processedFrames.map((f) => Array.from(f.bytes))"
-        :extra="{ fps: store.outputFps }"
+        :byte-count="store.estimatedBytes"
+        :extra="exportExtra"
       />
     </div>
 

@@ -115,13 +115,12 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
 
   async function processItem(item: BatchItem) {
     item.status = 'processing';
-    item.progress = 35;
+    item.progress = 0;
     item.error = '';
     try {
       const dims = sizeMode.value === 'aspect'
         ? fitToAspect(item.width, item.height, aspectLongEdge.value)
         : { width: targetWidth.value, height: targetHeight.value };
-      item.progress = 65;
       const result = await getFrameProcessorPool().process({
         imageData: item.imageData,
         targetWidth: dims.width,
@@ -185,7 +184,7 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
     if (!item) return;
     item.status = 'pending';
     item.progress = 0;
-    processItem(item);
+    await processItem(item);
   }
 
   function releaseUrl(item: BatchItem) {
@@ -216,6 +215,7 @@ export const useBatchModuloStore = defineStore('batchModulo', () => {
     items,
     selectedId,
     logs,
+    log,
     targetWidth,
     targetHeight,
     sizeMode,

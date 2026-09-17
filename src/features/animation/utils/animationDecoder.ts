@@ -1,7 +1,14 @@
 import { decodeGif, type DecodedGif } from './gifDecoder';
 import type { DecodedAnimationFrame } from '../stores/animationModuloStore';
+import { decodeImageFile } from '../../shared/imageDecode';
 
-export type DecodedAnimation = DecodedGif;
+export interface DecodedAnimation extends DecodedGif {
+  /**
+   * True when a multi-frame container (APNG / animated WebP) could only be
+   * decoded as a single image — e.g. a browser without WebCodecs ImageDecoder.
+   */
+  multiFrameUnsupported?: boolean;
+}
 
 const DEFAULT_FRAME_DELAY = 100; // ms, for static images / frames without timing
 
@@ -109,27 +116,15 @@ async function decodeWithImageDecoder(buffer: ArrayBuffer, type: string): Promis
 
 // Single-frame decode for static formats (png/jpg/webp/bmp) and as a fallback.
 async function decodeStaticImage(file: File): Promise<DecodedAnimation> {
-  const url = URL.createObjectURL(file);
-  try {
-    const image = new Image();
-    await new Promise<void>((resolve, reject) => {
-      image.onload = () => resolve();
-      image.onerror = () => reject(new Error('Unable to decode image'));
-      image.src = url;
-    });
-    const context = make2dContext(image.naturalWidth, image.naturalHeight);
-    context.drawImage(image, 0, 0);
-    return {
-      width: image.naturalWidth,
-      height: image.naturalHeight,
-      frames: [{
-        imageData: context.getImageData(0, 0, image.naturalWidth, image.naturalHeight),
-        delay: DEFAULT_FRAME_DELAY
-      }]
-    };
-  } finally {
-    URL.revokeObjectURL(url);
-  }
+  const decoded = await decodeImageFile(file);
+  return {
+    width: decoded.width,
+    height: decoded.height,
+    frames: [{
+      imageData: decoded.imageData,
+      delay: DEFAULT_FRAME_DELAY
+    }]
+  };
 }
 
 /**
@@ -147,10 +142,12 @@ export async function decodeAnimationFile(file: File): Promise<DecodedAnimation>
   if (type === 'image/gif') {
     return decodeGif(buffer);
   }
-  if (type === 'image/apng' || type === 'image/webp') {
+  const multiFrameContainer = type === 'image/apng' || type === 'image/webp';
+  if (multiFrameContainer) {
     const decoded = await decodeWithImageDecoder(buffer, type === 'image/apng' ? 'image/png' : type)
       .catch(() => null);
     if (decoded) return decoded;
   }
-  return decodeStaticImage(file);
+  const single = await decodeStaticImage(file);
+  return multiFrameContainer ? { ...single, multiFrameUnsupported: true } : single;
 }

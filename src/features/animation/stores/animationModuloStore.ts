@@ -1,9 +1,10 @@
 import { defineStore } from 'pinia';
 import { computed, ref, watch } from 'vue';
-import { encodeBitmap, type BitOrder, type Polarity, type ScanDirection } from '../../../engines/bitmapEncoder';
-import { imageDataToGray, processGrayToBitmap, type DitherMode } from '../../../engines/imageProcessor';
-import { COLOR_FORMAT_INFO, palette16Bytes, processImageDataToColor, type ColorByteOrder, type ColorMode } from '../../../engines/colorProcessor';
+import type { BitOrder, Polarity, ScanDirection } from '../../../engines/bitmapEncoder';
+import type { DitherMode } from '../../../engines/imageProcessor';
+import { COLOR_FORMAT_INFO, palette16Bytes, type ColorByteOrder, type ColorMode } from '../../../engines/colorProcessor';
 import { colorValueChunks, makeTextBlob, sanitizeIdentifier } from '../../../engines/outputFormatter';
+import { getFrameProcessorPool } from '../../../workers/frameProcessorPool';
 import { useSizeMode } from '../../shared/useSizeMode';
 
 export interface DecodedAnimationFrame {
@@ -115,7 +116,7 @@ export const useAnimationModuloStore = defineStore('animationModulo', () => {
     return lines.join('\n');
   });
 
-  function loadDecodedFrames(payload: LoadDecodedFramesPayload) {
+  async function loadDecodedFrames(payload: LoadDecodedFramesPayload) {
     fileName.value = payload.fileName;
     sourceWidth.value = payload.width;
     sourceHeight.value = payload.height;
@@ -125,7 +126,7 @@ export const useAnimationModuloStore = defineStore('animationModulo', () => {
     targetFrameCount.value = payload.frames.length;
     selectedIndex.value = 0;
     if (sizeMode.value === 'aspect') applyAspect();
-    processFrames();
+    await processFrames();
   }
 
   // Frame indices to output, derived from range + sampling settings.
@@ -147,56 +148,63 @@ export const useAnimationModuloStore = defineStore('animationModulo', () => {
     return indices;
   }
 
-  function processFrames() {
+  /** Monotonic token so a stale processing run can't overwrite a newer result. */
+  let processToken = 0;
+
+  /**
+   * Process the sampled frames through the worker pool. Doing this on the main
+   * thread froze the UI for large animations, and it duplicated the pipeline the
+   * frame worker already implements for video/batch.
+   */
+  async function processFrames() {
     const start = Math.max(0, startFrame.value - 1);
     const end = Math.min(decodedFrames.value.length, endFrame.value);
-    const nextFrames: ProcessedAnimationFrame[] = [];
+    const indices = sampleIndices(start, end);
+    const token = (processToken += 1);
 
-    for (const index of sampleIndices(start, end)) {
-      const frame = decodedFrames.value[index];
-      if (colorMode.value !== 'mono') {
-        const { bytes, preview } = processImageDataToColor(frame.imageData, {
+    const pool = getFrameProcessorPool();
+    const workers = Math.max(1, Math.min(pool.concurrency || 1, indices.length));
+    const nextFrames: ProcessedAnimationFrame[] = new Array(indices.length);
+    let cursor = 0;
+
+    const runSlot = async () => {
+      while (cursor < indices.length) {
+        const position = cursor++;
+        const index = indices[position];
+        const frame = decodedFrames.value[index];
+        const result = await pool.process({
+          imageData: frame.imageData,
           targetWidth: targetWidth.value,
           targetHeight: targetHeight.value,
           brightness: brightness.value,
           contrast: contrast.value,
-          format: colorMode.value,
-          byteOrder: colorByteOrder.value,
-          dither: dithering.value !== 'none'
+          threshold: threshold.value,
+          dither: dithering.value,
+          scalingAlgorithm: 'nearest',
+          scan: scanDirection.value,
+          bitOrder: bitOrder.value,
+          polarity: polarity.value,
+          colorMode: colorMode.value,
+          colorByteOrder: colorByteOrder.value
         });
-        nextFrames.push({
+        nextFrames[position] = {
           sourceIndex: index + 1,
           delay: frame.delay,
-          bitmap: new Uint8Array(),
-          bytes,
-          preview
-        });
-        continue;
+          bitmap: result.bitmap,
+          bytes: result.bytes,
+          preview: result.preview
+        };
       }
-      const gray = imageDataToGray(frame.imageData);
-      const bitmap = processGrayToBitmap(gray, {
-        sourceWidth: frame.imageData.width,
-        sourceHeight: frame.imageData.height,
-        targetWidth: targetWidth.value,
-        targetHeight: targetHeight.value,
-        brightness: brightness.value,
-        contrast: contrast.value,
-        threshold: threshold.value,
-        dither: dithering.value
-      });
-      const bytes = encodeBitmap(bitmap, targetWidth.value, targetHeight.value, {
-        scan: scanDirection.value,
-        bitOrder: bitOrder.value,
-        polarity: polarity.value
-      });
-      nextFrames.push({
-        sourceIndex: index + 1,
-        delay: frame.delay,
-        bitmap,
-        bytes
-      });
+    };
+
+    try {
+      await Promise.all(Array.from({ length: workers }, runSlot));
+    } catch (error) {
+      console.error('Frame processing failed:', error);
+      return;
     }
 
+    if (token !== processToken) return; // a newer run superseded this one
     processedFrames.value = nextFrames;
     selectedIndex.value = Math.min(selectedIndex.value, Math.max(0, nextFrames.length - 1));
   }
@@ -219,7 +227,7 @@ export const useAnimationModuloStore = defineStore('animationModulo', () => {
       if (processTimer) clearTimeout(processTimer);
       processTimer = setTimeout(() => {
         processTimer = null;
-        processFrames();
+        void processFrames();
       }, 80);
     }
   );

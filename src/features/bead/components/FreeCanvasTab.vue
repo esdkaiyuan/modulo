@@ -47,8 +47,41 @@ const objects = ref<CanvasObject[]>([]);
 const selectedId = ref<string | null>(null);
 const gridSize = ref(20);
 let nextZ = 1;
+let dragCommitted = false;
 
 const selected = computed(() => objects.value.find((o) => o.id === selectedId.value) ?? null);
+
+// ─ Undo / redo history ──
+const HISTORY_LIMIT = 50;
+const past = ref<CanvasObject[][]>([]);
+const future = ref<CanvasObject[][]>([]);
+const canUndo = computed(() => past.value.length > 0);
+const canRedo = computed(() => future.value.length > 0);
+
+function snapshotObjects(): CanvasObject[] {
+  return objects.value.map((o) => ({ ...o }));
+}
+
+/** Record the pre-edit state — call right before mutating objects. */
+function commit() {
+  past.value.push(snapshotObjects());
+  if (past.value.length > HISTORY_LIMIT) past.value.shift();
+  future.value = [];
+}
+
+function undo() {
+  if (!past.value.length) return;
+  future.value.push(snapshotObjects());
+  objects.value = past.value.pop()!;
+  selectedId.value = null;
+}
+
+function redo() {
+  if (!future.value.length) return;
+  past.value.push(snapshotObjects());
+  objects.value = future.value.pop()!;
+  selectedId.value = null;
+}
 
 // ── Add pattern from Image/Draw tab ──
 function addPattern() {
@@ -61,6 +94,7 @@ function addPattern() {
     for (let c = 0; c < p.width; c++)
       cells.push(p.cells[r]?.[c]?.bead?.code ?? null);
 
+  commit();
   objects.value.push({
     id: `obj-${nextZ++}`, type: 'pattern',
     x: 40, y: 40, width: p.width * cs, height: p.height * cs,
@@ -93,6 +127,7 @@ async function importImageFile(file: File) {
   if (ratio >= 1) { w = maxDim; h = Math.round(maxDim / ratio); }
   else { h = maxDim; w = Math.round(maxDim * ratio); }
 
+  commit();
   objects.value.push({
     id: `obj-${nextZ++}`, type: 'image',
     x: 60 + Math.random() * 100, y: 60 + Math.random() * 100,
@@ -128,6 +163,7 @@ function addPreset(presetId: string) {
   ctx.fillText(preset.char, res / 2, res / 2);
   const dataUrl = offscreen.toDataURL('image/png');
 
+  commit();
   objects.value.push({
     id: `obj-${nextZ++}`, type: 'preset',
     x: 100 + Math.random() * 200, y: 100 + Math.random() * 100,
@@ -143,12 +179,12 @@ function selectObj(id: string | null) {
   selectedId.value = id;
   objects.value = objects.value.map((o) => ({ ...o, selected: o.id === id }));
 }
-function deleteObj(id: string) { objects.value = objects.value.filter((o) => o.id !== id); if (selectedId.value === id) selectedId.value = null; }
-function rotateObj(id: string, deg: number) { objects.value = objects.value.map((o) => o.id === id ? { ...o, rotation: (o.rotation + deg + 360) % 360 } : o); }
-function scaleObj(id: string, f: number) { objects.value = objects.value.map((o) => o.id === id ? { ...o, scale: Math.max(0.2, Math.min(5, o.scale * f)) } : o); }
-function bringForward(id: string) { const mz = Math.max(0, ...objects.value.map((o) => o.zIndex)); objects.value = objects.value.map((o) => o.id === id ? { ...o, zIndex: mz + 1 } : o); }
-function sendBackward(id: string) { const mz = Math.min(0, ...objects.value.map((o) => o.zIndex)); objects.value = objects.value.map((o) => o.id === id ? { ...o, zIndex: Math.min(0, mz - 1) } : o); }
-function clearAll() { objects.value = []; selectedId.value = null; compositeAndConvert(); }
+function deleteObj(id: string) { commit(); objects.value = objects.value.filter((o) => o.id !== id); if (selectedId.value === id) selectedId.value = null; }
+function rotateObj(id: string, deg: number) { commit(); objects.value = objects.value.map((o) => o.id === id ? { ...o, rotation: (o.rotation + deg + 360) % 360 } : o); }
+function scaleObj(id: string, f: number) { commit(); objects.value = objects.value.map((o) => o.id === id ? { ...o, scale: Math.max(0.2, Math.min(5, o.scale * f)) } : o); }
+function bringForward(id: string) { commit(); const mz = Math.max(0, ...objects.value.map((o) => o.zIndex)); objects.value = objects.value.map((o) => o.id === id ? { ...o, zIndex: mz + 1 } : o); }
+function sendBackward(id: string) { commit(); const mz = Math.min(0, ...objects.value.map((o) => o.zIndex)); objects.value = objects.value.map((o) => o.id === id ? { ...o, zIndex: Math.min(0, mz - 1) } : o); }
+function clearAll() { commit(); objects.value = []; selectedId.value = null; compositeAndConvert(); }
 
 // ── Composite all objects into one image, then convert to beads ──
 function compositeAndConvert() {
@@ -329,6 +365,7 @@ function onStageMouseDown(e: MouseEvent) {
     const id = target.dataset.objId!;
     selectObj(id);
     draggingId.value = id;
+    dragCommitted = false;
     dragStart.value = { x: e.clientX, y: e.clientY };
     const obj = objects.value.find((o) => o.id === id);
     if (obj) dragObjStart.value = { x: obj.x, y: obj.y };
@@ -337,6 +374,7 @@ function onStageMouseDown(e: MouseEvent) {
 }
 function onStageMouseMove(e: MouseEvent) {
   if (!draggingId.value) return;
+  if (!dragCommitted) { commit(); dragCommitted = true; }
   const dx = e.clientX - dragStart.value.x, dy = e.clientY - dragStart.value.y;
   objects.value = objects.value.map((o) => o.id === draggingId.value ? { ...o, x: dragObjStart.value.x + dx, y: dragObjStart.value.y + dy } : o);
 }
@@ -346,14 +384,20 @@ function onStageMouseUp() { draggingId.value = null; }
 function onKeyDown(e: KeyboardEvent) {
   const tag = (e.target as HTMLElement).tagName;
   if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA') return;
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+    e.preventDefault();
+    if (e.shiftKey) redo(); else undo();
+    return;
+  }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
   const s = selected.value;
   if (!s) return;
   if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteObj(s.id); return; }
   const step = e.shiftKey ? gridSize.value : 1;
-  if (e.key === 'ArrowLeft') { e.preventDefault(); objects.value = objects.value.map((o) => o.id === s.id ? { ...o, x: o.x - step } : o); }
-  if (e.key === 'ArrowRight') { e.preventDefault(); objects.value = objects.value.map((o) => o.id === s.id ? { ...o, x: o.x + step } : o); }
-  if (e.key === 'ArrowUp') { e.preventDefault(); objects.value = objects.value.map((o) => o.id === s.id ? { ...o, y: o.y - step } : o); }
-  if (e.key === 'ArrowDown') { e.preventDefault(); objects.value = objects.value.map((o) => o.id === s.id ? { ...o, y: o.y + step } : o); }
+  if (e.key === 'ArrowLeft') { e.preventDefault(); commit(); objects.value = objects.value.map((o) => o.id === s.id ? { ...o, x: o.x - step } : o); }
+  if (e.key === 'ArrowRight') { e.preventDefault(); commit(); objects.value = objects.value.map((o) => o.id === s.id ? { ...o, x: o.x + step } : o); }
+  if (e.key === 'ArrowUp') { e.preventDefault(); commit(); objects.value = objects.value.map((o) => o.id === s.id ? { ...o, y: o.y - step } : o); }
+  if (e.key === 'ArrowDown') { e.preventDefault(); commit(); objects.value = objects.value.map((o) => o.id === s.id ? { ...o, y: o.y + step } : o); }
   if (e.key === 'r' || e.key === 'R') rotateObj(s.id, e.shiftKey ? -15 : 15);
   if (e.key === '+' || e.key === '=') scaleObj(s.id, 1.1);
   if (e.key === '-') scaleObj(s.id, 0.9);
@@ -367,7 +411,7 @@ function scheduleComposite() {
 }
 
 watch(() => objects.value.length, () => scheduleComposite());
-watch(() => objects.value.map((o) => `${o.x},${o.y},${o.rotation},${o.scale}`), () => scheduleComposite());
+watch(() => objects.value.map((o) => `${o.x},${o.y},${o.rotation},${o.scale},${o.zIndex}`), () => scheduleComposite());
 
 onMounted(() => { window.addEventListener('keydown', onKeyDown); compositeAndConvert(); });
 onBeforeUnmount(() => { window.removeEventListener('keydown', onKeyDown); if (compositeTimer) clearTimeout(compositeTimer); });
@@ -388,6 +432,9 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', onKeyDown); if (co
       <input v-model.number="beadPx" type="number" min="4" max="40" class="canvas-grid-input" @change="onBeadPxChange()" />
       <span class="draw-check">= {{ canvasW }}×{{ canvasH }}</span>
       <span class="toolbar-spacer"></span>
+      <button class="btn sm" :disabled="!canUndo" :title="t('bead.drawUndo')" @click="undo()">↶</button>
+      <button class="btn sm" :disabled="!canRedo" :title="t('bead.drawRedo')" @click="redo()">↷</button>
+      <span class="divider-v"></span>
       <button class="btn sm danger" @click="clearAll()">{{ t('bead.drawClear') }}</button>
     </div>
 
@@ -445,7 +492,7 @@ onBeforeUnmount(() => { window.removeEventListener('keydown', onKeyDown); if (co
     <div class="canvas-statusbar">
       <span>{{ objects.length }} {{ t('bead.objects', { n: objects.length }) }}</span>
       <span class="toolbar-spacer"></span>
-      <span class="canvas-hint">←→↑↓ 移动 · R 旋转 · +/- 缩放 · Del 删除</span>
+      <span class="canvas-hint">{{ t('bead.canvasShortcuts') }}</span>
     </div>
 
     <input ref="fileInput" type="file" class="hidden-input" accept="image/png,image/jpeg,image/webp,image/bmp" @change="onFileChange" />

@@ -2,8 +2,8 @@ import { defineStore } from 'pinia';
 import { computed, ref, watch } from 'vue';
 import { generatePattern, findClosestBead } from '../patternEngine';
 import { removeBackgroundAi, removeBackgroundSimple, loadAiRemoval } from '../backgroundRemoval';
-import { BEAD_BRANDS, getBrand, getSymbol } from '../paletteData';
-import type { BeadBrandId, MaterialItem, PatternResult, PatternSettings } from '../types';
+import { BEAD_BRANDS } from '../paletteData';
+import type { BeadBrandId, PatternResult, PatternSettings } from '../types';
 
 export type BeadSizeMode = 'custom' | 'aspect';
 
@@ -22,6 +22,7 @@ export const useBeadPatternStore = defineStore('beadPattern', () => {
   const gridWidth = ref(29);
   const gridHeight = ref(29);
   const aspectLongEdge = ref(29);
+  const lockAspectRatio = ref(false);
   const boardSize = ref(29);
   const viewMode = ref<'colors' | 'symbols' | 'both'>('colors');
   const showGrid = ref(true);
@@ -41,72 +42,11 @@ export const useBeadPatternStore = defineStore('beadPattern', () => {
   const pattern = ref<PatternResult | null>(null);
   const isGenerating = ref(false);
 
-  // ── Draw pattern override (from DrawTab) ──
-  const drawCells = ref<(string | null)[] | null>(null);
-  const drawWidth = ref(0);
-  const drawHeight = ref(0);
-
-  // ── Preset objects count (for materials) ──
-  const presetCount = ref(0);
-  const presetNames = ref<string[]>([]);
-
-  // ── Derived: use drawCells if available, else generated pattern ──
-  function computeMaterialsFromCells(cells: (string | null)[], w: number, h: number): MaterialItem[] {
-    const brand = getBrand(brandId.value);
-    const counts = new Map<string, number>();
-    for (const code of cells) {
-      if (!code) continue;
-      counts.set(code, (counts.get(code) ?? 0) + 1);
-    }
-    const total = cells.filter(Boolean).length;
-    const items: MaterialItem[] = [];
-    let idx = 0;
-    for (const [code, count] of [...counts.entries()].sort((a, b) => b[1] - a[1])) {
-      const bead = brand.colors.find((c) => c.code === code);
-      if (!bead) continue;
-      items.push({
-        bead,
-        count,
-        percentage: total > 0 ? (count / total) * 100 : 0,
-        symbol: getSymbol(idx++)
-      });
-    }
-    return items;
-  }
-
-  const materials = computed(() => {
-    let items: MaterialItem[] = [];
-    if (drawCells.value) {
-      items = computeMaterialsFromCells(drawCells.value, drawWidth.value, drawHeight.value);
-    } else if (pattern.value) {
-      items = pattern.value.materials;
-    }
-    // Add preset items
-    if (presetCount.value > 0) {
-      const presetColors: Record<string, { hex: string; name: string }> = {
-        'smile': { hex: '#FFD600', name: 'Emoji Smiley' },
-        'heart': { hex: '#E53935', name: 'Emoji Heart' },
-        'star': { hex: '#FFD600', name: 'Emoji Star' },
-        'fire': { hex: '#FF6D00', name: 'Emoji Fire' },
-      };
-      for (const name of presetNames.value) {
-        const info = presetColors[name] || { hex: '#9E9E9E', name: `Preset: ${name}` };
-        items.push({
-          bead: { code: `PRESET-${name}`, name: info.name, hex: info.hex, r: 0, g: 0, b: 0 },
-          count: 1,
-          percentage: 0,
-          symbol: '★'
-        });
-      }
-    }
-    return items;
-  });
-
-  const totalBeads = computed(() => {
-    let count = drawCells.value ? drawCells.value.filter(Boolean).length : (pattern.value?.totalBeads ?? 0);
-    count += presetCount.value;
-    return count;
-  });
+  // ── Derived from the generated pattern ──
+  // Each tab reports its own stats (Draw / Canvas emit them), so these always
+  // describe the image pattern and stay consistent with the preview + exports.
+  const materials = computed(() => pattern.value?.materials ?? []);
+  const totalBeads = computed(() => pattern.value?.totalBeads ?? 0);
 
   const boardCount = computed(() => {
     const beads = totalBeads.value;
@@ -160,7 +100,6 @@ export const useBeadPatternStore = defineStore('beadPattern', () => {
     sourceHeight.value = data.height;
     fileName.value = data.fileName;
     fileSize.value = data.size;
-    drawCells.value = null; // clear draw override
 
     suppressRecalc = true;
     sizeMode.value = 'aspect';
@@ -176,38 +115,26 @@ export const useBeadPatternStore = defineStore('beadPattern', () => {
   function generate() {
     if (!sourceImageData.value) return;
     isGenerating.value = true;
-    drawCells.value = null; // clear draw override when regenerating
-
     const settings: PatternSettings = {
       brandId: brandId.value,
       gridWidth: gridWidth.value,
       gridHeight: gridHeight.value,
       boardSize: boardSize.value,
-      lockAspectRatio: sizeMode.value === 'aspect',
-      showSymbols: viewMode.value !== 'colors',
+      lockAspectRatio: lockAspectRatio.value || sizeMode.value === 'aspect',
       viewMode: viewMode.value,
       showColorCodes: showColorCodes.value,
       bgRemoveMode: bgRemoveMode.value,
       bgTolerance: bgTolerance.value
     };
 
-    requestAnimationFrame(() => {
-      pattern.value = generatePattern(sourceImageData.value!, settings, excludeColors.value);
-      isGenerating.value = false;
-    });
-  }
-
-  /** Called by DrawTab to sync its pattern data for materials calculation. */
-  function applyDrawCells(cells: (string | null)[], w: number, h: number) {
-    drawCells.value = cells;
-    drawWidth.value = w;
-    drawHeight.value = h;
+    pattern.value = generatePattern(sourceImageData.value!, settings, excludeColors.value);
+    isGenerating.value = false;
   }
 
   function setGridWidth(w: number) {
     const clamped = Math.max(1, Math.min(200, Math.round(w)));
     gridWidth.value = clamped;
-    if (sizeMode.value === 'aspect' && sourceWidth.value > 0 && sourceHeight.value > 0) {
+    if ((sizeMode.value === 'aspect' || lockAspectRatio.value) && sourceWidth.value > 0 && sourceHeight.value > 0) {
       gridHeight.value = Math.max(1, Math.round((clamped * sourceHeight.value) / sourceWidth.value));
     }
     generate();
@@ -216,7 +143,7 @@ export const useBeadPatternStore = defineStore('beadPattern', () => {
   function setGridHeight(h: number) {
     const clamped = Math.max(1, Math.min(200, Math.round(h)));
     gridHeight.value = clamped;
-    if (sizeMode.value === 'aspect' && sourceWidth.value > 0 && sourceHeight.value > 0) {
+    if ((sizeMode.value === 'aspect' || lockAspectRatio.value) && sourceWidth.value > 0 && sourceHeight.value > 0) {
       gridWidth.value = Math.max(1, Math.round((clamped * sourceWidth.value) / sourceHeight.value));
     }
     generate();
@@ -259,6 +186,20 @@ export const useBeadPatternStore = defineStore('beadPattern', () => {
 
   function setViewMode(mode: 'colors' | 'symbols' | 'both') {
     viewMode.value = mode;
+  }
+
+  function setLockAspectRatio(value: boolean) {
+    lockAspectRatio.value = value;
+    if (value && sourceWidth.value > 0 && sourceHeight.value > 0) {
+      gridHeight.value = Math.max(1, Math.round((gridWidth.value * sourceHeight.value) / sourceWidth.value));
+      generate();
+    }
+  }
+
+  function clearExcludeColors() {
+    if (excludeColors.value.size === 0) return;
+    excludeColors.value = new Set();
+    generate();
   }
 
   function setShowGrid(value: boolean) {
@@ -350,11 +291,6 @@ export const useBeadPatternStore = defineStore('beadPattern', () => {
     generate();
   }
 
-  function updatePresets(count: number, names: string[]) {
-    presetCount.value = count;
-    presetNames.value = names;
-  }
-
   function reset() {
     sourceImageData.value = null;
     sourceDataUrl.value = '';
@@ -365,9 +301,6 @@ export const useBeadPatternStore = defineStore('beadPattern', () => {
     fileName.value = '';
     fileSize.value = 0;
     pattern.value = null;
-    drawCells.value = null;
-    presetCount.value = 0;
-    presetNames.value = [];
     excludeColors.value = new Set();
     patternTitle.value = '';
     bgRemoveMode.value = 'none';
@@ -377,13 +310,13 @@ export const useBeadPatternStore = defineStore('beadPattern', () => {
   return {
     sourceImageData, sourceDataUrl, sourceWidth, sourceHeight,
     fileName, fileSize, brandId, sizeMode, gridWidth, gridHeight,
-    aspectLongEdge, boardSize, viewMode, excludeColors, patternTitle,
+    aspectLongEdge, lockAspectRatio, boardSize, viewMode, excludeColors, patternTitle,
     pattern, isGenerating, hasImage: computed(() => !!sourceImageData.value),
     brand: computed(() => BEAD_BRANDS.find((b) => b.id === brandId.value) ?? BEAD_BRANDS[0]),
     materials, totalBeads, boardCount,
-    loadImage, generate, applyDrawCells, updatePresets,
+    loadImage, generate,
     setBrand, setGridWidth, setGridHeight, setBoardSize, setSizeMode,
-    applyOriginalRatio, toggleExcludeColor, setViewMode,
+    applyOriginalRatio, toggleExcludeColor, clearExcludeColors, setViewMode, setLockAspectRatio,
     setShowGrid, setShowBoardLines, setShowCenterCrosshair, setShowColorCodes,
     showGrid, showBoardLines, showCenterCrosshair,
     bgRemoveMode, bgTolerance, isRemovingBg, bgRemoveProgress,

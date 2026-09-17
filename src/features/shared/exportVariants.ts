@@ -95,11 +95,15 @@ export function buildExport(format: ExportFormat | string, p: ExportPayload): Ex
 
 /** Trigger a browser download for an export result. */
 export function downloadExport(baseName: string, result: ExportResult): void {
-  const blob = new Blob([result.content], { type: result.mime });
+  downloadBlobFile(new Blob([result.content], { type: result.mime }), `${baseName}.${result.ext}`);
+}
+
+/** Trigger a browser download for a ready-made blob (binary output, images…). */
+export function downloadBlobFile(blob: Blob, fileName: string): void {
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${baseName}.${result.ext}`;
-  a.click();
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  anchor.click();
   URL.revokeObjectURL(url);
 }

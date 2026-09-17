@@ -17,6 +17,7 @@ import {
   type InputCodeFile
 } from '../../../engines/aiClient';
 import { makeTextBlob } from '../../../engines/outputFormatter';
+import { downloadBlobFile } from '../../shared/exportVariants';
 import { useAuthStore } from '../../../user/authStore';
 import { request } from '../../../user/serverApi';
 import { locale, t } from '../../../i18n';
@@ -694,12 +695,7 @@ export const useAiAgentStore = defineStore('aiAgent', () => {
   function downloadFile(index: number) {
     const file = generatedFiles.value[index];
     if (!file) return;
-    const url = URL.createObjectURL(makeTextBlob(file.content));
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = file.name;
-    anchor.click();
-    URL.revokeObjectURL(url);
+    downloadBlobFile(makeTextBlob(file.content), file.name);
   }
 
   function downloadAll() {

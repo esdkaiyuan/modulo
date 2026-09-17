@@ -8,6 +8,7 @@ import SizeModeFields from '../components/SizeModeFields.vue';
 import ColorModeFields from '../components/ColorModeFields.vue';
 import { useImageModuloStore } from '../features/image/stores/imageModuloStore';
 import { useFileRecordStore } from '../user/fileRecordStore';
+import { decodeImageFile } from '../features/shared/imageDecode';
 import { t } from '../i18n';
 
 const store = useImageModuloStore();
@@ -30,31 +31,7 @@ function pickFile() {
 async function loadFile(file: File) {
   loadError.value = '';
   try {
-    const dataUrl = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(String(reader.result));
-      reader.onerror = () => reject(new Error('File read failed'));
-      reader.readAsDataURL(file);
-    });
-    const img = new Image();
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error('Unable to decode image'));
-      img.src = dataUrl;
-    });
-    const ctx = document.createElement('canvas').getContext('2d')!;
-    ctx.canvas.width = img.naturalWidth;
-    ctx.canvas.height = img.naturalHeight;
-    ctx.drawImage(img, 0, 0);
-    store.loadImageData({
-      fileName: file.name,
-      width: img.naturalWidth,
-      height: img.naturalHeight,
-      size: file.size,
-      type: file.type || 'image/*',
-      imageData: ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight),
-      dataUrl
-    });
+    store.loadImageData(await decodeImageFile(file));
     fileRecords.recordFile('image', file.name, file.size);
   } catch (error) {
     loadError.value = error instanceof Error ? error.message : 'Image failed to load';
