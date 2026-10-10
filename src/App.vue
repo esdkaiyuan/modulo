@@ -21,6 +21,9 @@ import { locale, t, toggleLocale } from './i18n';
 const auth = useAuthStore();
 const activity = useActivityStore();
 
+// Injected at build time from package.json (see vite.config.ts).
+const appVersion = __APP_VERSION__;
+
 const NAV = [
   { route: 'image', labelKey: 'nav.image', icon: '▣' },
   { route: 'video', labelKey: 'nav.video', icon: '▶' },
@@ -110,7 +113,7 @@ onBeforeUnmount(() => window.removeEventListener('hashchange', onHashChange));
       <div class="brand" @click="navigate('')">
         <span class="brand-logo">▣</span>
         <span class="brand-name">Dot Matrix Studio</span>
-        <span class="brand-version">v2.0</span>
+        <span class="brand-version">v{{ appVersion }}</span>
       </div>
       <nav class="app-nav">
         <button

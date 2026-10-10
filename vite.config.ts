@@ -1,8 +1,18 @@
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 
+// Single source of truth for the app version: read it from package.json so the
+// header badge can never drift from the package metadata again.
+const pkg = JSON.parse(
+  readFileSync(new URL('./package.json', import.meta.url), 'utf-8')
+) as { version: string };
+
 export default defineConfig({
   plugins: [vue()],
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version)
+  },
   // GitHub Pages serves project sites from /<repo>/, so the Pages workflow sets
   // VITE_BASE=/modulo/. Local dev and server (nginx) deploys keep the root base.
   base: process.env.VITE_BASE ?? '/',

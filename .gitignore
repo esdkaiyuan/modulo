@@ -19,3 +19,8 @@ Thumbs.db
 
 
 .claude/
+
+# Scratch / generated dev artifacts
+_*.py
+tmp_*/
+.superpowers/
